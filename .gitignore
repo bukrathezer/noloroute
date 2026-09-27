@@ -1,23 +1,20 @@
-# Maven
-target/
-!.mvn/wrapper/maven-wrapper.jar
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+
+# Environment variables
+.env
 
 # IDE
 .idea/
-*.iml
 .vscode/
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Spring Boot
-*.log
-application-local.properties
-application-local.yml
-
-# Secrets
-.env
 
 # Frontend (once added)
 node_modules/
