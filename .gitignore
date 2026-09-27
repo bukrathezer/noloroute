@@ -1,9 +1,14 @@
 # Python
 __pycache__/
-*.pyc
-venv/
-.venv/
+*.py[cod]
 *.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # Environment variables
 .env
@@ -15,6 +20,9 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
 
 # Frontend (once added)
 node_modules/
