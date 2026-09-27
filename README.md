@@ -19,6 +19,7 @@ budget instead.
 - **Backend:** Python, FastAPI, SQLAlchemy 2.0
 - **Database:** PostgreSQL
 - **POI data:** Google Places API (New)
+- **Frontend:** TBD
 - **CI/CD:** GitHub Actions
 - **Deployment:** Google Cloud Platform — Cloud Run + Cloud SQL
 

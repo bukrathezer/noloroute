@@ -10,9 +10,11 @@ venv/
 .coverage
 htmlcov/
 
+# Environment variables
+.env
+
 # IDE
 .idea/
-*.iml
 .vscode/
 
 # OS
@@ -21,9 +23,6 @@ Thumbs.db
 
 # Logs
 *.log
-
-# Secrets
-.env
 
 # Frontend (once added)
 node_modules/
