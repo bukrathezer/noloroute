@@ -1,6 +1,14 @@
-# Maven
-target/
-!.mvn/wrapper/maven-wrapper.jar
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
 # IDE
 .idea/
@@ -11,10 +19,8 @@ target/
 .DS_Store
 Thumbs.db
 
-# Spring Boot
+# Logs
 *.log
-application-local.properties
-application-local.yml
 
 # Secrets
 .env
