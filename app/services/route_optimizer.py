@@ -241,6 +241,7 @@ def build_day(day_number: int, stops: Sequence[POI], loop: LoopRoute, source: Ro
             visit_minutes=poi.avg_duration_min,
             travel_minutes_from_previous=_minutes(leg.seconds),
             distance_km_from_previous=_km(leg.meters),
+            path_from_previous=leg.polyline,
             entry_price=poi.entry_price,
             rating=poi.rating,
         )
@@ -253,6 +254,7 @@ def build_day(day_number: int, stops: Sequence[POI], loop: LoopRoute, source: Ro
         stops=planned,
         return_travel_minutes=_minutes(back.seconds),
         return_distance_km=_km(back.meters),
+        return_path=back.polyline,
         total_travel_minutes=_minutes(sum(leg.seconds for leg in loop.legs)),
         total_visit_minutes=sum(poi.avg_duration_min for poi in ordered),
         routing_source=source,

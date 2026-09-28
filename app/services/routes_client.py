@@ -9,7 +9,14 @@ import httpx
 from app.services.geo import LatLng
 
 COMPUTE_ROUTES_URL = "https://routes.googleapis.com/directions/v2:computeRoutes"
-FIELD_MASK = "routes.optimizedIntermediateWaypointIndex,routes.legs.duration,routes.legs.distanceMeters"
+FIELD_MASK = ",".join(
+    [
+        "routes.optimizedIntermediateWaypointIndex",
+        "routes.legs.duration",
+        "routes.legs.distanceMeters",
+        "routes.legs.polyline.encodedPolyline",  # street-level path, drawn on the map
+    ]
+)
 MAX_INTERMEDIATES = 25  # API limit when optimizeWaypointOrder is on
 
 
@@ -27,6 +34,7 @@ class RoutesAPIError(Exception):
 class Leg:
     seconds: int
     meters: int
+    polyline: str | None = None  # Google encoded polyline; None for straight-line estimates
 
 
 @dataclass(frozen=True)
@@ -78,7 +86,11 @@ class RoutesClient:
         # Omitted when there is nothing to reorder (a single stop).
         order = route.get("optimizedIntermediateWaypointIndex") or list(range(len(stops)))
         legs = [
-            Leg(seconds=_parse_duration(leg.get("duration", "0s")), meters=leg.get("distanceMeters", 0))
+            Leg(
+                seconds=_parse_duration(leg.get("duration", "0s")),
+                meters=leg.get("distanceMeters", 0),
+                polyline=leg.get("polyline", {}).get("encodedPolyline"),
+            )
             for leg in route["legs"]
         ]
         return LoopRoute(order=order, legs=legs)

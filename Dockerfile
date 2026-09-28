@@ -1,5 +1,16 @@
-# Production image for the NoloRoute API (Cloud Run). The same image also runs one-off jobs
-# (migrations, POI ingestion) by overriding the command.
+# Production image for NoloRoute (Cloud Run): the FastAPI API plus the built web frontend,
+# served from the same origin. The same image also runs one-off jobs (migrations, POI
+# ingestion) by overriding the command.
+
+# --- Stage 1: build the web frontend (only its output is kept) ---
+FROM node:22-slim AS frontend
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend/ ./
+RUN npm run build
+
+# --- Stage 2: the runtime image ---
 FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -17,6 +28,7 @@ COPY alembic.ini .
 COPY alembic ./alembic
 COPY app ./app
 COPY scripts ./scripts
+COPY --from=frontend /frontend/dist ./frontend/dist
 
 # Don't run as root inside the container. /app stays read-only for this user, so the ingest
 # script caches its raw API results under /tmp instead.
