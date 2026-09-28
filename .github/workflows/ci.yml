@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:  # "Run workflow" button in the Actions tab (redeploys main)
 
 # A newer commit on the same PR cancels the older check. Runs on main are queued instead,
 # so a deploy is never cut off halfway.
@@ -93,8 +94,8 @@ jobs:
   deploy:
     name: Deploy
     needs: [lint, test]
-    # Only for main, and only once the GCP repository variables are configured.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+    # Only for main (pushes or the manual button), and only once the GCP repository variables are configured.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
     runs-on: ubuntu-latest
     environment:
       name: production
@@ -108,6 +109,7 @@ jobs:
       REGION: ${{ vars.GCP_REGION }}
       SERVICE: noloroute-api
       MIGRATE_JOB: noloroute-migrate
+      INGEST_JOB: noloroute-ingest
       IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/noloroute/api:${{ github.sha }}
       SQL_INSTANCE: ${{ vars.GCP_PROJECT_ID }}:${{ vars.GCP_REGION }}:noloroute-db
       RUNTIME_SA: noloroute-runtime@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
@@ -158,6 +160,23 @@ jobs:
             --max-instances 3 \
             --memory 512Mi \
             --cpu 1 \
+            --quiet
+
+      # Kept on the current image but not run here: POI ingestion calls the paid Places API, so it
+      # is started by hand when needed (gcloud run jobs execute noloroute-ingest).
+      - name: Update the POI ingestion job
+        run: |
+          gcloud run jobs deploy "$INGEST_JOB" \
+            --image "$IMAGE" \
+            --region "$REGION" \
+            --service-account "$RUNTIME_SA" \
+            --set-cloudsql-instances "$SQL_INSTANCE" \
+            --set-secrets "DATABASE_URL=database-url:latest,GOOGLE_PLACES_API_KEY=maps-api-key:latest" \
+            --command python \
+            --args=-m,scripts.ingest_places \
+            --max-retries 0 \
+            --task-timeout 1200s \
+            --memory 1Gi \
             --quiet
 
       - name: Smoke test

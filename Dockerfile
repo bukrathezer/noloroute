@@ -18,9 +18,11 @@ COPY alembic ./alembic
 COPY app ./app
 COPY scripts ./scripts
 
-# Don't run as root inside the container.
+# Don't run as root inside the container. /app stays read-only for this user, so the ingest
+# script caches its raw API results under /tmp instead.
 RUN useradd --create-home --uid 1000 app
 USER app
+ENV PLACES_CACHE_DIR=/tmp/places-cache
 
 # Cloud Run sends traffic to $PORT (8080 by default).
 ENV PORT=8080
