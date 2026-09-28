@@ -14,9 +14,7 @@ class RouteStop(Base):
     __tablename__ = "route_stop"
 
     id: Mapped[str] = mapped_column(primary_key=True, default=new_id)
-    saved_route_id: Mapped[str] = mapped_column(
-        ForeignKey("saved_route.id", ondelete="CASCADE"), index=True
-    )
+    saved_route_id: Mapped[str] = mapped_column(ForeignKey("saved_route.id", ondelete="CASCADE"), index=True)
     poi_id: Mapped[str] = mapped_column(ForeignKey("poi.id"))
     day_number: Mapped[int] = mapped_column(Integer)
     order_in_day: Mapped[int] = mapped_column(Integer)
