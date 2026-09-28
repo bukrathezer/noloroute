@@ -5,7 +5,9 @@
                     pick lowers the score of its category, so the trip stays varied.
 2. split_into_days  "Sweep": sort the chosen stops by direction from the hotel and cut the circle
                     into `days` consecutive slices of roughly equal time, so each day heads one way.
-3. order_day        Google Routes API optimizes the visiting order (hotel -> stops -> hotel) and
+3. fit_to_dates     With trip dates: a stop that is closed on its day moves to the least busy day
+                    it is open on (or is dropped); on rainy days, outdoor stops move to a dry day.
+4. order_day        Google Routes API optimizes the visiting order (hotel -> stops -> hotel) and
                     returns real travel times. If it fails, fall back to nearest-neighbour ordering
                     with straight-line time estimates so a plan is always returned.
 """
@@ -18,14 +20,17 @@ import unicodedata
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import date
 from decimal import Decimal
 from itertools import pairwise
 from typing import Literal
 
 from app.models import POI
-from app.schemas.route import DayPlan, PlannedStop
+from app.schemas.route import DayPlan, DayWeatherOut, PlannedStop
 from app.services.geo import LatLng, bearing_rad, haversine_km
+from app.services.opening_hours import hours_on, is_open_long_enough
 from app.services.routes_client import Leg, LoopRoute, RoutesAPIError, RoutesClient, TravelMode
+from app.services.weather import DayWeather
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +66,10 @@ DETOUR_FACTOR = 1.3  # streets aren't straight lines
 
 RoutingSource = Literal["google", "estimate"]
 
+# Categories that are no fun in the rain: avoided on rainy days when a dry day is available.
+OUTDOOR_CATEGORIES = {"PARK", "VIEWPOINT"}
+RAIN_OUTDOOR_PENALTY = 0.5  # outdoor scores shrink by up to this much as the share of rainy days grows
+
 
 class HotelTooFarError(ValueError):
     pass
@@ -73,18 +82,49 @@ async def plan_trip(
     budget: Decimal | None,
     mode: TravelMode,
     routes_client: RoutesClient | None,
+    dates: Sequence[date] | None = None,
+    weather: Sequence[DayWeather] | None = None,
 ) -> list[DayPlan]:
+    """Plan the trip. `dates` (one per day) enables opening hours; `weather` (one per day) rain tweaks."""
     if not pois or min(haversine_km(hotel, location(p)) for p in pois) > MAX_HOTEL_DISTANCE_KM:
         raise HotelTooFarError(f"Accommodation is more than {MAX_HOTEL_DISTANCE_KM:g} km from every sight")
 
-    chosen = select_stops(pois, hotel, days, budget, mode)
+    rainy = [w.is_rainy for w in weather] if weather else [False] * days
+    if dates:
+        # A place that is closed on every day of the trip cannot be visited at all.
+        pois = [p for p in pois if any(is_open_long_enough(p.opening_hours, d, p.avg_duration_min) for d in dates)]
+
+    chosen = select_stops(pois, hotel, days, budget, mode, rainy_share=sum(rainy) / days)
     groups = split_into_days(chosen, hotel, days, mode)
+    rain_adjusted = [False] * days
+    if dates:
+        groups, rain_adjusted = fit_to_dates(groups, dates, rainy, mode)
+
     # Days are independent, so route them concurrently.
     routed = await asyncio.gather(*(order_day(hotel, group, mode, routes_client) for group in groups))
     return [
-        build_day(day_number, group, loop, source)
+        build_day(
+            day_number,
+            group,
+            loop,
+            source,
+            day_date=dates[day_number - 1] if dates else None,
+            weather=to_weather_out(weather[day_number - 1]) if weather else None,
+            rain_adjusted=rain_adjusted[day_number - 1],
+        )
         for day_number, (group, (loop, source)) in enumerate(zip(groups, routed, strict=True), start=1)
     ]
+
+
+def to_weather_out(weather: DayWeather) -> DayWeatherOut:
+    return DayWeatherOut(
+        source=weather.source,
+        condition=weather.condition,
+        temp_max_c=weather.temp_max_c,
+        temp_min_c=weather.temp_min_c,
+        precipitation_chance=weather.precipitation_chance,
+        is_rainy=weather.is_rainy,
+    )
 
 
 def location(poi: POI) -> LatLng:
@@ -102,15 +142,25 @@ def stop_minutes(poi: POI, mode: TravelMode) -> int:
     return poi.avg_duration_min + MODE_PROFILES[mode].travel_min_per_stop
 
 
-def select_stops(pois: Sequence[POI], hotel: LatLng, days: int, budget: Decimal | None, mode: TravelMode) -> list[POI]:
+def select_stops(
+    pois: Sequence[POI],
+    hotel: LatLng,
+    days: int,
+    budget: Decimal | None,
+    mode: TravelMode,
+    rainy_share: float = 0.0,
+) -> list[POI]:
     """Greedy: repeatedly take the highest (category-adjusted) score that still fits."""
     half_score_km = MODE_PROFILES[mode].distance_half_score_km
     known = sorted(p for p in map(popularity, pois) if p is not None)
     curated_popularity = known[int(CURATED_POPULARITY_PERCENTILE * (len(known) - 1))] if known else 1.0
+    # The rainier the trip, the less parks and viewpoints are worth.
+    outdoor_factor = 1 - RAIN_OUTDOOR_PENALTY * rainy_share
 
     def base_score(poi: POI) -> float:
         pop = popularity(poi) or curated_popularity
-        return pop / (1 + haversine_km(hotel, location(poi)) / half_score_km)
+        score = pop / (1 + haversine_km(hotel, location(poi)) / half_score_km)
+        return score * outdoor_factor if poi.category in OUTDOOR_CATEGORIES else score
 
     scores = {poi.id: base_score(poi) for poi in pois}
     capacity = days * DAY_MINUTES
@@ -194,6 +244,48 @@ def _sort_by_direction(stops: Sequence[POI], hotel: LatLng) -> list[POI]:
     return by_angle[start:] + by_angle[:start]
 
 
+def fit_to_dates(
+    groups: list[list[POI]], dates: Sequence[date], rainy: Sequence[bool], mode: TravelMode
+) -> tuple[list[list[POI]], list[bool]]:
+    """Make each day's stops fit its date: move stops off days they are closed on, and outdoor
+    stops off rainy days, to the least busy day that suits them.
+
+    Returns the new groups and, per day, whether outdoor stops were moved away because of rain.
+    """
+    groups = [list(g) for g in groups]
+    load = [sum(stop_minutes(s, mode) for s in g) for g in groups]
+    rain_adjusted = [False] * len(groups)
+
+    def open_on(poi: POI, day: int) -> bool:
+        return is_open_long_enough(poi.opening_hours, dates[day], poi.avg_duration_min)
+
+    def move(poi: POI, src: int, candidates: list[int]) -> bool:
+        if not candidates:
+            return False
+        dst = min(candidates, key=lambda d: (load[d], abs(d - src)))  # least busy, then nearest
+        groups[src].remove(poi)
+        groups[dst].append(poi)
+        load[src] -= stop_minutes(poi, mode)
+        load[dst] += stop_minutes(poi, mode)
+        return True
+
+    days = range(len(groups))
+    # 1. Closed that day: move to a day it is open on, or drop it.
+    for day in days:
+        for poi in [p for p in groups[day] if not open_on(p, day)]:
+            if not move(poi, day, [d for d in days if d != day and open_on(poi, d)]):
+                groups[day].remove(poi)
+                load[day] -= stop_minutes(poi, mode)
+    # 2. Rain: move outdoor stops to a dry day they are open on; keep them if there is none.
+    for day in days:
+        if not rainy[day]:
+            continue
+        for poi in [p for p in groups[day] if p.category in OUTDOOR_CATEGORIES]:
+            if move(poi, day, [d for d in days if not rainy[d] and open_on(poi, d)]):
+                rain_adjusted[day] = True
+    return groups, rain_adjusted
+
+
 async def order_day(
     hotel: LatLng, stops: Sequence[POI], mode: TravelMode, routes_client: RoutesClient | None
 ) -> tuple[LoopRoute, RoutingSource]:
@@ -228,7 +320,15 @@ def _estimate_leg(a: LatLng, b: LatLng, mode: TravelMode) -> Leg:
     return Leg(seconds=round(km / MODE_PROFILES[mode].fallback_speed_kmh * 3600), meters=round(km * 1000))
 
 
-def build_day(day_number: int, stops: Sequence[POI], loop: LoopRoute, source: RoutingSource) -> DayPlan:
+def build_day(
+    day_number: int,
+    stops: Sequence[POI],
+    loop: LoopRoute,
+    source: RoutingSource,
+    day_date: date | None = None,
+    weather: DayWeatherOut | None = None,
+    rain_adjusted: bool = False,
+) -> DayPlan:
     ordered = [stops[i] for i in loop.order]
     planned = [
         PlannedStop(
@@ -244,6 +344,7 @@ def build_day(day_number: int, stops: Sequence[POI], loop: LoopRoute, source: Ro
             path_from_previous=leg.polyline,
             entry_price=poi.entry_price,
             rating=poi.rating,
+            hours=hours_on(poi.opening_hours, day_date) if day_date else None,
         )
         # legs has one extra entry (the way back to the hotel), handled separately below.
         for position, (poi, leg) in enumerate(zip(ordered, loop.legs, strict=False), start=1)
@@ -258,6 +359,9 @@ def build_day(day_number: int, stops: Sequence[POI], loop: LoopRoute, source: Ro
         total_travel_minutes=_minutes(sum(leg.seconds for leg in loop.legs)),
         total_visit_minutes=sum(poi.avg_duration_min for poi in ordered),
         routing_source=source,
+        date=day_date,
+        weather=weather,
+        rain_adjusted=rain_adjusted,
     )
 
 

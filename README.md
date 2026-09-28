@@ -75,6 +75,17 @@ optional budget returns a day-by-day plan:
    accommodation → stops → accommodation loop and returns real travel times. If Google is
    unavailable, a nearest-neighbour order with straight-line estimates is used instead.
 
+## Trip dates, opening hours and weather
+With a `start_date`, every day gets a date:
+
+- Stops are only placed on days they are open long enough for a visit (Google opening hours,
+  checked against 09:00–20:00); a stop closed on its day moves to the least busy day it is open
+  on, or is dropped. Each stop shows that day's hours.
+- Each day shows the weather from [Open-Meteo](https://open-meteo.com): a forecast up to 16 days
+  ahead, beyond that the average of the same dates over the past 5 years. On rainy days outdoor
+  stops (parks, viewpoints) move to a dry day when possible, and a rainy trip favours indoor
+  sights. If the weather service is down, the plan is made without it.
+
 ## Editing a plan and finding the accommodation
 - `POST /api/v1/routes/plan/remove-stop` drops a stop and re-routes only that day.
 - `GET /api/v1/places/autocomplete` and `GET /api/v1/places/{place_id}` find a hotel or address

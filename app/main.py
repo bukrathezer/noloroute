@@ -10,6 +10,7 @@ from app.api.v1 import routes_auth, routes_city, routes_places, routes_poi, rout
 from app.core.config import get_settings
 from app.services.place_search import PlaceSearchClient
 from app.services.routes_client import RoutesClient
+from app.services.weather import WeatherClient
 
 MIN_JWT_KEY_LENGTH = 32
 
@@ -26,8 +27,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     api_key = get_settings().google_places_api_key
     app.state.routes_client = RoutesClient(api_key) if api_key else None
     app.state.place_search_client = PlaceSearchClient(api_key) if api_key else None
+    app.state.weather_client = WeatherClient()  # Open-Meteo needs no key
     yield
-    for client in (app.state.routes_client, app.state.place_search_client):
+    for client in (app.state.routes_client, app.state.place_search_client, app.state.weather_client):
         if client is not None:
             await client.aclose()
 

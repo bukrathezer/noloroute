@@ -19,6 +19,7 @@ import { type FormState, PlanForm } from "./components/PlanForm";
 import { PlanResult, type SaveState } from "./components/PlanResult";
 import { RouteMap } from "./components/RouteMap";
 import { SavedRoutes } from "./components/SavedRoutes";
+import { addDays, todayIso } from "./dates";
 import { cityName, initialLang, type Lang, STRINGS } from "./i18n";
 
 const SOURCE_URL = "https://github.com/bukrathezer/noloroute";
@@ -60,6 +61,7 @@ export function App() {
     days: 2,
     mode: "WALK",
     budget: "",
+    startDate: addDays(todayIso(), 1), // tomorrow: close enough for a real forecast
   });
   const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -139,6 +141,7 @@ export function App() {
         duration_days: form.days,
         travel_mode: form.mode,
         budget,
+        start_date: form.startDate || undefined,
       });
       if (id !== requestId.current) return;
       setPlan(result);
@@ -207,6 +210,7 @@ export function App() {
         days: saved.plan.duration_days,
         mode: saved.plan.travel_mode,
         budget: saved.plan.budget ?? "",
+        startDate: saved.plan.start_date ?? "",
       });
       setPlan(saved.plan);
       setActiveDay(null);

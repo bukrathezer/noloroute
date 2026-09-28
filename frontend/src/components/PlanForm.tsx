@@ -1,5 +1,6 @@
 import type { FormEvent } from "react";
 import type { City, LatLng, TravelMode } from "../api";
+import { addDays, formatDay, MAX_DAYS_AHEAD, todayIso } from "../dates";
 import { type Lang, STRINGS } from "../i18n";
 import { CitySearch } from "./CitySearch";
 import { PlaceSearch } from "./PlaceSearch";
@@ -14,6 +15,8 @@ export interface FormState {
   days: number;
   mode: TravelMode;
   budget: string;
+  /** "YYYY-MM-DD" of day 1, or "" to plan without dates. */
+  startDate: string;
 }
 
 interface Props {
@@ -136,6 +139,30 @@ export function PlanForm({ cities, form, onChange, onSubmit, loading, lang }: Pr
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="field">
+        <label className="field-label" htmlFor="start-date">
+          {t.dates.label}
+        </label>
+        <div className="input-wrap">
+          <input
+            id="start-date"
+            type="date"
+            min={todayIso()}
+            max={addDays(todayIso(), MAX_DAYS_AHEAD)}
+            value={form.startDate}
+            onChange={(e) => onChange({ startDate: e.target.value })}
+          />
+        </div>
+        <p className="hint">
+          {form.startDate
+            ? t.dates.range(
+                formatDay(form.startDate, lang, false),
+                formatDay(addDays(form.startDate, form.days - 1), lang, false),
+              )
+            : t.dates.hint}
+        </p>
       </div>
 
       <div className="field">

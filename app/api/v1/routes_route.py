@@ -1,3 +1,6 @@
+import asyncio
+import logging
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Annotated
 
@@ -14,13 +17,30 @@ from app.schemas.saved_route import SavedRouteOut, SavedRouteSummary, SaveRouteR
 from app.services.geo import LatLng
 from app.services.route_optimizer import HotelTooFarError, build_day, order_day, plan_trip
 from app.services.routes_client import RoutesClient
+from app.services.weather import DayWeather, WeatherClient, WeatherError
 
 router = APIRouter(prefix="/routes", tags=["routes"])
+logger = logging.getLogger(__name__)
 
 
 def get_routes_client(request: Request) -> RoutesClient | None:
     """The shared Routes API client created at startup; None when no API key is configured."""
     return request.app.state.routes_client
+
+
+def get_weather_client(request: Request) -> WeatherClient | None:
+    return request.app.state.weather_client
+
+
+async def fetch_weather(client: WeatherClient | None, where: LatLng, dates: list[date]) -> list[DayWeather] | None:
+    """Weather per trip day, or None: a plan never fails just because the weather service does."""
+    if client is None:
+        return None
+    try:
+        return await client.for_dates(where, dates)
+    except WeatherError as exc:
+        logger.warning("Weather unavailable, planning without it: %s", exc)
+        return None
 
 
 def load_city_pois(db: Session, city_id: str) -> tuple[City | None, list[POI]]:
@@ -35,15 +55,22 @@ async def plan_route(
     req: RoutePlanRequest,
     db: Annotated[Session, Depends(get_db)],
     routes_client: Annotated[RoutesClient | None, Depends(get_routes_client)],
+    weather_client: Annotated[WeatherClient | None, Depends(get_weather_client)],
 ) -> RoutePlanResponse:
-    # SQLAlchemy is synchronous here, so run the query in a worker thread instead of blocking the event loop.
-    city, pois = await run_in_threadpool(load_city_pois, db, req.city_id)
+    hotel = LatLng(req.accommodation.lat, req.accommodation.lng)
+    dates = [req.start_date + timedelta(days=i) for i in range(req.duration_days)] if req.start_date else None
+    # The DB query (synchronous SQLAlchemy, so in a worker thread) and the weather lookup run side by side.
+    (city, pois), weather = await asyncio.gather(
+        run_in_threadpool(load_city_pois, db, req.city_id),
+        fetch_weather(weather_client, hotel, dates) if dates else asyncio.sleep(0),
+    )
     if city is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown city '{req.city_id}'")
 
-    hotel = LatLng(req.accommodation.lat, req.accommodation.lng)
     try:
-        days = await plan_trip(pois, hotel, req.duration_days, req.budget, req.travel_mode, routes_client)
+        days = await plan_trip(
+            pois, hotel, req.duration_days, req.budget, req.travel_mode, routes_client, dates=dates, weather=weather
+        )
     except HotelTooFarError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
@@ -54,6 +81,7 @@ async def plan_route(
         budget=req.budget,
         travel_mode=req.travel_mode,
         duration_days=req.duration_days,
+        start_date=req.start_date,
         days=days,
         **_plan_totals(days),
     )
@@ -75,7 +103,9 @@ async def remove_stop(
     pois = await run_in_threadpool(_load_pois, db, plan.city_id, remaining_ids)
     hotel = LatLng(plan.accommodation.lat, plan.accommodation.lng)
     loop, source = await order_day(hotel, pois, plan.travel_mode, routes_client)
-    new_day = build_day(day.day_number, pois, loop, source)
+    new_day = build_day(
+        day.day_number, pois, loop, source, day_date=day.date, weather=day.weather, rain_adjusted=day.rain_adjusted
+    )
 
     days = [new_day if d.day_number == day.day_number else d for d in plan.days]
     return plan.model_copy(update={"days": days, **_plan_totals(days)})
