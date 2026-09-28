@@ -31,6 +31,7 @@ python -m venv .venv
 .venv\Scripts\activate          # Windows (use `source .venv/bin/activate` on macOS/Linux)
 pip install -r requirements.txt
 cp .env.example .env            # then fill in DATABASE_URL and GOOGLE_PLACES_API_KEY
+alembic upgrade head            # create/update DB tables
 uvicorn app.main:app --reload
 ```
 

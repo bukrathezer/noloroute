@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base
+from app.db.base import Base, new_id
 
 if TYPE_CHECKING:
     from app.models.poi import POI
@@ -13,8 +13,10 @@ if TYPE_CHECKING:
 class RouteStop(Base):
     __tablename__ = "route_stop"
 
-    id: Mapped[str] = mapped_column(primary_key=True)
-    saved_route_id: Mapped[str] = mapped_column(ForeignKey("saved_route.id"))
+    id: Mapped[str] = mapped_column(primary_key=True, default=new_id)
+    saved_route_id: Mapped[str] = mapped_column(
+        ForeignKey("saved_route.id", ondelete="CASCADE"), index=True
+    )
     poi_id: Mapped[str] = mapped_column(ForeignKey("poi.id"))
     day_number: Mapped[int] = mapped_column(Integer)
     order_in_day: Mapped[int] = mapped_column(Integer)
