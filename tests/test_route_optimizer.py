@@ -174,7 +174,7 @@ class FakeRoutesClient:
         if self.fail:
             raise RoutesAPIError("boom")
         order = list(reversed(range(len(stops))))
-        return LoopRoute(order=order, legs=[Leg(seconds=600, meters=2000)] * (len(stops) + 1))
+        return LoopRoute(order=order, legs=[Leg(seconds=600, meters=2000, polyline="enc")] * (len(stops) + 1))
 
 
 def test_plan_trip_uses_google_ordering() -> None:
@@ -185,12 +185,16 @@ def test_plan_trip_uses_google_ordering() -> None:
     for day in days:
         assert [s.order_in_day for s in day.stops] == list(range(1, len(day.stops) + 1))
         assert day.total_travel_minutes == 10 * (len(day.stops) + 1)
+        assert all(s.path_from_previous == "enc" for s in day.stops)
+        assert day.return_path == "enc"
 
 
 def test_plan_trip_falls_back_to_estimates_when_google_fails() -> None:
     days = asyncio.run(plan_trip(ring(12), HOTEL, 2, None, MODE, FakeRoutesClient(fail=True)))
     assert {d.routing_source for d in days} == {"estimate"}
     assert all(d.stops for d in days)
+    # No street geometry for estimates: the map draws straight lines instead.
+    assert all(s.path_from_previous is None for d in days for s in d.stops)
 
 
 def test_plan_trip_works_without_google_client() -> None:

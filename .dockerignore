@@ -15,3 +15,5 @@ tests
 *.md
 Dockerfile
 .dockerignore
+frontend/node_modules
+frontend/dist

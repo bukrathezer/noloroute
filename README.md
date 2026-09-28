@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/bukrathezer/noloroute/actions/workflows/ci.yml/badge.svg)](https://github.com/bukrathezer/noloroute/actions/workflows/ci.yml)
 
+**Live demo:** https://noloroute-api-bymcvopkyq-ew.a.run.app · **API docs:** https://noloroute-api-bymcvopkyq-ew.a.run.app/docs
+
 Generates a custom day-by-day travel route based on where you're staying,
 how many days you have, and your budget.
 
@@ -22,7 +24,7 @@ budget instead.
 - **Database:** PostgreSQL
 - **POI data:** Google Places API (New)
 - **Routing:** Google Routes API (waypoint optimization)
-- **Frontend:** TBD
+- **Frontend:** React + TypeScript (Vite), Leaflet with OpenStreetMap tiles, Turkish/English UI
 - **CI/CD:** GitHub Actions
 - **Deployment:** Google Cloud Platform — Cloud Run + Cloud SQL
 
@@ -40,6 +42,14 @@ uvicorn app.main:app --reload
 ```
 
 Health check: `GET http://localhost:8000/health` · API docs: `http://localhost:8000/docs`
+
+The web app lives in `frontend/` (Node 22+). Its dev server proxies `/api` to the API above:
+
+```bash
+cd frontend
+npm install
+npm run dev                     # http://localhost:5173
+```
 
 Run the tests (no database or Google API key needed):
 
@@ -64,6 +74,19 @@ optional budget returns a day-by-day plan:
 3. **Order each day** — the Google Routes API optimizes the visiting order of the
    accommodation → stops → accommodation loop and returns real travel times. If Google is
    unavailable, a nearest-neighbour order with straight-line estimates is used instead.
+
+## Deployment
+Every merge to `main` runs the GitHub Actions pipeline: lint, frontend build, tests against a
+throwaway PostgreSQL, then deploy:
+
+1. One Docker image is built with the API and the compiled web app (served from the same origin)
+   and pushed to Artifact Registry.
+2. Alembic migrations run as a Cloud Run job against Cloud SQL.
+3. The new revision is deployed to Cloud Run and smoke-tested.
+
+GitHub authenticates to Google Cloud with Workload Identity Federation (no stored keys);
+secrets (database URL, Maps API key) live in Secret Manager. POI ingestion runs on demand as
+the `noloroute-ingest` Cloud Run job.
 
 ## Roadmap
 - Weather-aware route suggestions

@@ -18,7 +18,10 @@ class RoutePlanRequest(BaseModel):
     accommodation: Coordinates = Field(examples=[{"lat": 48.8566, "lng": 2.3522}])
     duration_days: int = Field(ge=1, le=MAX_TRIP_DAYS, examples=[2])
     budget: Decimal | None = Field(
-        default=None, ge=0, description="Max total entry fees, in the city's currency. Omit for no limit."
+        default=None,
+        ge=0,
+        description="Max total entry fees, in the city's currency. Omit for no limit.",
+        examples=[100],
     )
     travel_mode: TravelMode = TravelMode.DRIVE
 
@@ -33,7 +36,9 @@ class PlannedStop(BaseModel):
     visit_minutes: int
     travel_minutes_from_previous: int
     distance_km_from_previous: float
-    entry_price: Decimal | None
+    # Google encoded polyline of the street path from the previous point; None for estimates.
+    path_from_previous: str | None
+    entry_price: Decimal | None = Field(examples=["17.00"])
     rating: float | None
 
 
@@ -42,6 +47,7 @@ class DayPlan(BaseModel):
     stops: list[PlannedStop]
     return_travel_minutes: int
     return_distance_km: float
+    return_path: str | None
     total_travel_minutes: int
     total_visit_minutes: int
     # "google": times from the Routes API; "estimate": straight-line fallback when Google is unavailable.
@@ -53,6 +59,6 @@ class RoutePlanResponse(BaseModel):
     currency_code: str
     travel_mode: TravelMode
     duration_days: int
-    total_entry_cost: Decimal
+    total_entry_cost: Decimal = Field(examples=["34.00"])
     unpriced_stop_count: int = Field(description="Stops whose entry price is unknown (not counted in the cost).")
     days: list[DayPlan]

@@ -73,7 +73,16 @@ def client(seeded: Session) -> Iterator[TestClient]:
 
 def test_list_cities_includes_poi_count(client: TestClient) -> None:
     cities = {c["id"]: c for c in client.get("/api/v1/cities").json()}
-    assert cities[CITY_ID] == {"id": CITY_ID, "name": "Test City", "currency_code": "EUR", "poi_count": 12}
+    city = cities[CITY_ID]
+    assert {k: city[k] for k in ("id", "name", "currency_code", "poi_count")} == {
+        "id": CITY_ID,
+        "name": "Test City",
+        "currency_code": "EUR",
+        "poi_count": 12,
+    }
+    # The centre is the average POI position, which the seed data places around the hotel.
+    assert city["center_lat"] == pytest.approx(HOTEL["lat"], abs=0.02)
+    assert city["center_lng"] == pytest.approx(HOTEL["lng"], abs=0.02)
 
 
 def test_plan_route(client: TestClient) -> None:
