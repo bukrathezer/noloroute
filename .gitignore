@@ -21,6 +21,9 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Local caches (e.g. raw Places API results)
+.cache/
+
 # Logs
 *.log
 
