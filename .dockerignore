@@ -1,0 +1,17 @@
+# Keep the build context small and never bake secrets into the image.
+.env
+.env.*
+.git
+.github
+.claude
+.cache
+.venv
+venv
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.ruff_cache
+tests
+*.md
+Dockerfile
+.dockerignore
