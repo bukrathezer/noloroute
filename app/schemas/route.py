@@ -65,3 +65,8 @@ class RoutePlanResponse(BaseModel):
     total_entry_cost: Decimal = Field(examples=["34.00"])
     unpriced_stop_count: int = Field(description="Stops whose entry price is unknown (not counted in the cost).")
     days: list[DayPlan] = Field(max_length=MAX_TRIP_DAYS)
+
+
+class RemoveStopRequest(BaseModel):
+    plan: RoutePlanResponse = Field(description="The current plan, as returned by POST /routes/plan.")
+    poi_id: str = Field(description="The stop to drop; its day is re-ordered and re-routed.")

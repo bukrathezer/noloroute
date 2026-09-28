@@ -26,3 +26,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserOut
+
+
+class DeleteAccountRequest(BaseModel):
+    password: str = Field(max_length=128)

@@ -789,6 +789,90 @@ button.stop:hover,
   font-size: 12px;
 }
 
+.stop-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.remove-stop {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-top: 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+/* Visible on hover/focus with a mouse; always visible on touch screens. */
+.stops li:hover .remove-stop,
+.remove-stop:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .remove-stop {
+    opacity: 1;
+  }
+}
+
+.remove-stop:hover:not(:disabled) {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.remove-stop:disabled {
+  cursor: progress;
+}
+
+.stops li.removing {
+  opacity: 0.4;
+}
+
+.suggestions li.stacked {
+  flex-direction: column;
+  gap: 1px;
+}
+
+.hotel-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.danger-zone {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.button-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.danger-button {
+  height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.danger-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ---------- footer ---------- */
 
 .footer {

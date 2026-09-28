@@ -3,7 +3,8 @@ import type { PlanResponse } from "../api";
 import { type Lang, STRINGS } from "../i18n";
 import { dayColor } from "../theme";
 
-export type SaveState = "idle" | "saving" | "saved" | "error";
+// "dirty": a saved route was edited and the changes are not stored yet.
+export type SaveState = "idle" | "saving" | "saved" | "dirty" | "error";
 
 interface Props {
   plan: PlanResponse;
@@ -15,11 +16,14 @@ interface Props {
   saveState: SaveState;
   onSave: () => void;
   onShowSaved: () => void;
+  onRemoveStop: (poiId: string) => void;
+  /** The stop being removed right now, if any. */
+  removingStop: string | null;
 }
 
 export function PlanResult(props: Props) {
   const { plan, lang, activeDay, onActiveDayChange, highlightedStop, onHighlightStop } = props;
-  const { saveState, onSave, onShowSaved } = props;
+  const { saveState, onSave, onShowSaved, onRemoveStop, removingStop } = props;
   const t = STRINGS[lang];
   const r = t.result;
   const stopCount = plan.days.reduce((n, d) => n + d.stops.length, 0);
@@ -40,7 +44,7 @@ export function PlanResult(props: Props) {
           </button>
         ) : (
           <button type="button" className="secondary-button" onClick={onSave} disabled={saveState === "saving"}>
-            {saveState === "saving" ? t.save.saving : t.save.button}
+            {saveState === "saving" ? t.save.saving : saveState === "dirty" ? t.save.saveChanges : t.save.button}
           </button>
         )}
       </div>
@@ -121,7 +125,11 @@ export function PlanResult(props: Props) {
               {day.stops.map((stop) => (
                 <li
                   key={stop.poi_id}
-                  className={highlightedStop === stop.poi_id ? "highlighted" : undefined}
+                  className={
+                    [highlightedStop === stop.poi_id && "highlighted", removingStop === stop.poi_id && "removing"]
+                      .filter(Boolean)
+                      .join(" ") || undefined
+                  }
                   onMouseEnter={() => onHighlightStop(stop.poi_id)}
                   onMouseLeave={() => onHighlightStop(null)}
                 >
@@ -133,16 +141,28 @@ export function PlanResult(props: Props) {
                       stop.order_in_day === 1,
                     )}
                   </div>
-                  <button type="button" className="stop" onClick={() => onHighlightStop(stop.poi_id)}>
-                    <span className="stop-number">{stop.order_in_day}</span>
-                    <span className="stop-body">
-                      <span className="stop-name">{stop.name}</span>
-                      <span className="muted">
-                        {t.categories[stop.category] ?? stop.category} · {t.minutes(stop.visit_minutes)} {r.visit}
-                        {stop.rating != null && ` · ★ ${stop.rating.toFixed(1)}`}
+                  <div className="stop-row">
+                    <button type="button" className="stop" onClick={() => onHighlightStop(stop.poi_id)}>
+                      <span className="stop-number">{stop.order_in_day}</span>
+                      <span className="stop-body">
+                        <span className="stop-name">{stop.name}</span>
+                        <span className="muted">
+                          {t.categories[stop.category] ?? stop.category} · {t.minutes(stop.visit_minutes)} {r.visit}
+                          {stop.rating != null && ` · ★ ${stop.rating.toFixed(1)}`}
+                        </span>
                       </span>
-                    </span>
-                  </button>
+                    </button>
+                    <button
+                      type="button"
+                      className="remove-stop"
+                      aria-label={r.removeStop(stop.name)}
+                      title={r.removeStop(stop.name)}
+                      disabled={removingStop !== null}
+                      onClick={() => onRemoveStop(stop.poi_id)}
+                    >
+                      ×
+                    </button>
+                  </div>
                 </li>
               ))}
               <li className="return">

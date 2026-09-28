@@ -12,9 +12,16 @@ from sqlalchemy.exc import OperationalError  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
 from app.api.v1.routes_route import get_routes_client  # noqa: E402
+from app.core.rate_limit import reset_all_limiters  # noqa: E402
 from app.db.session import engine, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from tests.seed import seed_city  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def fresh_rate_limits() -> None:
+    # All test requests share one fake client IP; start every test with clean counters.
+    reset_all_limiters()
 
 
 @pytest.fixture
