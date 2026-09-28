@@ -7,6 +7,8 @@ from typing import Any, Self
 
 import httpx
 
+from app.services.geo import LatLng
+
 BASE_URL = "https://places.googleapis.com/v1"
 
 # Only request the fields we store: the field mask also decides which billing SKU applies.
@@ -34,12 +36,6 @@ class PlacesAPIError(Exception):
     def __init__(self, status_code: int, message: str) -> None:
         super().__init__(f"Places API error {status_code}: {message}")
         self.status_code = status_code
-
-
-@dataclass(frozen=True)
-class LatLng:
-    lat: float
-    lng: float
 
 
 @dataclass(frozen=True)

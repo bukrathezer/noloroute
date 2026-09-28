@@ -34,7 +34,8 @@ from app.db.base import new_id
 from app.db.session import SessionLocal
 from app.models import POI, City
 from app.models.poi import POICategory
-from app.services.places_client import BoundingBox, LatLng, PlacesAPIError, PlacesClient
+from app.services.geo import LatLng
+from app.services.places_client import BoundingBox, PlacesAPIError, PlacesClient
 
 CACHE_DIR = Path(__file__).resolve().parents[1] / ".cache" / "places"
 
