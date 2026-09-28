@@ -1,5 +1,7 @@
 # NoloRoute — Personalized Travel Itinerary Planner
 
+[![CI](https://github.com/bukrathezer/noloroute/actions/workflows/ci.yml/badge.svg)](https://github.com/bukrathezer/noloroute/actions/workflows/ci.yml)
+
 Generates a custom day-by-day travel route based on where you're staying,
 how many days you have, and your budget.
 

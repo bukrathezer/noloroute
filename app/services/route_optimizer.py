@@ -46,7 +46,6 @@ GENERIC_NAME_WORDS = {
 }  # fmt: skip
 
 
-
 @dataclass(frozen=True)
 class ModeProfile:
     travel_min_per_stop: int  # travel allowance per stop while selecting; real times come from routing
@@ -84,7 +83,7 @@ async def plan_trip(
     routed = await asyncio.gather(*(order_day(hotel, group, mode, routes_client) for group in groups))
     return [
         build_day(day_number, group, loop, source)
-        for day_number, (group, (loop, source)) in enumerate(zip(groups, routed), start=1)
+        for day_number, (group, (loop, source)) in enumerate(zip(groups, routed, strict=True), start=1)
     ]
 
 
@@ -103,9 +102,7 @@ def stop_minutes(poi: POI, mode: TravelMode) -> int:
     return poi.avg_duration_min + MODE_PROFILES[mode].travel_min_per_stop
 
 
-def select_stops(
-    pois: Sequence[POI], hotel: LatLng, days: int, budget: Decimal | None, mode: TravelMode
-) -> list[POI]:
+def select_stops(pois: Sequence[POI], hotel: LatLng, days: int, budget: Decimal | None, mode: TravelMode) -> list[POI]:
     """Greedy: repeatedly take the highest (category-adjusted) score that still fits."""
     half_score_km = MODE_PROFILES[mode].distance_half_score_km
     known = sorted(p for p in map(popularity, pois) if p is not None)
@@ -247,7 +244,8 @@ def build_day(day_number: int, stops: Sequence[POI], loop: LoopRoute, source: Ro
             entry_price=poi.entry_price,
             rating=poi.rating,
         )
-        for position, (poi, leg) in enumerate(zip(ordered, loop.legs), start=1)
+        # legs has one extra entry (the way back to the hotel), handled separately below.
+        for position, (poi, leg) in enumerate(zip(ordered, loop.legs, strict=False), start=1)
     ]
     back = loop.legs[-1]
     return DayPlan(

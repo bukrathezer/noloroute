@@ -31,3 +31,6 @@ Thumbs.db
 node_modules/
 dist/
 build/
+
+# Local dev-server launcher (machine-specific paths)
+.claude/launch.json

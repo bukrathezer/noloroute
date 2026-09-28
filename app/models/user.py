@@ -16,6 +16,4 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
 
-    saved_routes: Mapped[list["SavedRoute"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
+    saved_routes: Mapped[list["SavedRoute"]] = relationship(back_populates="user", cascade="all, delete-orphan")

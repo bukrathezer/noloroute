@@ -90,7 +90,10 @@ KM_PER_DEG_LAT = 111.32
 # category comes from its own Google types (see categorize).
 NEARBY_GROUPS: list[tuple[POICategory, list[str]]] = [
     (POICategory.MUSEUM, ["museum", "art_gallery"]),
-    (POICategory.LANDMARK, ["tourist_attraction", "historical_landmark", "monument", "cultural_landmark", "historical_place"]),
+    (
+        POICategory.LANDMARK,
+        ["tourist_attraction", "historical_landmark", "monument", "cultural_landmark", "historical_place"],
+    ),
     (POICategory.PARK, ["park", "botanical_garden", "garden"]),
     (POICategory.RELIGIOUS_SITE, ["church", "mosque", "synagogue", "hindu_temple"]),
     (POICategory.VIEWPOINT, ["observation_deck", "scenic_spot"]),
@@ -301,9 +304,7 @@ def print_summary(rows: list[dict[str, Any]]) -> None:
     counts = Counter(row["category"] for row in rows)
     print(f"  kept {len(rows)}: " + "  ".join(f"{cat}={n}" for cat, n in sorted(counts.items())))
     for category in sorted(counts):
-        top = sorted(
-            (r for r in rows if r["category"] == category), key=lambda r: -(r["user_rating_count"] or 0)
-        )[:8]
+        top = sorted((r for r in rows if r["category"] == category), key=lambda r: -(r["user_rating_count"] or 0))[:8]
         print(f"    {category:15} " + ", ".join(r["name"] for r in top))
 
 

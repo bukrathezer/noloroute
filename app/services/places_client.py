@@ -60,9 +60,7 @@ class PlacesClient:
     def close(self) -> None:
         self._http.close()
 
-    def search_nearby(
-        self, center: LatLng, radius_m: float, included_types: list[str]
-    ) -> list[dict[str, Any]]:
+    def search_nearby(self, center: LatLng, radius_m: float, included_types: list[str]) -> list[dict[str, Any]]:
         """Return up to 20 places of the given types within the circle, most popular first."""
         body = {
             "includedTypes": included_types,
