@@ -1,14 +1,15 @@
-name: CI
+name: CI/CD
 
 on:
   pull_request:
   push:
     branches: [main]
 
-# Cancel a still-running check when a newer commit is pushed to the same branch/PR.
+# A newer commit on the same PR cancels the older check. Runs on main are queued instead,
+# so a deploy is never cut off halfway.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -85,3 +86,84 @@ jobs:
 
       - name: Run tests
         run: pytest -v
+
+      - name: Check the Docker image builds
+        run: docker build --tag noloroute-api:ci .
+
+  deploy:
+    name: Deploy
+    needs: [lint, test]
+    # Only for main, and only once the GCP repository variables are configured.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ steps.smoke-test.outputs.url }}
+    permissions:
+      contents: read
+      id-token: write  # lets GitHub request a short-lived GCP token (Workload Identity Federation)
+
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION }}
+      SERVICE: noloroute-api
+      MIGRATE_JOB: noloroute-migrate
+      IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/noloroute/api:${{ github.sha }}
+      SQL_INSTANCE: ${{ vars.GCP_PROJECT_ID }}:${{ vars.GCP_REGION }}:noloroute-db
+      RUNTIME_SA: noloroute-runtime@${{ vars.GCP_PROJECT_ID }}.iam.gserviceaccount.com
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # No stored key: GitHub proves its identity to GCP and gets a token valid for this run only.
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v3
+
+      - name: Build and push the image
+        run: |
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          docker build --tag "$IMAGE" .
+          docker push "$IMAGE"
+
+      # Migrations run inside GCP as a Cloud Run job, so the database needs no public access.
+      - name: Run database migrations
+        run: |
+          gcloud run jobs deploy "$MIGRATE_JOB" \
+            --image "$IMAGE" \
+            --region "$REGION" \
+            --service-account "$RUNTIME_SA" \
+            --set-cloudsql-instances "$SQL_INSTANCE" \
+            --set-secrets "DATABASE_URL=database-url:latest" \
+            --command alembic \
+            --args upgrade,head \
+            --max-retries 0 \
+            --task-timeout 300s \
+            --quiet
+          gcloud run jobs execute "$MIGRATE_JOB" --region "$REGION" --wait
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy "$SERVICE" \
+            --image "$IMAGE" \
+            --region "$REGION" \
+            --service-account "$RUNTIME_SA" \
+            --set-cloudsql-instances "$SQL_INSTANCE" \
+            --set-secrets "DATABASE_URL=database-url:latest,GOOGLE_PLACES_API_KEY=maps-api-key:latest" \
+            --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 3 \
+            --memory 512Mi \
+            --cpu 1 \
+            --quiet
+
+      - name: Smoke test
+        id: smoke-test
+        run: |
+          URL=$(gcloud run services describe "$SERVICE" --region "$REGION" --format 'value(status.url)')
+          curl --fail --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors "$URL/health"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Deployed \`${GITHUB_SHA::7}\` to $URL" >> "$GITHUB_STEP_SUMMARY"
