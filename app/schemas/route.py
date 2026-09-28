@@ -1,12 +1,14 @@
+import datetime as dt
 from decimal import Decimal
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.services.routes_client import TravelMode
 
 MAX_TRIP_DAYS = 7
 MAX_STOPS_PER_DAY = 25  # Routes API waypoint-optimization limit
+MAX_DAYS_AHEAD = 365
 
 
 class Coordinates(BaseModel):
@@ -25,6 +27,29 @@ class RoutePlanRequest(BaseModel):
         examples=[100],
     )
     travel_mode: TravelMode = TravelMode.DRIVE
+    start_date: dt.date | None = Field(
+        default=None,
+        description="Date of day 1. Enables opening hours and weather; omit to plan without dates.",
+    )
+
+    @field_validator("start_date")
+    @classmethod
+    def start_date_in_range(cls, value: dt.date | None) -> dt.date | None:
+        # One day of slack for visitors whose "today" is still yesterday in UTC.
+        today = dt.date.today()
+        if value is not None and not today - dt.timedelta(days=1) <= value <= today + dt.timedelta(days=MAX_DAYS_AHEAD):
+            raise ValueError(f"start_date must be between today and {MAX_DAYS_AHEAD} days ahead")
+        return value
+
+
+class DayWeatherOut(BaseModel):
+    # "forecast": Open-Meteo forecast; "typical": average of the same dates in past years.
+    source: Literal["forecast", "typical"]
+    condition: Literal["clear", "partly_cloudy", "cloudy", "fog", "drizzle", "rain", "snow", "thunderstorm"]
+    temp_max_c: float
+    temp_min_c: float
+    precipitation_chance: int | None
+    is_rainy: bool
 
 
 class PlannedStop(BaseModel):
@@ -41,6 +66,7 @@ class PlannedStop(BaseModel):
     path_from_previous: str | None
     entry_price: Decimal | None = Field(examples=["17.00"])
     rating: float | None
+    hours: str | None = Field(default=None, description='Opening hours that day, e.g. "09:00–18:00".')
 
 
 class DayPlan(BaseModel):
@@ -53,6 +79,10 @@ class DayPlan(BaseModel):
     total_visit_minutes: int
     # "google": times from the Routes API; "estimate": straight-line fallback when Google is unavailable.
     routing_source: Literal["google", "estimate"]
+    date: dt.date | None = None
+    weather: DayWeatherOut | None = None
+    # True when outdoor stops were moved away from this day because rain is expected.
+    rain_adjusted: bool = False
 
 
 class RoutePlanResponse(BaseModel):
@@ -62,6 +92,7 @@ class RoutePlanResponse(BaseModel):
     budget: Decimal | None
     travel_mode: TravelMode
     duration_days: int = Field(ge=1, le=MAX_TRIP_DAYS)
+    start_date: dt.date | None = None
     total_entry_cost: Decimal = Field(examples=["34.00"])
     unpriced_stop_count: int = Field(description="Stops whose entry price is unknown (not counted in the cost).")
     days: list[DayPlan] = Field(max_length=MAX_TRIP_DAYS)

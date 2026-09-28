@@ -1,5 +1,7 @@
 import asyncio
+import json
 import math
+from datetime import date
 from decimal import Decimal
 
 import pytest
@@ -10,6 +12,7 @@ from app.services.route_optimizer import (
     DAY_MINUTES,
     HotelTooFarError,
     estimate_loop,
+    fit_to_dates,
     plan_trip,
     popularity,
     select_stops,
@@ -17,6 +20,7 @@ from app.services.route_optimizer import (
     stop_minutes,
 )
 from app.services.routes_client import Leg, LoopRoute, RoutesAPIError, TravelMode, _parse_duration
+from app.services.weather import DayWeather
 
 HOTEL = LatLng(48.8566, 2.3522)
 MODE = TravelMode.DRIVE
@@ -34,6 +38,7 @@ def make_poi(
     rating: float | None = 4.5,
     reviews: int | None = 10_000,
     price: str | None = None,
+    hours: str | None = None,
 ) -> POI:
     """A POI placed dlat_km north and dlng_km east of the hotel (transient, never saved)."""
     return POI(
@@ -48,6 +53,7 @@ def make_poi(
         entry_price=Decimal(price) if price is not None else None,
         rating=rating,
         user_rating_count=reviews,
+        opening_hours=hours,
     )
 
 
@@ -205,3 +211,102 @@ def test_plan_trip_works_without_google_client() -> None:
 def test_plan_trip_rejects_hotel_outside_the_city() -> None:
     with pytest.raises(HotelTooFarError):
         asyncio.run(plan_trip(ring(6), LatLng(41.0, 28.9), 1, None, MODE, None))
+
+
+# --- dates, opening hours and rain -----------------------------------------------------------------
+
+TUESDAY = date(2026, 10, 6)
+WEDNESDAY = date(2026, 10, 7)
+# Open 09:00-18:00 every day except Tuesday (Google day 2), like the Louvre.
+CLOSED_TUESDAYS = json.dumps(
+    [
+        {"open": {"day": d, "hour": 9, "minute": 0}, "close": {"day": d, "hour": 18, "minute": 0}}
+        for d in (0, 1, 3, 4, 5, 6)
+    ]
+)
+
+
+def weather(day: date, rainy: bool) -> DayWeather:
+    return DayWeather(
+        day=day,
+        source="forecast",
+        condition="rain" if rainy else "clear",
+        temp_max_c=20.0,
+        temp_min_c=12.0,
+        precipitation_chance=80 if rainy else 5,
+        is_rainy=rainy,
+    )
+
+
+def test_a_stop_moves_off_the_day_it_is_closed() -> None:
+    museum = make_poi("museum", 1, category="MUSEUM", hours=CLOSED_TUESDAYS)
+    park = make_poi("park", -1, category="PARK")
+    groups, _ = fit_to_dates([[museum], [park]], [TUESDAY, WEDNESDAY], [False, False], MODE)
+    assert [[p.id for p in g] for g in groups] == [[], ["park", "museum"]]
+
+
+def test_a_stop_closed_on_every_trip_day_is_dropped() -> None:
+    museum = make_poi("museum", 1, category="MUSEUM", hours=CLOSED_TUESDAYS)
+    groups, _ = fit_to_dates([[museum]], [TUESDAY], [False], MODE)
+    assert groups == [[]]
+
+
+def test_rain_moves_outdoor_stops_to_a_dry_day() -> None:
+    park = make_poi("park", 1, category="PARK")
+    museum = make_poi("museum", 1.2, category="MUSEUM")
+    church = make_poi("church", -1, category="RELIGIOUS_SITE")
+    groups, adjusted = fit_to_dates([[park, museum], [church]], [TUESDAY, WEDNESDAY], [True, False], MODE)
+    assert [[p.id for p in g] for g in groups] == [["museum"], ["church", "park"]]
+    assert adjusted == [True, False]
+
+
+def test_without_a_dry_day_outdoor_stops_stay() -> None:
+    park = make_poi("park", 1, category="PARK")
+    groups, adjusted = fit_to_dates([[park], []], [TUESDAY, WEDNESDAY], [True, True], MODE)
+    assert [[p.id for p in g] for g in groups] == [["park"], []]
+    assert adjusted == [False, False]
+
+
+def test_a_rainy_trip_prefers_indoor_sights() -> None:
+    # Only one of the two fits in a day; the park is slightly more popular.
+    park = make_poi("park", 1, category="PARK", duration=400, reviews=11_000)
+    museum = make_poi("museum", 1, category="MUSEUM", duration=400, reviews=10_000)
+    assert [p.id for p in select_stops([park, museum], HOTEL, 1, None, MODE)] == ["park"]
+    assert [p.id for p in select_stops([park, museum], HOTEL, 1, None, MODE, rainy_share=1.0)] == ["museum"]
+
+
+def test_plan_trip_with_dates_adds_dates_hours_and_weather() -> None:
+    museum = make_poi("museum", 1, category="MUSEUM", hours=CLOSED_TUESDAYS, reviews=500_000)
+    others = ring(6)
+    days = asyncio.run(
+        plan_trip(
+            [museum, *others],
+            HOTEL,
+            1,
+            None,
+            MODE,
+            None,
+            dates=[TUESDAY],
+            weather=[weather(TUESDAY, rainy=True)],
+        )
+    )
+    [day] = days
+    assert day.date == TUESDAY
+    assert day.weather is not None and day.weather.is_rainy and day.weather.condition == "rain"
+    assert "museum" not in [s.poi_id for s in day.stops]  # closed on Tuesdays, despite its popularity
+    assert day.stops  # the rest of the day is still planned
+
+
+def test_plan_trip_shows_hours_for_the_day() -> None:
+    museum = make_poi("museum", 1, category="MUSEUM", hours=CLOSED_TUESDAYS, reviews=500_000)
+    [day] = asyncio.run(plan_trip([museum, *ring(4)], HOTEL, 1, None, MODE, None, dates=[WEDNESDAY]))
+    hours = {s.poi_id: s.hours for s in day.stops}
+    assert hours["museum"] == "09:00–18:00"
+    assert hours["p0"] is None  # no hours known for the ring POIs
+    assert day.weather is None  # no weather given
+
+
+def test_plan_trip_without_dates_is_unchanged() -> None:
+    [day] = asyncio.run(plan_trip(ring(6), HOTEL, 1, None, MODE, None))
+    assert day.date is None and day.weather is None and not day.rain_adjusted
+    assert all(s.hours is None for s in day.stops)

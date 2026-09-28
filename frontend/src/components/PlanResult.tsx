@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
-import type { PlanResponse } from "../api";
+import type { DayWeather, PlanResponse } from "../api";
+import { formatDay } from "../dates";
 import { type Lang, STRINGS } from "../i18n";
 import { dayColor } from "../theme";
 
@@ -112,11 +113,14 @@ export function PlanResult(props: Props) {
             <h3>
               <span className="swatch" aria-hidden="true" />
               {r.day(day.day_number)}
+              {day.date && <span className="day-date">{formatDay(day.date, lang)}</span>}
             </h3>
             <span className="muted">
               {r.stopsCount(day.stops.length)} · {t.minutes(day.total_visit_minutes + day.total_travel_minutes)}
             </span>
           </header>
+          {day.weather && <WeatherLine weather={day.weather} lang={lang} />}
+          {day.rain_adjusted && <p className="hint rain-note">{r.rainNote}</p>}
           {day.routing_source === "estimate" && day.stops.length > 0 && <p className="badge">{r.estimated}</p>}
           {day.stops.length === 0 ? (
             <p className="hint">{r.emptyDay}</p>
@@ -150,6 +154,11 @@ export function PlanResult(props: Props) {
                           {t.categories[stop.category] ?? stop.category} · {t.minutes(stop.visit_minutes)} {r.visit}
                           {stop.rating != null && ` · ★ ${stop.rating.toFixed(1)}`}
                         </span>
+                        {stop.hours && stop.hours !== "closed" && (
+                          <span className="muted small">
+                            {stop.hours === "24/7" ? r.open247 : r.openHours(stop.hours)}
+                          </span>
+                        )}
                       </span>
                     </button>
                     <button
@@ -181,5 +190,36 @@ export function PlanResult(props: Props) {
         </article>
       ))}
     </section>
+  );
+}
+
+const WEATHER_ICONS: Record<DayWeather["condition"], string> = {
+  clear: "☀️",
+  partly_cloudy: "⛅",
+  cloudy: "☁️",
+  fog: "🌫️",
+  drizzle: "🌦️",
+  rain: "🌧️",
+  snow: "❄️",
+  thunderstorm: "⛈️",
+};
+
+function WeatherLine({ weather, lang }: { weather: DayWeather; lang: Lang }) {
+  const w = STRINGS[lang].weather;
+  const typical = weather.source === "typical";
+  const temp = (c: number) => `${Math.round(c)}°`;
+  return (
+    <p className={weather.is_rainy ? "weather rainy" : "weather"} title={typical ? w.typicalHint : undefined}>
+      <span aria-hidden="true">{WEATHER_ICONS[weather.condition]}</span>
+      {typical && <span className="muted">{w.typical}</span>}
+      {/* "usually cloudy" rather than "usually Cloudy" */}
+      <span>{typical ? w.conditions[weather.condition].toLocaleLowerCase(lang) : w.conditions[weather.condition]}</span>
+      <span>
+        {temp(weather.temp_max_c)} / <span className="muted">{temp(weather.temp_min_c)}</span>
+      </span>
+      {weather.precipitation_chance != null && weather.precipitation_chance > 0 && (
+        <span className="muted">{w.rainChance(weather.precipitation_chance)}</span>
+      )}
+    </p>
   );
 }

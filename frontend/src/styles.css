@@ -873,6 +873,39 @@ button.stop:hover,
   cursor: not-allowed;
 }
 
+.day-date {
+  margin-left: 2px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.weather {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 13px;
+  cursor: default;
+}
+
+.weather.rainy {
+  background: color-mix(in srgb, #2563eb 12%, var(--surface));
+}
+
+.rain-note {
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.input-wrap input[type="date"] {
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- footer ---------- */
 
 .footer {

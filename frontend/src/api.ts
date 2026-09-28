@@ -22,6 +22,8 @@ export interface PlanRequest {
   duration_days: number;
   budget?: number;
   travel_mode: TravelMode;
+  /** YYYY-MM-DD; enables opening hours and weather. */
+  start_date?: string;
 }
 
 export interface PlannedStop {
@@ -37,6 +39,8 @@ export interface PlannedStop {
   path_from_previous: string | null;
   entry_price: string | null;
   rating: number | null;
+  /** Opening hours on that day, e.g. "09:00–18:00", "24/7", "closed". */
+  hours: string | null;
 }
 
 export interface DayPlan {
@@ -48,6 +52,29 @@ export interface DayPlan {
   total_travel_minutes: number;
   total_visit_minutes: number;
   routing_source: "google" | "estimate";
+  date: string | null;
+  weather: DayWeather | null;
+  rain_adjusted: boolean;
+}
+
+export type WeatherCondition =
+  | "clear"
+  | "partly_cloudy"
+  | "cloudy"
+  | "fog"
+  | "drizzle"
+  | "rain"
+  | "snow"
+  | "thunderstorm";
+
+export interface DayWeather {
+  /** "forecast", or "typical": the average of the same dates in past years. */
+  source: "forecast" | "typical";
+  condition: WeatherCondition;
+  temp_max_c: number;
+  temp_min_c: number;
+  precipitation_chance: number | null;
+  is_rainy: boolean;
 }
 
 export interface PlanResponse {
@@ -57,6 +84,7 @@ export interface PlanResponse {
   budget: string | null;
   travel_mode: TravelMode;
   duration_days: number;
+  start_date: string | null;
   total_entry_cost: string;
   unpriced_stop_count: number;
   days: DayPlan[];
