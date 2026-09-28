@@ -154,3 +154,44 @@ export const getSavedRoute = (id: string) => request<SavedRoute>(`/api/v1/routes
 
 export const deleteSavedRoute = (id: string) =>
   request<void>(`/api/v1/routes/${encodeURIComponent(id)}`, { method: "DELETE" });
+
+export const removeStop = (plan: PlanResponse, poiId: string) =>
+  request<PlanResponse>("/api/v1/routes/plan/remove-stop", {
+    method: "POST",
+    body: JSON.stringify({ plan, poi_id: poiId }),
+  });
+
+export const updateSavedRoute = (id: string, plan: PlanResponse) =>
+  request<SavedRoute>(`/api/v1/routes/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ plan }) });
+
+export const deleteAccount = (password: string) =>
+  request<void>("/api/v1/auth/me", { method: "DELETE", body: JSON.stringify({ password }) });
+
+export interface PlaceSuggestion {
+  place_id: string;
+  main_text: string;
+  secondary_text: string;
+}
+
+export interface PlaceLocation {
+  place_id: string;
+  lat: number;
+  lng: number;
+  address: string;
+}
+
+export const placeAutocomplete = (q: string, near: LatLng, sessionToken: string, lang: string) =>
+  request<PlaceSuggestion[]>(
+    `/api/v1/places/autocomplete?${new URLSearchParams({
+      q,
+      lat: String(near.lat),
+      lng: String(near.lng),
+      session_token: sessionToken,
+      lang,
+    })}`,
+  );
+
+export const placeLocation = (placeId: string, sessionToken: string, lang: string) =>
+  request<PlaceLocation>(
+    `/api/v1/places/${encodeURIComponent(placeId)}?${new URLSearchParams({ session_token: sessionToken, lang })}`,
+  );

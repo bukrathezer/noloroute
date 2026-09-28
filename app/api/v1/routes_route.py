@@ -9,10 +9,10 @@ from sqlalchemy.orm import Session
 from app.api.deps import CurrentUser, DbSession
 from app.db.session import get_db
 from app.models import POI, City, RouteStop, SavedRoute, User
-from app.schemas.route import RoutePlanRequest, RoutePlanResponse
+from app.schemas.route import DayPlan, RemoveStopRequest, RoutePlanRequest, RoutePlanResponse
 from app.schemas.saved_route import SavedRouteOut, SavedRouteSummary, SaveRouteRequest
 from app.services.geo import LatLng
-from app.services.route_optimizer import HotelTooFarError, plan_trip
+from app.services.route_optimizer import HotelTooFarError, build_day, order_day, plan_trip
 from app.services.routes_client import RoutesClient
 
 router = APIRouter(prefix="/routes", tags=["routes"])
@@ -47,7 +47,6 @@ async def plan_route(
     except HotelTooFarError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
-    prices = [stop.entry_price for day in days for stop in day.stops]
     return RoutePlanResponse(
         city_id=city.id,
         currency_code=city.currency_code,
@@ -55,10 +54,47 @@ async def plan_route(
         budget=req.budget,
         travel_mode=req.travel_mode,
         duration_days=req.duration_days,
-        total_entry_cost=sum((p for p in prices if p is not None), Decimal(0)),
-        unpriced_stop_count=sum(p is None for p in prices),
         days=days,
+        **_plan_totals(days),
     )
+
+
+@router.post("/plan/remove-stop", response_model=RoutePlanResponse)
+async def remove_stop(
+    req: RemoveStopRequest,
+    db: Annotated[Session, Depends(get_db)],
+    routes_client: Annotated[RoutesClient | None, Depends(get_routes_client)],
+) -> RoutePlanResponse:
+    """Drop one stop from a plan and re-route only the day it was on; other days are untouched."""
+    plan = req.plan
+    day = next((d for d in plan.days if any(s.poi_id == req.poi_id for s in d.stops)), None)
+    if day is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "That stop is not in the plan")
+
+    remaining_ids = [s.poi_id for s in day.stops if s.poi_id != req.poi_id]
+    pois = await run_in_threadpool(_load_pois, db, plan.city_id, remaining_ids)
+    hotel = LatLng(plan.accommodation.lat, plan.accommodation.lng)
+    loop, source = await order_day(hotel, pois, plan.travel_mode, routes_client)
+    new_day = build_day(day.day_number, pois, loop, source)
+
+    days = [new_day if d.day_number == day.day_number else d for d in plan.days]
+    return plan.model_copy(update={"days": days, **_plan_totals(days)})
+
+
+def _load_pois(db: Session, city_id: str, poi_ids: list[str]) -> list[POI]:
+    """The POIs for `poi_ids` in that order; 422 if any isn't a POI of the city."""
+    by_id = {poi.id: poi for poi in db.scalars(select(POI).where(POI.id.in_(poi_ids), POI.city_id == city_id))}
+    if unknown := set(poi_ids) - by_id.keys():
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"Unknown places for this city: {sorted(unknown)}")
+    return [by_id[i] for i in poi_ids]
+
+
+def _plan_totals(days: list[DayPlan]) -> dict[str, Decimal | int]:
+    prices = [stop.entry_price for day in days for stop in day.stops]
+    return {
+        "total_entry_cost": sum((p for p in prices if p is not None), Decimal(0)),
+        "unpriced_stop_count": sum(p is None for p in prices),
+    }
 
 
 # ---------------------------------------------------------------------------------------------
@@ -71,36 +107,23 @@ MAX_SAVED_ROUTES_LISTED = 100
 
 @router.post("", response_model=SavedRouteOut, status_code=status.HTTP_201_CREATED)
 def save_route(req: SaveRouteRequest, user: CurrentUser, db: DbSession) -> SavedRouteOut:
-    plan = req.plan
-    city = db.get(City, plan.city_id)
-    if city is None:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"Unknown city '{plan.city_id}'")
-
-    # The plan comes from the client, so check every stop really is a POI of that city.
-    poi_ids = {stop.poi_id for day in plan.days for stop in day.stops}
-    if not poi_ids:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "The plan has no stops")
-    known = set(db.scalars(select(POI.id).where(POI.id.in_(poi_ids), POI.city_id == city.id)))
-    if unknown := poi_ids - known:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"Unknown places for this city: {sorted(unknown)}")
-
-    route = SavedRoute(
-        name=(req.name or "").strip() or _default_name(city, plan.duration_days),
-        user_id=user.id,
-        city_id=city.id,
-        accommodation_lat=plan.accommodation.lat,
-        accommodation_lng=plan.accommodation.lng,
-        duration_days=plan.duration_days,
-        budget=plan.budget,
-        travel_mode=plan.travel_mode.value,
-        plan=plan.model_dump(mode="json"),
-        stops=[
-            RouteStop(poi_id=stop.poi_id, day_number=day.day_number, order_in_day=stop.order_in_day)
-            for day in plan.days
-            for stop in day.stops
-        ],
-    )
+    city = _validated_city(db, req.plan)
+    route = SavedRoute(name=(req.name or "").strip() or _default_name(city, req.plan.duration_days), user_id=user.id)
+    _apply_plan(route, req.plan)
     db.add(route)
+    db.commit()
+    db.refresh(route)
+    return _saved_route_out(route)
+
+
+@router.put("/{route_id}", response_model=SavedRouteOut)
+def update_saved_route(route_id: str, req: SaveRouteRequest, user: CurrentUser, db: DbSession) -> SavedRouteOut:
+    """Replace a saved route's plan (e.g. after removing stops); the name changes only if given."""
+    route = _owned_route(db, user, route_id)
+    _validated_city(db, req.plan)
+    _apply_plan(route, req.plan)
+    if name := (req.name or "").strip():
+        route.name = name
     db.commit()
     db.refresh(route)
     return _saved_route_out(route)
@@ -137,6 +160,34 @@ def _owned_route(db: Session, user: User, route_id: str) -> SavedRoute:
     if route is None or route.user_id != user.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Saved route not found")
     return route
+
+
+def _validated_city(db: Session, plan: RoutePlanResponse) -> City:
+    """The plan comes from the client, so check the city exists and every stop is one of its POIs."""
+    city = db.get(City, plan.city_id)
+    if city is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"Unknown city '{plan.city_id}'")
+    poi_ids = {stop.poi_id for day in plan.days for stop in day.stops}
+    if not poi_ids:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "The plan has no stops")
+    _load_pois(db, city.id, sorted(poi_ids))
+    return city
+
+
+def _apply_plan(route: SavedRoute, plan: RoutePlanResponse) -> None:
+    route.city_id = plan.city_id
+    route.accommodation_lat = plan.accommodation.lat
+    route.accommodation_lng = plan.accommodation.lng
+    route.duration_days = plan.duration_days
+    route.budget = plan.budget
+    route.travel_mode = plan.travel_mode.value
+    route.plan = plan.model_dump(mode="json")
+    # Replacing the list deletes the old rows (delete-orphan cascade).
+    route.stops = [
+        RouteStop(poi_id=stop.poi_id, day_number=day.day_number, order_in_day=stop.order_in_day)
+        for day in plan.days
+        for stop in day.stops
+    ]
 
 
 def _default_name(city: City, days: int) -> str:

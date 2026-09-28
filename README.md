@@ -75,6 +75,12 @@ optional budget returns a day-by-day plan:
    accommodation → stops → accommodation loop and returns real travel times. If Google is
    unavailable, a nearest-neighbour order with straight-line estimates is used instead.
 
+## Editing a plan and finding the accommodation
+- `POST /api/v1/routes/plan/remove-stop` drops a stop and re-routes only that day.
+- `GET /api/v1/places/autocomplete` and `GET /api/v1/places/{place_id}` find a hotel or address
+  by name through Google Places Autocomplete, proxied so the API key stays on the server. One
+  session token covers all keystrokes and the final pick, which Google bills as a single session.
+
 ## Accounts and saved routes
 Users register with an email and password (`POST /api/v1/auth/register`) or log in with the OAuth2
 password flow (`POST /api/v1/auth/login`) and receive a JWT, sent as `Authorization: Bearer <token>`
@@ -84,8 +90,9 @@ password flow (`POST /api/v1/auth/login`) and receive a JWT, sent as `Authorizat
   for an unknown email and a wrong password.
 - Tokens are HS256-signed with `JWT_SECRET_KEY` and expire after a week; the API refuses to start
   without a sufficiently long key.
-- `POST/GET /api/v1/routes` and `GET/DELETE /api/v1/routes/{id}` save, list, open and delete the
-  current user's routes. A saved route keeps a snapshot of the plan as shown (travel times, street
+- `POST/GET /api/v1/routes` and `GET/PUT/DELETE /api/v1/routes/{id}` save, list, open, update and
+  delete the current user's routes; `DELETE /api/v1/auth/me` deletes the account (password required).
+- Login, registration and place search are rate-limited per client (in memory, per instance). A saved route keeps a snapshot of the plan as shown (travel times, street
   paths), so reopening it needs no new Routes API calls; another user's route answers 404.
 
 ## Deployment

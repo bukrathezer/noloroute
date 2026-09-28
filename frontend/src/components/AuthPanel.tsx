@@ -30,6 +30,7 @@ export function AuthPanel({ lang, reason, onAuthenticated, onBack }: Props) {
       if (status === 401) setError(t.errors.wrongCredentials);
       else if (status === 409) setError(t.errors.emailTaken);
       else if (status === 422) setError(t.errors.invalid);
+      else if (status === 429) setError(t.errors.tooMany);
       else setError(STRINGS[lang].errors.network);
     } finally {
       setBusy(false);

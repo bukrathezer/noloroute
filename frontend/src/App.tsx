@@ -7,9 +7,11 @@ import {
   getSavedRoute,
   type PlanResponse,
   planRoute,
+  removeStop,
   saveRoute,
   setAuthToken,
   type TokenResponse,
+  updateSavedRoute,
   type User,
 } from "./api";
 import { AuthPanel } from "./components/AuthPanel";
@@ -51,7 +53,14 @@ export function App() {
   const [lang, setLang] = useState<Lang>(initialLang);
   const [cities, setCities] = useState<City[]>([]);
   const [citiesFailed, setCitiesFailed] = useState(false);
-  const [form, setForm] = useState<FormState>({ city: null, hotel: null, days: 2, mode: "WALK", budget: "" });
+  const [form, setForm] = useState<FormState>({
+    city: null,
+    hotel: null,
+    hotelLabel: null,
+    days: 2,
+    mode: "WALK",
+    budget: "",
+  });
   const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +74,9 @@ export function App() {
   const [view, setView] = useState<View>("plan");
   const [authReason, setAuthReason] = useState<"save" | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  // Set when the shown plan is a saved route, so edits update it instead of saving a copy.
+  const [savedRouteId, setSavedRouteId] = useState<string | null>(null);
+  const [removingStop, setRemovingStop] = useState<string | null>(null);
   // Ignores responses to requests that were superseded while in flight.
   const requestId = useRef(0);
   const t = STRINGS[lang];
@@ -90,6 +102,7 @@ export function App() {
     setAuth(null);
     setView("plan");
     setSaveState("idle");
+    setSavedRouteId(null);
   }, []);
 
   // A stored token may have expired while the tab was closed: check it once on load.
@@ -110,6 +123,7 @@ export function App() {
     setActiveDay(null);
     setLoading(false);
     setSaveState("idle");
+    setSavedRouteId(null);
   };
 
   const submit = async () => {
@@ -130,6 +144,7 @@ export function App() {
       setPlan(result);
       setActiveDay(null);
       setSaveState("idle");
+      setSavedRouteId(null);
     } catch (e) {
       if (id !== requestId.current) return;
       setError(errorMessage(e, lang));
@@ -143,7 +158,10 @@ export function App() {
     const name = t.save.defaultName(city ? cityName(city, lang) : planToSave.city_id, planToSave.duration_days);
     setSaveState("saving");
     try {
-      await saveRoute(planToSave, name);
+      const saved = savedRouteId
+        ? await updateSavedRoute(savedRouteId, planToSave)
+        : await saveRoute(planToSave, name);
+      setSavedRouteId(saved.id);
       setSaveState("saved");
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -185,6 +203,7 @@ export function App() {
       setForm({
         city,
         hotel: saved.plan.accommodation,
+        hotelLabel: null,
         days: saved.plan.duration_days,
         mode: saved.plan.travel_mode,
         budget: saved.plan.budget ?? "",
@@ -194,10 +213,30 @@ export function App() {
       setError(null);
       setLoading(false);
       setSaveState("saved");
+      setSavedRouteId(saved.id);
       setView("plan");
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) logout();
       else setError(errorMessage(e, lang));
+    }
+  };
+
+  const onRemoveStop = async (poiId: string) => {
+    if (!plan) return;
+    const id = requestId.current;
+    setRemovingStop(poiId);
+    setError(null);
+    try {
+      const updated = await removeStop(plan, poiId);
+      if (id !== requestId.current) return; // the form changed meanwhile
+      setPlan(updated);
+      setHighlightedStop(null);
+      // A saved route now differs from what is stored; an unsaved plan just stays unsaved.
+      setSaveState(savedRouteId ? "dirty" : "idle");
+    } catch {
+      if (id === requestId.current) setError(t.result.removeFailed);
+    } finally {
+      setRemovingStop(null);
     }
   };
 
@@ -287,6 +326,8 @@ export function App() {
                 saveState={saveState}
                 onSave={requestSave}
                 onShowSaved={() => setView("saved")}
+                onRemoveStop={onRemoveStop}
+                removingStop={removingStop}
               />
             )}
           </>
@@ -309,8 +350,8 @@ export function App() {
           plan={plan}
           activeDay={activeDay}
           highlightedStop={highlightedStop}
-          onPickCity={(city) => updateForm({ city, hotel: null })}
-          onPickHotel={(hotel) => updateForm({ hotel })}
+          onPickCity={(city) => updateForm({ city, hotel: null, hotelLabel: null })}
+          onPickHotel={(hotel) => updateForm({ hotel, hotelLabel: null })}
           onHighlightStop={setHighlightedStop}
           lang={lang}
         />

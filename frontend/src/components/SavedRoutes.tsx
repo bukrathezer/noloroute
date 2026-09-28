@@ -1,5 +1,12 @@
-import { useEffect, useState } from "react";
-import { ApiError, type City, deleteSavedRoute, listSavedRoutes, type SavedRouteSummary } from "../api";
+import { type FormEvent, useEffect, useState } from "react";
+import {
+  ApiError,
+  type City,
+  deleteAccount,
+  deleteSavedRoute,
+  listSavedRoutes,
+  type SavedRouteSummary,
+} from "../api";
 import { cityName, type Lang, STRINGS } from "../i18n";
 
 interface Props {
@@ -16,6 +23,10 @@ export function SavedRoutes({ lang, email, cities, onOpen, onBack, onLogout, onU
   const t = STRINGS[lang];
   const [routes, setRoutes] = useState<SavedRouteSummary[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [password, setPassword] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     listSavedRoutes()
@@ -34,6 +45,24 @@ export function SavedRoutes({ lang, email, cities, onOpen, onBack, onLogout, onU
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) onUnauthorized();
       else setFailed(true);
+    }
+  };
+
+  const removeAccount = async (e: FormEvent) => {
+    e.preventDefault();
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount(password);
+      onLogout();
+    } catch (err) {
+      const status = err instanceof ApiError ? err.status : -1;
+      if (status === 401) onUnauthorized();
+      else if (status === 403) setDeleteError(t.account.wrongPassword);
+      else if (status === 429) setDeleteError(t.auth.errors.tooMany);
+      else setDeleteError(t.account.deleteFailed);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -84,6 +113,54 @@ export function SavedRoutes({ lang, email, cities, onOpen, onBack, onLogout, onU
           ))}
         </ul>
       )}
+
+      <div className="danger-zone">
+        {!confirmingDelete ? (
+          <button type="button" className="link-button danger" onClick={() => setConfirmingDelete(true)}>
+            {t.account.deleteAccount}
+          </button>
+        ) : (
+          <form className="plan-form" onSubmit={removeAccount}>
+            <p className="hint">{t.account.deleteWarning}</p>
+            <div className="field">
+              <label className="field-label" htmlFor="delete-password">
+                {t.account.deletePassword}
+              </label>
+              <div className="input-wrap">
+                <input
+                  id="delete-password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
+            {deleteError && (
+              <p className="error" role="alert">
+                {deleteError}
+              </p>
+            )}
+            <div className="button-row">
+              <button type="submit" className="danger-button" disabled={deleting || !password}>
+                {deleting ? t.auth.working : t.account.deleteSubmit}
+              </button>
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => {
+                  setConfirmingDelete(false);
+                  setPassword("");
+                  setDeleteError(null);
+                }}
+              >
+                {t.account.cancel}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </section>
   );
 }

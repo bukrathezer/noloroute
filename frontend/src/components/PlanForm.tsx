@@ -2,12 +2,15 @@ import type { FormEvent } from "react";
 import type { City, LatLng, TravelMode } from "../api";
 import { type Lang, STRINGS } from "../i18n";
 import { CitySearch } from "./CitySearch";
+import { PlaceSearch } from "./PlaceSearch";
 
 export const MAX_DAYS = 7;
 
 export interface FormState {
   city: City | null;
   hotel: LatLng | null;
+  /** Name of the searched place, or null when the pin was put on the map by hand. */
+  hotelLabel: string | null;
   days: number;
   mode: TravelMode;
   budget: string;
@@ -45,7 +48,7 @@ export function PlanForm({ cities, form, onChange, onSubmit, loading, lang }: Pr
         <CitySearch
           cities={cities}
           value={form.city}
-          onChange={(city) => onChange({ city, hotel: null })}
+          onChange={(city) => onChange({ city, hotel: null, hotelLabel: null })}
           lang={lang}
         />
       </div>
@@ -60,21 +63,28 @@ export function PlanForm({ cities, form, onChange, onSubmit, loading, lang }: Pr
         ) : form.hotel ? (
           <div className="hotel-chosen">
             <span className="pin-dot" aria-hidden="true" />
-            <span>
-              {t.hotel.chosen}
+            <span className="hotel-label">
+              {form.hotelLabel ?? t.hotel.pinnedOnMap}
               <span className="muted coords">
                 {form.hotel.lat.toFixed(4)}, {form.hotel.lng.toFixed(4)}
               </span>
             </span>
-            <button type="button" className="link-button" onClick={() => onChange({ hotel: null })}>
+            <button type="button" className="link-button" onClick={() => onChange({ hotel: null, hotelLabel: null })}>
               {t.hotel.clear}
             </button>
           </div>
         ) : (
           <div className="hotel-empty">
-            <p className="hint">{t.hotel.hint}</p>
             {cityCenter && (
-              <button type="button" className="link-button" onClick={() => onChange({ hotel: cityCenter })}>
+              <PlaceSearch near={cityCenter} lang={lang} onPick={(hotel, hotelLabel) => onChange({ hotel, hotelLabel })} />
+            )}
+            <p className="hint">{t.hotel.orClickMap}</p>
+            {cityCenter && (
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => onChange({ hotel: cityCenter, hotelLabel: null })}
+              >
                 {t.hotel.useCenter}
               </button>
             )}
