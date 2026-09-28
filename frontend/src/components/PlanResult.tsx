@@ -3,6 +3,8 @@ import type { PlanResponse } from "../api";
 import { type Lang, STRINGS } from "../i18n";
 import { dayColor } from "../theme";
 
+export type SaveState = "idle" | "saving" | "saved" | "error";
+
 interface Props {
   plan: PlanResponse;
   lang: Lang;
@@ -10,9 +12,14 @@ interface Props {
   onActiveDayChange: (day: number | null) => void;
   highlightedStop: string | null;
   onHighlightStop: (poiId: string | null) => void;
+  saveState: SaveState;
+  onSave: () => void;
+  onShowSaved: () => void;
 }
 
-export function PlanResult({ plan, lang, activeDay, onActiveDayChange, highlightedStop, onHighlightStop }: Props) {
+export function PlanResult(props: Props) {
+  const { plan, lang, activeDay, onActiveDayChange, highlightedStop, onHighlightStop } = props;
+  const { saveState, onSave, onShowSaved } = props;
   const t = STRINGS[lang];
   const r = t.result;
   const stopCount = plan.days.reduce((n, d) => n + d.stops.length, 0);
@@ -25,7 +32,23 @@ export function PlanResult({ plan, lang, activeDay, onActiveDayChange, highlight
 
   return (
     <section className="plan-result" aria-live="polite">
-      <h2>{r.summary(stopCount, plan.duration_days)}</h2>
+      <div className="result-header">
+        <h2>{r.summary(stopCount, plan.duration_days)}</h2>
+        {saveState === "saved" ? (
+          <button type="button" className="saved-badge" onClick={onShowSaved}>
+            ✓ {t.save.saved}
+          </button>
+        ) : (
+          <button type="button" className="secondary-button" onClick={onSave} disabled={saveState === "saving"}>
+            {saveState === "saving" ? t.save.saving : t.save.button}
+          </button>
+        )}
+      </div>
+      {saveState === "error" && (
+        <p className="error" role="alert">
+          {t.save.error}
+        </p>
+      )}
       <dl className="stats">
         <div>
           <dt>{r.sightseeing}</dt>

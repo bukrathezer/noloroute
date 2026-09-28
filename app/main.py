@@ -10,9 +10,16 @@ from app.api.v1 import routes_auth, routes_city, routes_poi, routes_route
 from app.core.config import get_settings
 from app.services.routes_client import RoutesClient
 
+MIN_JWT_KEY_LENGTH = 32
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    # Fail at startup rather than on the first login if the token signing key is missing or weak.
+    jwt_key = get_settings().jwt_secret_key
+    if not jwt_key or len(jwt_key) < MIN_JWT_KEY_LENGTH:
+        raise RuntimeError(f"JWT_SECRET_KEY must be set to a random string of at least {MIN_JWT_KEY_LENGTH} characters")
+
     # One shared HTTP client for the Routes API (reuses connections across requests).
     # Without an API key, route planning falls back to straight-line estimates.
     api_key = get_settings().google_places_api_key

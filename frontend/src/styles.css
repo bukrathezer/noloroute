@@ -145,7 +145,12 @@ a {
   text-decoration: none;
 }
 
-.lang-toggle {
+.header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.pill-button {
   border: 1px solid var(--border);
   background: var(--surface);
   border-radius: 999px;
@@ -154,7 +159,7 @@ a {
   cursor: pointer;
 }
 
-.lang-toggle:hover {
+.pill-button:hover {
   background: var(--surface-2);
 }
 
@@ -652,6 +657,136 @@ button.stop:hover,
 .stops li.return .stop {
   cursor: default;
   align-items: center;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.secondary-button {
+  flex: none;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--brand);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--brand);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--brand-soft);
+}
+
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.saved-badge {
+  flex: none;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 9px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- account views ---------- */
+
+.auth-panel,
+.saved-routes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-panel h2,
+.saved-routes h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.link-button.back {
+  align-self: flex-start;
+  margin: 0;
+}
+
+.link-button.switch-mode {
+  align-self: center;
+  margin: 0;
+}
+
+.link-button.inline {
+  margin: 0;
+  font-size: inherit;
+}
+
+.link-button.danger {
+  margin: 0;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.account-line {
+  margin-top: -6px;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  text-align: center;
+}
+
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.saved-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 12px 4px 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.saved-open {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 9px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.saved-open:hover {
+  background: var(--surface-2);
+}
+
+.small {
+  font-size: 12px;
 }
 
 /* ---------- footer ---------- */
