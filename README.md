@@ -32,6 +32,7 @@ python -m venv .venv
 pip install -r requirements.txt
 cp .env.example .env            # then fill in DATABASE_URL and GOOGLE_PLACES_API_KEY
 alembic upgrade head            # create/update DB tables
+python -m scripts.ingest_places # load Paris & Istanbul POIs from Google Places (re-runnable)
 uvicorn app.main:app --reload
 ```
 
