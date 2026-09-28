@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from app.services.routes_client import TravelMode
 
 MAX_TRIP_DAYS = 7
+MAX_STOPS_PER_DAY = 25  # Routes API waypoint-optimization limit
 
 
 class Coordinates(BaseModel):
@@ -43,8 +44,8 @@ class PlannedStop(BaseModel):
 
 
 class DayPlan(BaseModel):
-    day_number: int
-    stops: list[PlannedStop]
+    day_number: int = Field(ge=1, le=MAX_TRIP_DAYS)
+    stops: list[PlannedStop] = Field(max_length=MAX_STOPS_PER_DAY)
     return_travel_minutes: int
     return_distance_km: float
     return_path: str | None
@@ -57,8 +58,10 @@ class DayPlan(BaseModel):
 class RoutePlanResponse(BaseModel):
     city_id: str
     currency_code: str
+    accommodation: Coordinates
+    budget: Decimal | None
     travel_mode: TravelMode
-    duration_days: int
+    duration_days: int = Field(ge=1, le=MAX_TRIP_DAYS)
     total_entry_cost: Decimal = Field(examples=["34.00"])
     unpriced_stop_count: int = Field(description="Stops whose entry price is unknown (not counted in the cost).")
-    days: list[DayPlan]
+    days: list[DayPlan] = Field(max_length=MAX_TRIP_DAYS)

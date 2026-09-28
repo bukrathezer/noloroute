@@ -1,74 +1,15 @@
 """Endpoint tests against a real PostgreSQL database (skipped when none is reachable).
 
-Each test runs inside a transaction that is rolled back afterwards, so the test data never
-persists and the local development database stays untouched.
+Each test runs inside a transaction that is rolled back afterwards (see conftest.py), so the
+test data never persists and the local development database stays untouched.
 """
 
-from collections.abc import Iterator
 from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.exc import OperationalError
-from sqlalchemy.orm import Session
 
-from app.api.v1.routes_route import get_routes_client
-from app.db.session import engine, get_db
-from app.main import app
-from app.models import POI, City
-
-CITY_ID = "test-city"
-HOTEL = {"lat": 48.8566, "lng": 2.3522}
-
-
-@pytest.fixture
-def db_session() -> Iterator[Session]:
-    try:
-        connection = engine.connect()
-    except OperationalError:
-        pytest.skip("PostgreSQL is not reachable")
-    transaction = connection.begin()
-    # Commits inside the app become savepoints, so the outer rollback still undoes everything.
-    session = Session(bind=connection, join_transaction_mode="create_savepoint")
-    try:
-        yield session
-    finally:
-        session.close()
-        transaction.rollback()
-        connection.close()
-
-
-@pytest.fixture
-def seeded(db_session: Session) -> Session:
-    db_session.add(City(id=CITY_ID, name="Test City", currency_code="EUR"))
-    for i in range(12):
-        db_session.add(
-            POI(
-                city_id=CITY_ID,
-                place_id=f"test-place-{i}",
-                name=f"Sight {i}",
-                category=["MUSEUM", "PARK", "LANDMARK"][i % 3],
-                latitude=HOTEL["lat"] + (i % 4 - 1.5) * 0.01,
-                longitude=HOTEL["lng"] + (i // 4 - 1) * 0.015,
-                avg_duration_min=60,
-                entry_price=Decimal("10.00") if i % 2 == 0 else None,
-                rating=4.5,
-                user_rating_count=1000 + i * 100,
-            )
-        )
-    db_session.flush()
-    return db_session
-
-
-@pytest.fixture
-def client(seeded: Session) -> Iterator[TestClient]:
-    app.dependency_overrides[get_db] = lambda: seeded
-    app.dependency_overrides[get_routes_client] = lambda: None  # no Google calls: use estimates
-    try:
-        with TestClient(app) as test_client:
-            yield test_client
-    finally:
-        app.dependency_overrides.clear()
+from tests.seed import CITY_ID, HOTEL, POI_COUNT
 
 
 def test_list_cities_includes_poi_count(client: TestClient) -> None:
@@ -78,7 +19,7 @@ def test_list_cities_includes_poi_count(client: TestClient) -> None:
         "id": CITY_ID,
         "name": "Test City",
         "currency_code": "EUR",
-        "poi_count": 12,
+        "poi_count": POI_COUNT,
     }
     # The centre is the average POI position, which the seed data places around the hotel.
     assert city["center_lat"] == pytest.approx(HOTEL["lat"], abs=0.02)

@@ -35,7 +35,7 @@ Requires Python 3.12+ and a running PostgreSQL instance.
 python -m venv .venv
 .venv\Scripts\activate          # Windows (use `source .venv/bin/activate` on macOS/Linux)
 pip install -r requirements.txt
-cp .env.example .env            # then fill in DATABASE_URL and GOOGLE_PLACES_API_KEY
+cp .env.example .env            # then fill in DATABASE_URL, GOOGLE_PLACES_API_KEY and JWT_SECRET_KEY
 alembic upgrade head            # create/update DB tables
 python -m scripts.ingest_places # load Paris & Istanbul POIs from Google Places (re-runnable)
 uvicorn app.main:app --reload
@@ -75,6 +75,19 @@ optional budget returns a day-by-day plan:
    accommodation → stops → accommodation loop and returns real travel times. If Google is
    unavailable, a nearest-neighbour order with straight-line estimates is used instead.
 
+## Accounts and saved routes
+Users register with an email and password (`POST /api/v1/auth/register`) or log in with the OAuth2
+password flow (`POST /api/v1/auth/login`) and receive a JWT, sent as `Authorization: Bearer <token>`
+(the **Authorize** button in `/docs` uses the same flow).
+
+- Passwords are stored only as Argon2id hashes; login gives the same answer, with similar timing,
+  for an unknown email and a wrong password.
+- Tokens are HS256-signed with `JWT_SECRET_KEY` and expire after a week; the API refuses to start
+  without a sufficiently long key.
+- `POST/GET /api/v1/routes` and `GET/DELETE /api/v1/routes/{id}` save, list, open and delete the
+  current user's routes. A saved route keeps a snapshot of the plan as shown (travel times, street
+  paths), so reopening it needs no new Routes API calls; another user's route answers 404.
+
 ## Deployment
 Every merge to `main` runs the GitHub Actions pipeline: lint, frontend build, tests against a
 throwaway PostgreSQL, then deploy:
@@ -85,7 +98,7 @@ throwaway PostgreSQL, then deploy:
 3. The new revision is deployed to Cloud Run and smoke-tested.
 
 GitHub authenticates to Google Cloud with Workload Identity Federation (no stored keys);
-secrets (database URL, Maps API key) live in Secret Manager. POI ingestion runs on demand as
+secrets (database URL, Maps API key, JWT signing key) live in Secret Manager. POI ingestion runs on demand as
 the `noloroute-ingest` Cloud Run job.
 
 ## Roadmap

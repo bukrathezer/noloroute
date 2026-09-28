@@ -53,6 +53,8 @@ export interface DayPlan {
 export interface PlanResponse {
   city_id: string;
   currency_code: string;
+  accommodation: LatLng;
+  budget: string | null;
   travel_mode: TravelMode;
   duration_days: number;
   total_entry_cost: string;
@@ -69,10 +71,45 @@ export class ApiError extends Error {
   }
 }
 
+export interface User {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  user: User;
+}
+
+export interface SavedRouteSummary {
+  id: string;
+  name: string;
+  city_id: string;
+  duration_days: number;
+  travel_mode: TravelMode;
+  stop_count: number;
+  created_at: string;
+}
+
+export interface SavedRoute extends SavedRouteSummary {
+  plan: PlanResponse;
+}
+
+// Sent as "Authorization: Bearer <token>" on every request once the user logs in.
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
   let res: Response;
   try {
-    res = await fetch(path, { ...init, headers: { "Content-Type": "application/json", ...init?.headers } });
+    res = await fetch(path, { ...init, headers: { ...headers, ...(init?.headers as Record<string, string>) } });
   } catch {
     throw new ApiError("network", 0);
   }
@@ -86,6 +123,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(detail, res.status);
   }
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -93,3 +131,26 @@ export const fetchCities = () => request<City[]>("/api/v1/cities");
 
 export const planRoute = (req: PlanRequest) =>
   request<PlanResponse>("/api/v1/routes/plan", { method: "POST", body: JSON.stringify(req) });
+
+export const register = (email: string, password: string) =>
+  request<TokenResponse>("/api/v1/auth/register", { method: "POST", body: JSON.stringify({ email, password }) });
+
+// The login endpoint follows the OAuth2 password flow, which uses form fields, not JSON.
+export const login = (email: string, password: string) =>
+  request<TokenResponse>("/api/v1/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ username: email, password }).toString(),
+  });
+
+export const fetchMe = () => request<User>("/api/v1/auth/me");
+
+export const saveRoute = (plan: PlanResponse, name: string) =>
+  request<SavedRoute>("/api/v1/routes", { method: "POST", body: JSON.stringify({ name, plan }) });
+
+export const listSavedRoutes = () => request<SavedRouteSummary[]>("/api/v1/routes");
+
+export const getSavedRoute = (id: string) => request<SavedRoute>(`/api/v1/routes/${encodeURIComponent(id)}`);
+
+export const deleteSavedRoute = (id: string) =>
+  request<void>(`/api/v1/routes/${encodeURIComponent(id)}`, { method: "DELETE" });
