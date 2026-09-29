@@ -133,10 +133,10 @@ weeks ahead, so for later trips the same weekday in the coming week is used. Whe
 transit data, every leg is walked and the plan says so. Transit plans cost the most Google calls
 (two route matrices per day), so they are rate-limited per client.
 
-## Places to eat and nightlife
+## Places to eat, nightlife and events
 Meals and evenings are not planned into the route (when and where to eat or go out is personal);
 instead each day can list suggestions, looked up only when the traveller asks
-(`app/services/suggestions.py`):
+(`app/services/suggestions.py`, `app/services/events.py`):
 
 - **Places to eat along the route** (`POST /api/v1/suggestions/food`): around two stops a third
   and two thirds of the way through the day, the most popular restaurants, bakeries and dessert
@@ -146,7 +146,14 @@ instead each day can list suggestions, looked up only when the traveller asks
   and near the day's last stop if it is 1.5 km+ away, bars, pubs, clubs, live music and comedy
   within 1 km whose main type is one of these (not restaurants that also have a bar), rated 4.2+
   with 100+ reviews and open for at least an hour between 20:00 and 02:00 that night.
-- Each lookup is one Nearby Search per anchor. Places are ranked by popularity, listed under the
+- **Events that day** (`POST /api/v1/suggestions/events`, trip dates only): concerts, sports and
+  theatre starting that day within 15 km of the accommodation, from the Ticketmaster Discovery
+  API (Google has no event data). The 8 most relevant are kept and put in order of time, several
+  showings of one show merged. Timed-entry attraction tickets ("Miscellaneous") are left out, or
+  they fill the list with half-hourly London Eye slots. Coverage varies a lot: on a Saturday in
+  October 2026 it listed 129 events around London, 26 around Istanbul (Biletix is part of
+  Ticketmaster), 1 in Rome and none in Paris. Needs `TICKETMASTER_API_KEY` (free, 5,000 calls a day).
+- Each food or nightlife lookup is one Nearby Search per anchor. Places are ranked by popularity, listed under the
   nearer anchor, and a chain appears once, with its best branch. Each shows its category, rating,
   price level, that day's hours, distance and a Google Maps link.
 - Lookups are rate-limited per client (food and nightlife together) and never stored: Google's

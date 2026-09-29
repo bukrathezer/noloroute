@@ -119,7 +119,27 @@ const en = {
     tooMany: "Too many searches in a short time. Please try again a little later.",
     note: "Suggestions only, not added to your route. Ratings and hours: Google Maps.",
   },
-  footer: { api: "API docs", source: "Source code" },
+  events: {
+    show: "Events in the city that day",
+    hide: "Hide events",
+    loading: "Looking for events…",
+    empty: "No events found on Ticketmaster for that day nearby.",
+    unavailable: "Event search isn't available right now.",
+    distance: (km: string) => `${km} km away`,
+    segments: {} as Record<string, string>, // Ticketmaster's names are already English
+    note: "Events and tickets: Ticketmaster. How many events it lists varies a lot from city to city.",
+  },
+  privacy: {
+    title: "Privacy",
+    back: "← Back",
+    paragraphs: [
+      "Without an account, nothing about you is stored on our side. Your language choice and login stay in your browser.",
+      "With an account we store your email address, a hash of your password (never the password itself) and the routes you save. Deleting your account removes all of it.",
+      "To plan a trip, the accommodation's location and the trip dates are sent to Google Maps Platform (routes, places to eat and go out), Open-Meteo (weather) and Ticketmaster (events). Your name and email are never sent to them.",
+      "Your IP address is kept in memory for a short while to limit repeated requests. There are no ads, no tracking cookies, and no data is sold.",
+    ],
+  },
+  footer: { api: "API docs", source: "Source code", privacy: "Privacy" },
   minutes: (total: number) => formatDuration(total, "h", "min"),
   weather: {
     conditions: {
@@ -307,7 +327,27 @@ const tr: Strings = {
     tooMany: "Kısa sürede çok fazla arama yapıldı. Biraz sonra tekrar dene.",
     note: "Sadece öneridir, rotana eklenmez. Puanlar ve saatler: Google Maps.",
   },
-  footer: { api: "API dokümanı", source: "Kaynak kod" },
+  events: {
+    show: "O gün şehirde etkinlikler",
+    hide: "Etkinlikleri gizle",
+    loading: "Etkinlikler aranıyor…",
+    empty: "Ticketmaster'da o gün için yakında etkinlik bulunamadı.",
+    unavailable: "Etkinlik araması şu an kullanılamıyor.",
+    distance: (km) => `${km} km`,
+    segments: { Music: "Müzik", Sports: "Spor", "Arts & Theatre": "Sanat & Tiyatro", Film: "Film" },
+    note: "Etkinlikler ve biletler: Ticketmaster. Listelenen etkinlik sayısı şehirden şehre çok değişir.",
+  },
+  privacy: {
+    title: "Gizlilik",
+    back: "← Geri",
+    paragraphs: [
+      "Hesap açmadan kullanırsan senin hakkında hiçbir şey saklanmaz. Dil seçimin ve oturumun tarayıcında kalır.",
+      "Hesap açarsan e-posta adresin, şifrenin özeti (şifrenin kendisi asla) ve kaydettiğin rotalar saklanır. Hesabını silince hepsi silinir.",
+      "Gezi planlamak için kaldığın yerin konumu ve gezi tarihleri Google Maps Platform'a (rotalar, yemek ve gece hayatı önerileri), Open-Meteo'ya (hava durumu) ve Ticketmaster'a (etkinlikler) gönderilir. Adın ve e-postan onlara asla gönderilmez.",
+      "Tekrarlanan istekleri sınırlamak için IP adresin kısa bir süre bellekte tutulur. Reklam yok, takip çerezi yok, veri satılmaz.",
+    ],
+  },
+  footer: { api: "API dokümanı", source: "Kaynak kod", privacy: "Gizlilik" },
   minutes: (total) => formatDuration(total, "sa", "dk"),
   weather: {
     conditions: {

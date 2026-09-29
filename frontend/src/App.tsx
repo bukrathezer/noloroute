@@ -17,6 +17,7 @@ import {
 import { AuthPanel } from "./components/AuthPanel";
 import { type FormState, PlanForm } from "./components/PlanForm";
 import { PlanResult, type SaveState } from "./components/PlanResult";
+import { Privacy } from "./components/Privacy";
 import { RouteMap } from "./components/RouteMap";
 import { SavedRoutes } from "./components/SavedRoutes";
 import { addDays, todayIso } from "./dates";
@@ -25,7 +26,7 @@ import { cityName, initialLang, type Lang, STRINGS } from "./i18n";
 const SOURCE_URL = "https://github.com/bukrathezer/noloroute";
 const AUTH_STORAGE_KEY = "auth";
 
-type View = "plan" | "auth" | "saved";
+type View = "plan" | "auth" | "saved" | "privacy";
 
 interface Auth {
   token: string;
@@ -294,6 +295,8 @@ export function App() {
           />
         )}
 
+        {view === "privacy" && <Privacy lang={lang} onBack={() => setView("plan")} />}
+
         {view === "plan" && (
           <>
             <p className="tagline">{t.tagline}</p>
@@ -343,6 +346,10 @@ export function App() {
           <a href={SOURCE_URL} target="_blank" rel="noreferrer">
             {t.footer.source}
           </a>
+          <span aria-hidden="true">·</span>
+          <button type="button" className="link-button footer-link" onClick={() => setView("privacy")}>
+            {t.footer.privacy}
+          </button>
         </footer>
       </aside>
 

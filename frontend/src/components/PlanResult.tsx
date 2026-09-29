@@ -3,6 +3,7 @@ import type { DayWeather, LegDetails, PlanResponse, TravelMode } from "../api";
 import { formatDay, formatMonth } from "../dates";
 import { type Lang, STRINGS } from "../i18n";
 import { dayColor } from "../theme";
+import { DayEvents } from "./DayEvents";
 import { Suggestions } from "./Suggestions";
 
 // "dirty": a saved route was edited and the changes are not stored yet.
@@ -224,6 +225,9 @@ export function PlanResult(props: Props) {
                   lang={lang}
                 />
               ))}
+              {day.date !== null && (
+                <DayEvents day={{ ...day, date: day.date }} accommodation={plan.accommodation} lang={lang} />
+              )}
             </div>
           )}
         </article>

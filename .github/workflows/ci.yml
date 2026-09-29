@@ -175,7 +175,7 @@ jobs:
             --region "$REGION" \
             --service-account "$RUNTIME_SA" \
             --set-cloudsql-instances "$SQL_INSTANCE" \
-            --set-secrets "DATABASE_URL=database-url:latest,GOOGLE_PLACES_API_KEY=maps-api-key:latest,JWT_SECRET_KEY=jwt-secret:latest" \
+            --set-secrets "DATABASE_URL=database-url:latest,GOOGLE_PLACES_API_KEY=maps-api-key:latest,JWT_SECRET_KEY=jwt-secret:latest,TICKETMASTER_API_KEY=ticketmaster-api-key:latest" \
             --allow-unauthenticated \
             --min-instances 0 \
             --max-instances 3 \

@@ -289,6 +289,29 @@ export const nightlifeSuggestions = (accommodation: LatLng, stops: StopPoint[], 
     body: JSON.stringify({ accommodation, stops, date, lang }),
   });
 
+export interface EventItem {
+  name: string;
+  /** Ticketmaster's main category: "Music", "Sports", "Arts & Theatre", ... */
+  segment: string | null;
+  /** e.g. "Rock", "Football". */
+  genre: string | null;
+  /** Local start times that day, e.g. ["14:30", "19:30"]. */
+  times: string[];
+  venue: string | null;
+  distance_km: number | null;
+  /** The event's Ticketmaster page. */
+  url: string | null;
+  price_min: number | null;
+  price_max: number | null;
+  currency: string | null;
+}
+
+export const eventSuggestions = (accommodation: LatLng, date: string, lang: string) =>
+  request<EventItem[]>("/api/v1/suggestions/events", {
+    method: "POST",
+    body: JSON.stringify({ accommodation, date, lang }),
+  });
+
 export const placeAutocomplete = (q: string, near: LatLng, sessionToken: string, lang: string) =>
   request<PlaceSuggestion[]>(
     `/api/v1/places/autocomplete?${new URLSearchParams({

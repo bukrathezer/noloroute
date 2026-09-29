@@ -27,6 +27,24 @@ class NightlifeRequest(BaseModel):
     lang: Literal["tr", "en"] = "en"
 
 
+class EventsRequest(BaseModel):
+    accommodation: Coordinates
+    date: dt.date = Field(description="The trip day: events starting that day (local time).")
+
+
+class EventOut(BaseModel):
+    name: str
+    segment: str | None = Field(description='The main category, e.g. "Music", "Sports", "Arts & Theatre".')
+    genre: str | None = Field(description='e.g. "Rock", "Football", "Theatre".')
+    times: list[str] = Field(description='Local start times that day, e.g. ["14:30", "19:30"].')
+    venue: str | None
+    distance_km: float | None = Field(description="From the accommodation.")
+    url: str | None = Field(description="The event's Ticketmaster page, for details and tickets.")
+    price_min: float | None
+    price_max: float | None
+    currency: str | None
+
+
 class SuggestionOut(BaseModel):
     place_id: str
     name: str

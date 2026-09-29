@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     database_url: str
     google_places_api_key: str | None = None
+    # Ticketmaster Discovery API (events); without it the events lookup is off.
+    ticketmaster_api_key: str | None = None
 
     # Signs login tokens. Optional here so one-off jobs (migrations, ingestion) don't need it;
     # the API refuses to start without it (see app.main).
