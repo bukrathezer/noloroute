@@ -19,6 +19,8 @@ def seed_city(session: Session) -> None:
         City(
             id=CITY_ID,
             name="Test City",
+            name_tr="Test Şehri",
+            country_code="FR",
             currency_code="EUR",
             timezone="Europe/Paris",
             price_basis="adult",

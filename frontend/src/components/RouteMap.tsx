@@ -23,6 +23,8 @@ interface Props {
 
 const EUROPE_VIEW: { center: Point; zoom: number } = { center: [45.5, 15.5], zoom: 4 };
 const CITY_ZOOM = 13;
+// With more cities than this, names show on hover only: otherwise they pile up over Europe.
+const MAX_CITY_LABELS = 8;
 
 // OpenStreetMap's own tiles: free and keyless for light use with attribution
 // (https://operations.osmfoundation.org/policies/tiles/). Dark mode re-colours them in CSS.
@@ -126,7 +128,12 @@ export function RouteMap(props: Props) {
                 pathOptions={{ color: "#0f766e", fillColor: "#14b8a6", fillOpacity: 0.9, weight: 3 }}
                 eventHandlers={{ click: () => onPickCity(c) }}
               >
-                <Tooltip permanent direction="top" offset={[0, -8]} className="city-label">
+                <Tooltip
+                  permanent={cities.length <= MAX_CITY_LABELS}
+                  direction="top"
+                  offset={[0, -8]}
+                  className="city-label"
+                >
                   {cityName(c, lang)}
                 </Tooltip>
               </CircleMarker>

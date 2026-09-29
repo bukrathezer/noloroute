@@ -15,9 +15,11 @@ from tests.seed import CITY_ID, HOTEL, POI_COUNT, PRICES_CHECKED_ON
 def test_list_cities_includes_poi_count(client: TestClient) -> None:
     cities = {c["id"]: c for c in client.get("/api/v1/cities").json()}
     city = cities[CITY_ID]
-    assert {k: city[k] for k in ("id", "name", "currency_code", "poi_count")} == {
+    assert {k: city[k] for k in ("id", "name", "name_tr", "country_code", "currency_code", "poi_count")} == {
         "id": CITY_ID,
         "name": "Test City",
+        "name_tr": "Test Şehri",
+        "country_code": "FR",
         "currency_code": "EUR",
         "poi_count": POI_COUNT,
     }

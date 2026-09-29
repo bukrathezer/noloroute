@@ -59,7 +59,6 @@ export function CitySearch({ cities, value, onChange, lang }: Props) {
     }
   };
 
-  const supported = cities.map((c) => cityName(c, lang)).join(", ");
   const showing = open || !value;
 
   return (
@@ -111,7 +110,7 @@ export function CitySearch({ cities, value, onChange, lang }: Props) {
               <span className="muted">{t.places(city.poi_count)}</span>
             </li>
           ))}
-          {matches.length === 0 && <li className="empty">{t.noResults(supported)}</li>}
+          {matches.length === 0 && <li className="empty">{t.noResults(cities.length)}</li>}
         </ul>
       )}
     </div>

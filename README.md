@@ -13,7 +13,7 @@ personalizes the route to the traveler's accommodation, trip length, and
 budget instead.
 
 ## MVP Scope
-- Cities: Paris and Istanbul
+- Cities: Paris, Istanbul and 30 popular cities abroad (`scripts/city_catalog.py`)
 - Input: accommodation location (lat/lng), trip length (days), budget
 - Output: points of interest split into days, ordered to minimize travel distance/time
 - User accounts with saved routes
@@ -37,7 +37,7 @@ python -m venv .venv
 pip install -r requirements.txt
 cp .env.example .env            # then fill in DATABASE_URL, GOOGLE_PLACES_API_KEY and JWT_SECRET_KEY
 alembic upgrade head            # create/update DB tables
-python -m scripts.ingest_places # load Paris & Istanbul POIs from Google Places (re-runnable)
+python -m scripts.ingest_places # load Paris & Istanbul POIs from Google Places (re-runnable; see below)
 uvicorn app.main:app --reload
 ```
 
@@ -153,6 +153,33 @@ password flow (`POST /api/v1/auth/login`) and receive a JWT, sent as `Authorizat
 - Login, registration and place search are rate-limited per client (in memory, per instance). A saved route keeps a snapshot of the plan as shown (travel times, street
   paths), so reopening it needs no new Routes API calls; another user's route answers 404.
 
+## Cities and keeping them fresh
+Sights come from Google Places Nearby Search (`scripts/ingest_places.py`), which costs about $35
+per 1,000 requests and returns at most 20 places per request, so the search is **adaptive**:
+
+- One request per cell asks for every sightseeing type at once. The search starts with a single
+  cell over the whole city; a cell is split in four only while its 20 results are all popular
+  enough to be among the city's 100 best found so far. If even the 20th falls short, nothing the
+  cell didn't return can make the list, so it isn't searched further. Big cells go first, so the
+  bar rises quickly.
+- On the cached Paris and Istanbul data this finds nearly all of the 100-150 most popular sights
+  with 45-60 requests instead of the fixed grid's 94 and 184; a pilot in Rome and Kyoto took 95
+  and 75. The fixed grid over all 32 cities would have cost about $290 per pass.
+- Cities abroad are found by name with free calls (Text Search returning only the place ID, then
+  Place Details' Essentials fields) and searched within 12 km of that centre. Google's own city
+  viewports proved unreliable (country-sized for one city, 200 m for another).
+- A run can be given a request budget (`--max-requests`); a city whose search doesn't finish
+  within it is not saved, so a half-searched city never loses its places.
+- **Monthly refresh:** `--refresh` updates the cities with the oldest data (at least 25 days old)
+  for as long as their last run's request count fits the budget. Run monthly with a budget of 900
+  it stays inside the free 1,000 Nearby requests a month, and every city is refreshed every few
+  months at no cost.
+
+```bash
+python -m scripts.ingest_places --city rome --city kyoto --max-requests 200
+python -m scripts.ingest_places --refresh --max-requests 900
+```
+
 ## Deployment
 Every merge to `main` runs the GitHub Actions pipeline: lint, frontend build, tests against a
 throwaway PostgreSQL, then deploy:
@@ -163,8 +190,9 @@ throwaway PostgreSQL, then deploy:
 3. The new revision is deployed to Cloud Run and smoke-tested.
 
 GitHub authenticates to Google Cloud with Workload Identity Federation (no stored keys);
-secrets (database URL, Maps API key, JWT signing key) live in Secret Manager. POI ingestion runs on demand as
-the `noloroute-ingest` Cloud Run job.
+secrets (database URL, Maps API key, JWT signing key) live in Secret Manager. POI ingestion is the
+`noloroute-ingest` Cloud Run job: by default the monthly refresh above, or with its own arguments
+for adding cities.
 
 ## Roadmap
 - City insights (crowd levels, price analysis)

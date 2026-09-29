@@ -5,7 +5,11 @@ export type TravelMode = "WALK" | "DRIVE" | "TRANSIT";
 
 export interface City {
   id: string;
+  /** English name. */
   name: string;
+  name_tr: string | null;
+  /** ISO 3166-1 alpha-2, e.g. "IT". */
+  country_code: string | null;
   currency_code: string;
   poi_count: number;
   center_lat: number | null;

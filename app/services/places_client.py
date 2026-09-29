@@ -1,6 +1,7 @@
 """Thin client for the Google Places API (New): Nearby Search and Text Search."""
 
 import time
+from collections import Counter
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Self
@@ -50,6 +51,8 @@ class PlacesClient:
     def __init__(self, api_key: str, language: str = "en", timeout: float = 15.0) -> None:
         self._language = language
         self._http = httpx.Client(base_url=BASE_URL, timeout=timeout, headers={"X-Goog-Api-Key": api_key})
+        # Requests made, by kind, for cost reports ("nearby", "text", "text_ids", "details").
+        self.requests: Counter[str] = Counter()
 
     def __enter__(self) -> Self:
         return self
@@ -71,7 +74,21 @@ class PlacesClient:
                 "circle": {"center": {"latitude": center.lat, "longitude": center.lng}, "radius": radius_m}
             },
         }
+        self.requests["nearby"] += 1
         return self._post("/places:searchNearby", body, PLACES_FIELD_MASK).get("places", [])
+
+    def find_place_id(self, query: str) -> str | None:
+        """The best match for a text query. Asking for the ID alone is the free "IDs only" SKU."""
+        self.requests["text_ids"] += 1
+        body = {"textQuery": query, "pageSize": 1, "languageCode": self._language}
+        places = self._post("/places:searchText", body, "places.id").get("places", [])
+        return places[0]["id"] if places else None
+
+    def place_location(self, place_id: str) -> LatLng:
+        """A place's coordinates (Place Details, Essentials SKU)."""
+        self.requests["details"] += 1
+        data = self._request("GET", f"/places/{place_id}", None, "location")
+        return LatLng(data["location"]["latitude"], data["location"]["longitude"])
 
     def search_text(
         self, query: str, bounds: BoundingBox, included_type: str | None = None
@@ -93,6 +110,7 @@ class PlacesClient:
             body["strictTypeFiltering"] = True
 
         for _ in range(TEXT_MAX_PAGES):
+            self.requests["text"] += 1
             data = self._post("/places:searchText", body, f"{PLACES_FIELD_MASK},nextPageToken")
             yield from data.get("places", [])
             token = data.get("nextPageToken")
@@ -101,8 +119,11 @@ class PlacesClient:
             body = {**body, "pageToken": token}
 
     def _post(self, path: str, body: dict[str, Any], field_mask: str) -> dict[str, Any]:
+        return self._request("POST", path, body, field_mask)
+
+    def _request(self, method: str, path: str, body: dict[str, Any] | None, field_mask: str) -> dict[str, Any]:
         for attempt in range(MAX_ATTEMPTS):
-            resp = self._http.post(path, json=body, headers={"X-Goog-FieldMask": field_mask})
+            resp = self._http.request(method, path, json=body, headers={"X-Goog-FieldMask": field_mask})
             if resp.status_code in RETRYABLE_STATUS and attempt < MAX_ATTEMPTS - 1:
                 time.sleep(2**attempt)  # 1s, 2s backoff for rate limits / transient errors
                 continue
