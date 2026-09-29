@@ -930,6 +930,45 @@ button.stop:hover,
   background: color-mix(in srgb, #2563eb 12%, var(--surface));
 }
 
+.food {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.food-toggle {
+  font-size: 14px;
+}
+
+.food-list ul {
+  margin: 4px 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.food-list li {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.food-near {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.food-name {
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+
+a.food-name:hover {
+  text-decoration: underline;
+}
+
 .rain-note {
   margin-top: 6px;
   font-size: 13px;

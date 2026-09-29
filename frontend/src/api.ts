@@ -252,6 +252,35 @@ export interface PlaceLocation {
   address: string;
 }
 
+export interface FoodPlace {
+  place_id: string;
+  name: string;
+  /** e.g. "Turkish restaurant", in the requested language. */
+  cuisine: string | null;
+  lat: number;
+  lng: number;
+  rating: number;
+  rating_count: number;
+  /** 0 (free) to 4 (very expensive). */
+  price_level: number | null;
+  /** Opening hours that day; null without a date. */
+  hours: string | null;
+  distance_m: number;
+  maps_url: string | null;
+}
+
+export interface FoodGroup {
+  /** The stop these places are close to. */
+  near: string;
+  places: FoodPlace[];
+}
+
+export const foodSuggestions = (stops: { name: string; lat: number; lng: number }[], date: string | null, lang: string) =>
+  request<FoodGroup[]>("/api/v1/suggestions/food", {
+    method: "POST",
+    body: JSON.stringify({ stops, date, lang }),
+  });
+
 export const placeAutocomplete = (q: string, near: LatLng, sessionToken: string, lang: string) =>
   request<PlaceSuggestion[]>(
     `/api/v1/places/autocomplete?${new URLSearchParams({
