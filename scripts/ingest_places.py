@@ -1,35 +1,42 @@
-"""Fetch POIs for Paris and Istanbul from Google Places and sync them into the DB.
+"""Fetch a city's sights from Google Places and sync them into the DB.
 
-How it works: each city's bounding box is split into a grid of overlapping circles. For every
-circle and category we ask Nearby Search for the 20 most *popular* places, then deduplicate on
-Google's place_id, drop obscure/irrelevant places and upsert the rest. A couple of text searches
-fill gaps that Google's type system misses (scenic viewpoints, bazaars). Famous streets and
-districts (e.g. Champs-Elysees, Istiklal Avenue) are poorly represented in Places, so they are
-added from a small hand-entered list (CURATED_POIS). Visit times and entry prices come from
-scripts/sight_details.py: rules for every place, hand-checked values for the most visited ones.
+How it works: Nearby Search, asking for the most *popular* places of our types, over an adaptive
+grid (see fetch_adaptive: Nearby Search costs about $35 per 1,000 requests, so a city takes as few
+as it can). Results are deduplicated on Google's place_id, obscure/irrelevant places dropped and
+the rest upserted. A couple of text searches fill gaps that Google's type system misses (scenic
+viewpoints, bazaars). Famous streets and districts (e.g. Champs-Elysees, Istiklal Avenue) are
+poorly represented in Places, so they are added from a small hand-entered list (CURATED_POIS).
+Visit times and entry prices come from scripts/sight_details.py: rules for every place,
+hand-checked values for the most visited ones.
+
+Paris and Istanbul have hand-drawn search areas (CITIES); the other cities come from
+scripts/city_catalog.py, searched around the centre Google gives for their name.
 
 Safe to re-run: existing POIs are updated, and POIs that no longer pass the filters are removed
 (unless a saved route references them).
 
 Usage (from the repo root):
-    python -m scripts.ingest_places                    # all cities
-    python -m scripts.ingest_places --city paris
-    python -m scripts.ingest_places --dry-run          # fetch and summarize, don't write to the DB
-    python -m scripts.ingest_places --use-cache        # reuse the last raw API results (no API calls)
+    python -m scripts.ingest_places                    # Paris and Istanbul
+    python -m scripts.ingest_places --city rome --city kyoto --max-requests 200
+    python -m scripts.ingest_places --refresh --max-requests 900   # the monthly refresh
+    python -m scripts.ingest_places --city rome --dry-run          # fetch and summarize only
+    python -m scripts.ingest_places --city rome --use-cache        # reuse the last raw results
 """
 
 import argparse
+import heapq
 import json
 import math
 import os
 import sys
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import delete
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.core.config import get_settings
@@ -38,7 +45,8 @@ from app.db.session import SessionLocal
 from app.models import POI, City
 from app.models.poi import POICategory
 from app.services.geo import LatLng
-from app.services.places_client import BoundingBox, PlacesAPIError, PlacesClient
+from app.services.places_client import MAX_NEARBY_RESULTS, BoundingBox, PlacesAPIError, PlacesClient
+from scripts.city_catalog import CATALOG, CatalogCity
 from scripts.sight_details import CITY_PRICES, SIGHTS, estimate_entry_price, estimate_visit_minutes
 
 # Raw API results are cached here. Override with PLACES_CACHE_DIR where the repo folder is
@@ -53,15 +61,36 @@ class CityConfig:
     currency_code: str
     timezone: str  # IANA name; transit timetables are read in local time
     bounds: BoundingBox
+    name_tr: str | None = None
+    country_code: str | None = None
 
 
+# Hand-drawn search areas; catalog cities get a square around their centre.
 CITIES = {
-    "paris": CityConfig("paris", "Paris", "EUR", "Europe/Paris", BoundingBox(48.815, 2.224, 48.902, 2.470)),
+    "paris": CityConfig(
+        "paris",
+        "Paris",
+        "EUR",
+        "Europe/Paris",
+        BoundingBox(48.815, 2.224, 48.902, 2.470),
+        name_tr="Paris",
+        country_code="FR",
+    ),
     # Historic peninsula, Beyoglu, Besiktas, Uskudar, Kadikoy and the Bosphorus shore up to Sariyer.
     "istanbul": CityConfig(
-        "istanbul", "Istanbul", "TRY", "Europe/Istanbul", BoundingBox(40.960, 28.840, 41.130, 29.100)
+        "istanbul",
+        "Istanbul",
+        "TRY",
+        "Europe/Istanbul",
+        BoundingBox(40.960, 28.840, 41.130, 29.100),
+        name_tr="İstanbul",
+        country_code="TR",
     ),
 }
+# A city's cost before its first run (afterwards the last run's count is used).
+EXPECTED_CITY_REQUESTS = 100
+# The monthly refresh leaves cities alone that were refreshed this recently.
+REFRESH_MIN_AGE_DAYS = 25
 
 
 @dataclass(frozen=True)
@@ -90,13 +119,10 @@ CURATED_POIS: dict[str, list[CuratedPOI]] = {
     ],
 }
 
-GRID_STEP_KM = 4.0
-# Circles must reach the grid cell corners (half the diagonal = 0.707 * step) to leave no gaps.
-GRID_RADIUS_M = GRID_STEP_KM * 1000 * 0.75
 KM_PER_DEG_LAT = 111.32
 
-# One Nearby Search per grid cell per group. The group label is only for logging: a place's
-# category comes from its own Google types (see categorize).
+# The Google types searched for, grouped for reading. A place's category comes from its own
+# Google types (see categorize).
 NEARBY_GROUPS: list[tuple[POICategory, list[str]]] = [
     (POICategory.MUSEUM, ["museum", "art_gallery"]),
     (
@@ -104,10 +130,17 @@ NEARBY_GROUPS: list[tuple[POICategory, list[str]]] = [
         ["tourist_attraction", "historical_landmark", "monument", "cultural_landmark", "historical_place"],
     ),
     (POICategory.PARK, ["park", "botanical_garden", "garden"]),
-    (POICategory.RELIGIOUS_SITE, ["church", "mosque", "synagogue", "hindu_temple"]),
+    (POICategory.RELIGIOUS_SITE, ["church", "mosque", "synagogue", "hindu_temple", "buddhist_temple", "shinto_shrine"]),
     (POICategory.VIEWPOINT, ["observation_deck", "scenic_spot"]),
     (POICategory.MARKET, ["market"]),
 ]  # fmt: skip
+
+# Adaptive search: all types in one request per cell, cells split while they may still hide
+# one of the city's ADAPTIVE_TOP_N most popular sights.
+ADAPTIVE_TYPES = sorted({t for _, types in NEARBY_GROUPS for t in types})
+ADAPTIVE_TOP_N = 100  # plenty for a week: a 7-day trip has about 45 stops
+ADAPTIVE_RADIUS_KM = 12.0  # around the centre of a catalog city
+MIN_CELL_KM = 1.0
 
 # Text searches for places Google doesn't type consistently.
 TEXT_SEARCHES = ["scenic viewpoint", "historic bazaar"]
@@ -121,6 +154,8 @@ TYPE_TO_CATEGORY: dict[str, POICategory] = {
     "mosque": POICategory.RELIGIOUS_SITE,
     "synagogue": POICategory.RELIGIOUS_SITE,
     "hindu_temple": POICategory.RELIGIOUS_SITE,
+    "buddhist_temple": POICategory.RELIGIOUS_SITE,
+    "shinto_shrine": POICategory.RELIGIOUS_SITE,
     "place_of_worship": POICategory.RELIGIOUS_SITE,
     "museum": POICategory.MUSEUM,
     "art_gallery": POICategory.MUSEUM,
@@ -157,43 +192,82 @@ MIN_RATING_COUNT = 300
 RawResult = dict[str, Any]  # {"source": <search that found it>, "place": <Places API place dict>}
 
 
-def grid_centers(bounds: BoundingBox, step_km: float) -> list[LatLng]:
-    mid_lat = (bounds.south + bounds.north) / 2
-    lat_step = step_km / KM_PER_DEG_LAT
-    lng_step = step_km / (KM_PER_DEG_LAT * math.cos(math.radians(mid_lat)))
-    rows = max(1, math.ceil((bounds.north - bounds.south) / lat_step))
-    cols = max(1, math.ceil((bounds.east - bounds.west) / lng_step))
-    return [
-        LatLng(bounds.south + (r + 0.5) * lat_step, bounds.west + (c + 0.5) * lng_step)
-        for r in range(rows)
-        for c in range(cols)
-    ]
-
-
-def fetch_raw(client: PlacesClient, city: CityConfig) -> list[RawResult]:
-    centers = grid_centers(city.bounds, GRID_STEP_KM)
-    print(f"  grid: {len(centers)} cells x {len(NEARBY_GROUPS)} groups + {len(TEXT_SEARCHES)} text searches")
-    results: list[RawResult] = []
-
-    for group, types in NEARBY_GROUPS:
-        fetched = 0
-        for center in centers:
-            try:
-                places = client.search_nearby(center, GRID_RADIUS_M, types)
-            except PlacesAPIError as exc:
-                # A 400 means the request itself is invalid (e.g. an unknown type): every cell would fail.
-                print(f"  ! skipped group {group.value}: {exc}", file=sys.stderr)
-                break
-            results += [{"source": f"nearby:{group.value}", "place": p} for p in places]
-            fetched += len(places)
-        print(f"  nearby {group.value:15} fetched {fetched}")
-
+def fetch_raw(client: PlacesClient, city: CityConfig, max_nearby: int | None = None) -> tuple[list[RawResult], bool]:
+    """The city's raw search results, and whether the search finished within `max_nearby`."""
+    results, complete = fetch_adaptive(client, city, max_nearby)
     for query in TEXT_SEARCHES:
-        places = list(client.search_text(query, city.bounds))
-        results += [{"source": f"text:{query}", "place": p} for p in places]
-        print(f"  text   {query!r:17} fetched {len(places)}")
+        results += [{"source": f"text:{query}", "place": p} for p in client.search_text(query, city.bounds)]
+    return results, complete
 
-    return results
+
+def fetch_adaptive(
+    client: PlacesClient, city: CityConfig, max_nearby: int | None = None
+) -> tuple[list[RawResult], bool]:
+    """Nearby Search on a quadtree, asking for every type at once in each cell.
+
+    Google returns at most 20 places per request, most popular first. The search starts with one
+    cell over the whole area; a cell whose 20 results are all popular enough to be among the
+    city's ADAPTIVE_TOP_N best found so far may hide more such places, so it is split in four.
+    A cell whose 20th result falls short can't: anything it didn't return is less popular still.
+    Bigger cells go first, so the bar rises quickly and prunes most small cells. `max_nearby`
+    caps the number of requests (the budget); the result says whether the search got to finish.
+    """
+    b = city.bounds
+    lat0, lng0 = (b.south + b.north) / 2, (b.west + b.east) / 2
+    width_km = (b.east - b.west) * KM_PER_DEG_LAT * math.cos(math.radians(lat0))
+    half_km = max(width_km, (b.north - b.south) * KM_PER_DEG_LAT) / 2  # a square over the whole area
+    queue = [(-half_km, 0, lat0, lng0, math.inf)]  # (-cell size, tie-breaker, centre, parent's 20th)
+    order = 1
+    kept_reviews: dict[str, int] = {}
+    results: list[RawResult] = []
+    requests = 0
+
+    def bar() -> int:
+        """Reviews a place needs to be among the top N found so far (at least MIN_RATING_COUNT)."""
+        if len(kept_reviews) < ADAPTIVE_TOP_N:
+            return MIN_RATING_COUNT
+        return max(MIN_RATING_COUNT, heapq.nlargest(ADAPTIVE_TOP_N, kept_reviews.values())[-1])
+
+    while queue and (max_nearby is None or requests < max_nearby):
+        neg_half, _, lat, lng, parent_last = heapq.heappop(queue)
+        if parent_last < bar():
+            continue  # the parent's 20th result was already below the bar
+        half = -neg_half
+        places = client.search_nearby(LatLng(lat, lng), half * math.sqrt(2) * 1000, ADAPTIVE_TYPES)
+        requests += 1
+        results += [{"source": f"adaptive:{half * 2:.1f}km", "place": p} for p in places]
+        for p in places:
+            if categorize(p) is not None and p.get("userRatingCount", 0) >= MIN_RATING_COUNT:
+                kept_reviews[p["id"]] = p["userRatingCount"]
+        last = places[-1].get("userRatingCount", 0) if len(places) == MAX_NEARBY_RESULTS else -1
+        if last >= bar() and half * 2 > MIN_CELL_KM:
+            dlat = half / 2 / KM_PER_DEG_LAT
+            dlng = half / 2 / (KM_PER_DEG_LAT * math.cos(math.radians(lat)))
+            for sy in (-1, 1):
+                for sx in (-1, 1):
+                    heapq.heappush(queue, (-half / 2, order, lat + sy * dlat, lng + sx * dlng, last))
+                    order += 1
+    complete = not any(parent_last >= bar() for *_, parent_last in queue)
+    print(f"  adaptive: {requests} Nearby requests, {len(kept_reviews)} places with {MIN_RATING_COUNT}+ reviews")
+    return results, complete
+
+
+def catalog_config(client: PlacesClient, city: CatalogCity) -> CityConfig:
+    """A catalog city's search area: a square around the centre Google gives for its name."""
+    place_id = client.find_place_id(city.query)
+    if place_id is None:
+        raise PlacesAPIError(404, f"no place found for {city.query!r}")
+    centre = client.place_location(place_id)
+    dlat = ADAPTIVE_RADIUS_KM / KM_PER_DEG_LAT
+    dlng = ADAPTIVE_RADIUS_KM / (KM_PER_DEG_LAT * math.cos(math.radians(centre.lat)))
+    bounds = BoundingBox(centre.lat - dlat, centre.lng - dlng, centre.lat + dlat, centre.lng + dlng)
+    return catalog_city_config(city, bounds)
+
+
+def catalog_city_config(city: CatalogCity, bounds: BoundingBox) -> CityConfig:
+    return CityConfig(
+        city.id, city.name_en, city.currency, city.timezone, bounds, name_tr=city.name_tr, country_code=city.country
+    )
 
 
 def categorize(place: dict[str, Any]) -> POICategory | None:
@@ -278,19 +352,33 @@ def curated_rows(city: CityConfig) -> list[dict[str, Any]]:
     ]
 
 
-def save_city(city: CityConfig, rows: list[dict[str, Any]]) -> int:
+def save_city(city: CityConfig, rows: list[dict[str, Any]], requests: int | None = None) -> int:
     """Upsert the city and its POIs; return how many stale POIs were removed."""
     with SessionLocal() as db:
         prices = CITY_PRICES.get(city.id)
         city_stmt = pg_insert(City).values(
             id=city.id,
             name=city.name,
+            name_tr=city.name_tr,
+            country_code=city.country_code,
             currency_code=city.currency_code,
             timezone=city.timezone,
             price_basis=prices.basis if prices else None,
             prices_checked_on=prices.checked_on if prices else None,
+            refreshed_at=func.now(),
+            last_ingest_requests=requests,
         )
-        city_columns = ("name", "currency_code", "timezone", "price_basis", "prices_checked_on")
+        city_columns = (
+            "name",
+            "name_tr",
+            "country_code",
+            "currency_code",
+            "timezone",
+            "price_basis",
+            "prices_checked_on",
+            "refreshed_at",
+            "last_ingest_requests",
+        )
         db.execute(
             city_stmt.on_conflict_do_update(
                 index_elements=[City.id],
@@ -330,6 +418,33 @@ def save_city(city: CityConfig, rows: list[dict[str, Any]]) -> int:
     return removed
 
 
+def pick_for_refresh(
+    cities: list[tuple[str, datetime | None, int | None]], budget: int, now: datetime | None = None
+) -> list[str]:
+    """Cities to refresh this run: the stalest first (never-refreshed ones before all), for as
+    long as their expected cost (the last run's request count) fits in the budget. Cities
+    refreshed in the last REFRESH_MIN_AGE_DAYS are left alone."""
+    cutoff = (now or datetime.now(UTC)) - timedelta(days=REFRESH_MIN_AGE_DAYS)
+    due = [c for c in cities if c[1] is None or c[1] < cutoff]
+    oldest_first = sorted(due, key=lambda c: (c[1] is not None, c[1] or cutoff))
+    picked: list[str] = []
+    for city_id, _, last_requests in oldest_first:
+        cost = last_requests or EXPECTED_CITY_REQUESTS
+        if cost > budget:
+            break  # it stays first in line for the next run
+        picked.append(city_id)
+        budget -= cost
+    return picked
+
+
+def refresh_candidates() -> list[tuple[str, datetime | None, int | None]]:
+    """Cities already in the database that this script knows how to search."""
+    known = set(CITIES) | {c.id for c in CATALOG}
+    with SessionLocal() as db:
+        rows = db.execute(select(City.id, City.refreshed_at, City.last_ingest_requests)).all()
+    return [(r.id, r.refreshed_at, r.last_ingest_requests) for r in rows if r.id in known]
+
+
 def print_summary(rows: list[dict[str, Any]]) -> None:
     counts = Counter(row["category"] for row in rows)
     print(f"  kept {len(rows)}: " + "  ".join(f"{cat}={n}" for cat, n in sorted(counts.items())))
@@ -340,33 +455,66 @@ def print_summary(rows: list[dict[str, Any]]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--city", choices=sorted(CITIES), help="ingest a single city (default: all)")
+    catalog = {c.id: c for c in CATALOG if c.id not in CITIES}
+    parser.add_argument(
+        "--city", action="append", choices=sorted({*CITIES, *catalog}), help="city to ingest (repeatable)"
+    )
     parser.add_argument("--dry-run", action="store_true", help="fetch and summarize without writing to the DB")
     parser.add_argument("--use-cache", action="store_true", help="reuse cached raw results instead of calling the API")
+    parser.add_argument("--max-requests", type=int, help="stop searching once this many Nearby requests are made")
+    parser.add_argument(
+        "--refresh", action="store_true", help="refresh the stalest cities in the database that fit --max-requests"
+    )
     args = parser.parse_args()
+    sys.stdout.reconfigure(errors="replace")  # place names in any script, on any console
 
-    cities = [CITIES[args.city]] if args.city else list(CITIES.values())
+    if args.refresh:
+        if args.max_requests is None:
+            sys.exit("--refresh needs --max-requests (the budget)")
+        city_ids = pick_for_refresh(refresh_candidates(), args.max_requests)
+        print(f"refreshing {len(city_ids)} cities: {', '.join(city_ids) or '-'}")
+    else:
+        city_ids = args.city or list(CITIES)
     api_key = get_settings().google_places_api_key
     if not args.use_cache and not api_key:
         sys.exit("GOOGLE_PLACES_API_KEY is not set in .env")
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     with PlacesClient(api_key or "") as client:
-        for city in cities:
-            print(f"== {city.name}")
-            cache_file = CACHE_DIR / f"{city.id}.json"
+        for city_id in city_ids:
+            cache_file = CACHE_DIR / f"{city_id}.json"
+            requests = None
             if args.use_cache:
-                raw = json.loads(cache_file.read_text(encoding="utf-8"))
-                print(f"  loaded {len(raw)} raw results from {cache_file.name}")
+                cached = json.loads(cache_file.read_text(encoding="utf-8"))
+                # Newer caches store the search area along with the results (older ones are a
+                # plain list). Names, currency etc. always come from the current code.
+                raw = cached["raw"] if isinstance(cached, dict) else cached
+                if city_id in CITIES:
+                    city = CITIES[city_id]
+                else:
+                    city = catalog_city_config(catalog[city_id], BoundingBox(**cached["city"]["bounds"]))
+                print(f"== {city.name}\n  loaded {len(raw)} raw results from {cache_file.name}")
             else:
-                raw = fetch_raw(client, city)
-                cache_file.write_text(json.dumps(raw, ensure_ascii=False), encoding="utf-8")
+                city = CITIES.get(city_id) or catalog_config(client, catalog[city_id])
+                print(f"== {city.name}")
+                before = client.requests["nearby"]
+                budget = None if args.max_requests is None else args.max_requests - before
+                raw, complete = fetch_raw(client, city, max_nearby=budget)
+                requests = client.requests["nearby"] - before
+                if not complete:
+                    # Saving half a city would delete the places the search didn't get to.
+                    print("  the request budget ran out before the search finished: not saved")
+                    break
+                cache_file.write_text(
+                    json.dumps({"city": asdict(city), "raw": raw}, ensure_ascii=False), encoding="utf-8"
+                )
 
             rows = build_rows(raw, city)
             print_summary(rows)
             if not args.dry_run:
-                removed = save_city(city, rows)
+                removed = save_city(city, rows, requests)
                 print(f"  saved {len(rows)} POIs, removed {removed} stale")
+    print("requests:", dict(client.requests))
 
 
 if __name__ == "__main__":

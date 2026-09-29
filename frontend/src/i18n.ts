@@ -9,7 +9,7 @@ const en = {
     label: "City",
     placeholder: "Search a city…",
     clear: "Clear city",
-    noResults: (supported: string) => `Not supported yet. Available: ${supported}`,
+    noResults: (count: number) => `Not supported yet. ${count} cities are available: scroll the list or the map.`,
     places: (n: number) => `${n} places`,
   },
   hotel: {
@@ -179,7 +179,7 @@ const tr: Strings = {
     label: "Şehir",
     placeholder: "Şehir ara…",
     clear: "Şehri temizle",
-    noResults: (supported) => `Henüz desteklenmiyor. Mevcut şehirler: ${supported}`,
+    noResults: (count) => `Henüz desteklenmiyor. ${count} şehir mevcut: listeye ya da haritaya göz at.`,
     places: (n) => `${n} yer`,
   },
   hotel: {
@@ -340,18 +340,9 @@ const tr: Strings = {
 
 export const STRINGS: Record<Lang, Strings> = { en, tr };
 
-// Local names shown in the UI. City aliases for search will move to the database when more
-// cities are added; until then this small table covers the two MVP cities.
-const CITY_NAMES: Record<string, Partial<Record<Lang, string>>> = {
-  istanbul: { tr: "İstanbul" },
-};
-const CITY_ALIASES: Record<string, string[]> = {
-  istanbul: ["İstanbul", "Constantinople", "Estambul", "Stambul"],
-  paris: ["París", "Parigi"],
-};
-
-export const cityName = (city: City, lang: Lang) => CITY_NAMES[city.id]?.[lang] ?? city.name;
-export const cityAliases = (city: City) => [city.name, city.id, ...(CITY_ALIASES[city.id] ?? [])];
+// City names come from the API in English and Turkish; search matches either, and the id.
+export const cityName = (city: City, lang: Lang) => (lang === "tr" && city.name_tr) || city.name;
+export const cityAliases = (city: City) => [city.name, city.id, ...(city.name_tr ? [city.name_tr] : [])];
 
 export function initialLang(): Lang {
   try {

@@ -183,8 +183,10 @@ jobs:
             --cpu 1 \
             --quiet
 
-      # Kept on the current image but not run here: POI ingestion calls the paid Places API, so it
-      # is started by hand when needed (gcloud run jobs execute noloroute-ingest).
+      # Kept on the current image but not run here: POI ingestion calls the paid Places API. By
+      # default it is the monthly refresh (the stalest cities within a budget of 900 Nearby
+      # requests, inside the free 1,000 a month), started by Cloud Scheduler; other runs pass
+      # their own arguments (gcloud run jobs execute noloroute-ingest --args=...).
       - name: Update the POI ingestion job
         run: |
           gcloud run jobs deploy "$INGEST_JOB" \
@@ -194,9 +196,9 @@ jobs:
             --set-cloudsql-instances "$SQL_INSTANCE" \
             --set-secrets "DATABASE_URL=database-url:latest,GOOGLE_PLACES_API_KEY=maps-api-key:latest" \
             --command python \
-            --args=-m,scripts.ingest_places \
+            --args=-m,scripts.ingest_places,--refresh,--max-requests,900 \
             --max-retries 0 \
-            --task-timeout 1200s \
+            --task-timeout 3600s \
             --memory 1Gi \
             --quiet
 

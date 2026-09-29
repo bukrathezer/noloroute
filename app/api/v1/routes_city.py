@@ -23,6 +23,8 @@ def list_cities(db: Annotated[Session, Depends(get_db)]) -> list[CityOut]:
         CityOut(
             id=city.id,
             name=city.name,
+            name_tr=city.name_tr,
+            country_code=city.country_code,
             currency_code=city.currency_code,
             poi_count=count,
             center_lat=lat,
