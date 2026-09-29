@@ -13,7 +13,7 @@ POI_COUNT = 12
 
 def seed_city(session: Session) -> None:
     """A small city whose POIs sit around HOTEL; half of them have an entry price."""
-    session.add(City(id=CITY_ID, name="Test City", currency_code="EUR"))
+    session.add(City(id=CITY_ID, name="Test City", currency_code="EUR", timezone="Europe/Paris"))
     for i in range(POI_COUNT):
         session.add(
             POI(

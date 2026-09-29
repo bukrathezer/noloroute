@@ -1,8 +1,9 @@
 import asyncio
 import logging
-from datetime import date, timedelta
+from datetime import UTC, date, timedelta, tzinfo
 from decimal import Decimal
 from typing import Annotated
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.concurrency import run_in_threadpool
@@ -10,17 +11,35 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser, DbSession
+from app.core.rate_limit import RateLimiter, client_ip, too_many_requests
 from app.db.session import get_db
 from app.models import POI, City, RouteStop, SavedRoute, User
 from app.schemas.route import DayPlan, RemoveStopRequest, RoutePlanRequest, RoutePlanResponse
 from app.schemas.saved_route import SavedRouteOut, SavedRouteSummary, SaveRouteRequest
 from app.services.geo import LatLng
 from app.services.route_optimizer import HotelTooFarError, build_day, order_day, plan_trip
-from app.services.routes_client import RoutesClient
+from app.services.routes_client import RoutesClient, TravelMode
 from app.services.weather import DayWeather, WeatherClient, WeatherError
 
 router = APIRouter(prefix="/routes", tags=["routes"])
 logger = logging.getLogger(__name__)
+
+# Transit routing is the costliest in Google calls (two route matrices per day), so it is capped
+# per client: plans and stop removals together.
+TRANSIT_ROUTINGS_PER_IP = RateLimiter(limit=30, window_seconds=60 * 60)
+
+
+def limit_transit(request: Request, mode: TravelMode) -> None:
+    if mode is TravelMode.TRANSIT and (wait := TRANSIT_ROUTINGS_PER_IP.hit(client_ip(request))) is not None:
+        raise too_many_requests(wait)
+
+
+def city_timezone(city: City) -> tzinfo:
+    try:
+        return ZoneInfo(city.timezone)
+    except (ZoneInfoNotFoundError, ValueError):
+        logger.warning("Unknown time zone %r for city %s, using UTC", city.timezone, city.id)
+        return UTC
 
 
 def get_routes_client(request: Request) -> RoutesClient | None:
@@ -53,10 +72,12 @@ def load_city_pois(db: Session, city_id: str) -> tuple[City | None, list[POI]]:
 @router.post("/plan", response_model=RoutePlanResponse)
 async def plan_route(
     req: RoutePlanRequest,
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
     routes_client: Annotated[RoutesClient | None, Depends(get_routes_client)],
     weather_client: Annotated[WeatherClient | None, Depends(get_weather_client)],
 ) -> RoutePlanResponse:
+    limit_transit(request, req.travel_mode)
     hotel = LatLng(req.accommodation.lat, req.accommodation.lng)
     dates = [req.start_date + timedelta(days=i) for i in range(req.duration_days)] if req.start_date else None
     # The DB query (synchronous SQLAlchemy, so in a worker thread) and the weather lookup run side by side.
@@ -69,7 +90,15 @@ async def plan_route(
 
     try:
         days = await plan_trip(
-            pois, hotel, req.duration_days, req.budget, req.travel_mode, routes_client, dates=dates, weather=weather
+            pois,
+            hotel,
+            req.duration_days,
+            req.budget,
+            req.travel_mode,
+            routes_client,
+            dates=dates,
+            weather=weather,
+            tz=city_timezone(city),
         )
     except HotelTooFarError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
@@ -90,6 +119,7 @@ async def plan_route(
 @router.post("/plan/remove-stop", response_model=RoutePlanResponse)
 async def remove_stop(
     req: RemoveStopRequest,
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
     routes_client: Annotated[RoutesClient | None, Depends(get_routes_client)],
 ) -> RoutePlanResponse:
@@ -99,16 +129,24 @@ async def remove_stop(
     if day is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "That stop is not in the plan")
 
+    limit_transit(request, plan.travel_mode)
     remaining_ids = [s.poi_id for s in day.stops if s.poi_id != req.poi_id]
-    pois = await run_in_threadpool(_load_pois, db, plan.city_id, remaining_ids)
+    city, pois = await run_in_threadpool(_load_city_and_pois, db, plan.city_id, remaining_ids)
     hotel = LatLng(plan.accommodation.lat, plan.accommodation.lng)
-    loop, source = await order_day(hotel, pois, plan.travel_mode, routes_client)
+    routed = await order_day(hotel, pois, plan.travel_mode, routes_client, day=day.date, tz=city_timezone(city))
     new_day = build_day(
-        day.day_number, pois, loop, source, day_date=day.date, weather=day.weather, rain_adjusted=day.rain_adjusted
+        day.day_number, pois, routed, day_date=day.date, weather=day.weather, rain_adjusted=day.rain_adjusted
     )
 
     days = [new_day if d.day_number == day.day_number else d for d in plan.days]
     return plan.model_copy(update={"days": days, **_plan_totals(days)})
+
+
+def _load_city_and_pois(db: Session, city_id: str, poi_ids: list[str]) -> tuple[City, list[POI]]:
+    city = db.get(City, city_id)
+    if city is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"Unknown city '{city_id}'")
+    return city, _load_pois(db, city_id, poi_ids)
 
 
 def _load_pois(db: Session, city_id: str, poi_ids: list[str]) -> list[POI]:

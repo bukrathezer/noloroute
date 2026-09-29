@@ -7,9 +7,11 @@
                     into `days` consecutive slices of roughly equal time, so each day heads one way.
 3. fit_to_dates     With trip dates: a stop that is closed on its day moves to the least busy day
                     it is open on (or is dropped); on rainy days, outdoor stops move to a dry day.
-4. order_day        Google Routes API optimizes the visiting order (hotel -> stops -> hotel) and
-                    returns real travel times. If it fails, fall back to nearest-neighbour ordering
-                    with straight-line time estimates so a plan is always returned.
+4. order_day        Walking and driving: Google Routes API optimizes the visiting order (hotel ->
+                    stops -> hotel) and returns real travel times. Transit: each leg is walked or
+                    ridden, and our own TSP solver orders the day (see transit_planner.py). If
+                    Google fails, fall back to nearest-neighbour ordering with straight-line time
+                    estimates so a plan is always returned.
 """
 
 import asyncio
@@ -20,16 +22,17 @@ import unicodedata
 from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, tzinfo
 from decimal import Decimal
 from itertools import pairwise
 from typing import Literal
 
 from app.models import POI
-from app.schemas.route import DayPlan, DayWeatherOut, PlannedStop
-from app.services.geo import LatLng, bearing_rad, haversine_km
+from app.schemas.route import DayPlan, DayWeatherOut, LegDetails, PlannedStop, TransitRideOut
+from app.services.geo import DETOUR_FACTOR, LatLng, bearing_rad, haversine_km
 from app.services.opening_hours import hours_on, is_open_long_enough
 from app.services.routes_client import Leg, LoopRoute, RoutesAPIError, RoutesClient, TravelMode
+from app.services.transit_planner import order_day_transit
 from app.services.weather import DayWeather
 
 logger = logging.getLogger(__name__)
@@ -61,8 +64,9 @@ class ModeProfile:
 MODE_PROFILES = {
     TravelMode.DRIVE: ModeProfile(travel_min_per_stop=20, distance_half_score_km=10.0, fallback_speed_kmh=18.0),
     TravelMode.WALK: ModeProfile(travel_min_per_stop=30, distance_half_score_km=4.0, fallback_speed_kmh=4.5),
+    # Door to door, waiting included; short hops are walked, longer ones ridden.
+    TravelMode.TRANSIT: ModeProfile(travel_min_per_stop=25, distance_half_score_km=7.0, fallback_speed_kmh=12.0),
 }
-DETOUR_FACTOR = 1.3  # streets aren't straight lines
 
 RoutingSource = Literal["google", "estimate"]
 
@@ -75,6 +79,13 @@ class HotelTooFarError(ValueError):
     pass
 
 
+@dataclass(frozen=True)
+class RoutedDay:
+    loop: LoopRoute
+    source: RoutingSource
+    transit_available: bool | None = None  # transit plans only: whether Google had any transit route
+
+
 async def plan_trip(
     pois: Sequence[POI],
     hotel: LatLng,
@@ -84,8 +95,12 @@ async def plan_trip(
     routes_client: RoutesClient | None,
     dates: Sequence[date] | None = None,
     weather: Sequence[DayWeather] | None = None,
+    tz: tzinfo = UTC,
 ) -> list[DayPlan]:
-    """Plan the trip. `dates` (one per day) enables opening hours; `weather` (one per day) rain tweaks."""
+    """Plan the trip. `dates` (one per day) enables opening hours; `weather` (one per day) rain tweaks.
+
+    `tz` is the city's time zone, which transit timetables are read in.
+    """
     if not pois or min(haversine_km(hotel, location(p)) for p in pois) > MAX_HOTEL_DISTANCE_KM:
         raise HotelTooFarError(f"Accommodation is more than {MAX_HOTEL_DISTANCE_KM:g} km from every sight")
 
@@ -101,18 +116,22 @@ async def plan_trip(
         groups, rain_adjusted = fit_to_dates(groups, dates, rainy, mode)
 
     # Days are independent, so route them concurrently.
-    routed = await asyncio.gather(*(order_day(hotel, group, mode, routes_client) for group in groups))
+    routed = await asyncio.gather(
+        *(
+            order_day(hotel, group, mode, routes_client, day=dates[i] if dates else None, tz=tz)
+            for i, group in enumerate(groups)
+        )
+    )
     return [
         build_day(
             day_number,
             group,
-            loop,
-            source,
+            day_route,
             day_date=dates[day_number - 1] if dates else None,
             weather=to_weather_out(weather[day_number - 1]) if weather else None,
             rain_adjusted=rain_adjusted[day_number - 1],
         )
-        for day_number, (group, (loop, source)) in enumerate(zip(groups, routed, strict=True), start=1)
+        for day_number, (group, day_route) in enumerate(zip(groups, routed, strict=True), start=1)
     ]
 
 
@@ -287,17 +306,27 @@ def fit_to_dates(
 
 
 async def order_day(
-    hotel: LatLng, stops: Sequence[POI], mode: TravelMode, routes_client: RoutesClient | None
-) -> tuple[LoopRoute, RoutingSource]:
+    hotel: LatLng,
+    stops: Sequence[POI],
+    mode: TravelMode,
+    routes_client: RoutesClient | None,
+    day: date | None = None,
+    tz: tzinfo = UTC,
+) -> RoutedDay:
+    """Order one day's stops and route its legs. `day` and `tz` pick the transit timetable."""
     if not stops:
-        return LoopRoute(order=[], legs=[Leg(seconds=0, meters=0)]), "estimate"
+        return RoutedDay(LoopRoute(order=[], legs=[Leg(seconds=0, meters=0)]), "estimate")
     points = [location(s) for s in stops]
     if routes_client is not None:
         try:
-            return await routes_client.optimize_loop(hotel, points, mode), "google"
+            if mode is TravelMode.TRANSIT:
+                visits = [s.avg_duration_min for s in stops]
+                loop, has_transit = await order_day_transit(hotel, points, visits, routes_client, day, tz)
+                return RoutedDay(loop, "google", transit_available=has_transit)
+            return RoutedDay(await routes_client.optimize_loop(hotel, points, mode), "google")
         except RoutesAPIError as exc:
             logger.warning("Routes API failed, falling back to estimates: %s", exc)
-    return estimate_loop(hotel, points, mode), "estimate"
+    return RoutedDay(estimate_loop(hotel, points, mode), "estimate")
 
 
 def estimate_loop(hotel: LatLng, points: Sequence[LatLng], mode: TravelMode) -> LoopRoute:
@@ -323,12 +352,12 @@ def _estimate_leg(a: LatLng, b: LatLng, mode: TravelMode) -> Leg:
 def build_day(
     day_number: int,
     stops: Sequence[POI],
-    loop: LoopRoute,
-    source: RoutingSource,
+    routed: RoutedDay,
     day_date: date | None = None,
     weather: DayWeatherOut | None = None,
     rain_adjusted: bool = False,
 ) -> DayPlan:
+    loop = routed.loop
     ordered = [stops[i] for i in loop.order]
     planned = [
         PlannedStop(
@@ -342,6 +371,7 @@ def build_day(
             travel_minutes_from_previous=_minutes(leg.seconds),
             distance_km_from_previous=_km(leg.meters),
             path_from_previous=leg.polyline,
+            leg_from_previous=leg_details(leg),
             entry_price=poi.entry_price,
             rating=poi.rating,
             hours=hours_on(poi.opening_hours, day_date) if day_date else None,
@@ -356,12 +386,41 @@ def build_day(
         return_travel_minutes=_minutes(back.seconds),
         return_distance_km=_km(back.meters),
         return_path=back.polyline,
+        return_leg=leg_details(back),
         total_travel_minutes=_minutes(sum(leg.seconds for leg in loop.legs)),
         total_visit_minutes=sum(poi.avg_duration_min for poi in ordered),
-        routing_source=source,
+        routing_source=routed.source,
+        transit_available=routed.transit_available,
         date=day_date,
         weather=weather,
         rain_adjusted=rain_adjusted,
+    )
+
+
+def leg_details(leg: Leg) -> LegDetails | None:
+    """How a transit-plan leg is travelled; None in walking and driving plans."""
+    if leg.mode is None:
+        return None
+    return LegDetails(
+        mode=leg.mode,
+        rides=[
+            TransitRideOut(
+                vehicle=ride.vehicle,
+                line=ride.line,
+                line_color=ride.line_color,
+                line_text_color=ride.line_text_color,
+                headsign=ride.headsign,
+                from_stop=ride.from_stop,
+                to_stop=ride.to_stop,
+                stop_count=ride.stop_count,
+                minutes=_minutes(ride.seconds),
+                agency=ride.agency,
+            )
+            for ride in leg.rides
+        ],
+        walk_minutes=_minutes(leg.walk_seconds) if leg.walk_seconds is not None else None,
+        alternative_mode=leg.alternative[0] if leg.alternative else None,
+        alternative_minutes=_minutes(leg.alternative[1]) if leg.alternative else None,
     )
 
 

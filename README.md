@@ -74,6 +74,7 @@ optional budget returns a day-by-day plan:
 3. **Order each day** — the Google Routes API optimizes the visiting order of the
    accommodation → stops → accommodation loop and returns real travel times. If Google is
    unavailable, a nearest-neighbour order with straight-line estimates is used instead.
+   For public transport (`"travel_mode": "TRANSIT"`) the order is computed differently, see below.
 
 ## Trip dates, opening hours and weather
 With a `start_date`, every day gets a date:
@@ -85,6 +86,26 @@ With a `start_date`, every day gets a date:
   ahead, beyond that the average of the same dates over the past 5 years. On rainy days outdoor
   stops (parks, viewpoints) move to a dry day when possible, and a rainy trip favours indoor
   sights. If the weather service is down, the plan is made without it.
+
+## Public transport
+With `"travel_mode": "TRANSIT"` every leg is either walked or taken by public transport, whichever
+is better (`app/services/transit_planner.py`):
+
+1. Two Route Matrix calls give walking and transit times between every pair of points (the
+   accommodation and the day's stops), using that day's timetable at midday.
+2. For each pair: walks of up to 10 minutes are always walked, and transit is chosen only when it
+   saves at least 5 minutes (waiting, stairs and tickets make a close call not worth it).
+3. The Routes API can't optimize the order of transit waypoints, so the day is ordered by our own
+   travelling-salesman solver (`app/services/tsp.py`): Held-Karp dynamic programming finds the
+   exact best order for up to 10 stops; longer days use nearest neighbour improved with 2-opt.
+4. Each leg of the final order is routed again at the time the traveller would actually leave
+   (09:00 local time, plus the travel and visits before it). That gives the street path and the
+   lines to take (line, direction, stops); the plan also shows the option not taken, e.g. "on foot: 45 min".
+
+Timetables are read in the city's time zone (stored per city). Google publishes transit only a few
+weeks ahead, so for later trips the same weekday in the coming week is used. Where Google has no
+transit data, every leg is walked and the plan says so. Transit plans cost the most Google calls
+(two route matrices per day), so they are rate-limited per client.
 
 ## Editing a plan and finding the accommodation
 - `POST /api/v1/routes/plan/remove-stop` drops a stop and re-routes only that day.
@@ -120,6 +141,5 @@ secrets (database URL, Maps API key, JWT signing key) live in Secret Manager. PO
 the `noloroute-ingest` Cloud Run job.
 
 ## Roadmap
-- Weather-aware route suggestions
 - City insights (crowd levels, price analysis)
 - Mobile app (React Native)

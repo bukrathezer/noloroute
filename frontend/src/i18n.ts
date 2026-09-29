@@ -32,7 +32,10 @@ const en = {
     range: (from: string, to: string) => `${from} – ${to}`,
     hint: "With dates we skip places that are closed and show the weather.",
   },
-  mode: { label: "Getting around", WALK: "Walking", DRIVE: "Driving" } satisfies Record<TravelMode | "label", string>,
+  mode: { label: "Getting around", WALK: "Walking", DRIVE: "Driving", TRANSIT: "Transit" } satisfies Record<
+    TravelMode | "label",
+    string
+  >,
   budget: {
     label: "Entry-fee budget",
     optional: "optional",
@@ -52,6 +55,15 @@ const en = {
     visit: "visit",
     leg: (mode: string, duration: string, km: string, fromHotel: boolean) =>
       `${mode} ${duration} · ${km} km${fromHotel ? " from your hotel" : ""}`,
+    // How a leg is travelled, as used in r.leg: "Walking 12 min · 0.9 km".
+    legMode: { WALK: "Walking", DRIVE: "Driving", TRANSIT: "Transit" } satisfies Record<TravelMode, string>,
+    ride: (from: string, to: string, stops: number) => `${from} → ${to} · ${stops} ${stops === 1 ? "stop" : "stops"}`,
+    towards: (headsign: string) => `towards ${headsign}`,
+    walkingPart: (duration: string) => `incl. ${duration} on foot`,
+    alternative: { WALK: (d: string) => `on foot: ${d}`, TRANSIT: (d: string) => `by transit: ${d}` },
+    noTransit: "No public transport data was found here, so every leg is on foot.",
+    mapLegend: "On the map, dotted lines are walks and solid lines are rides.",
+    attribution: "Routes and travel times: Google Maps",
     backToHotel: "Back to your hotel",
     unknownCost: "—",
     estimated: "Approximate times: live routing was unavailable",
@@ -69,6 +81,7 @@ const en = {
     unknownCity: "This city isn't available.",
     generic: "Something went wrong while planning. Please try again.",
     loadCities: "Couldn't load the city list.",
+    tooMany: "Too many transit plans in a short time. Please try again a little later.",
   },
   categories: {
     MUSEUM: "Museum",
@@ -182,7 +195,7 @@ const tr: Strings = {
     range: (from, to) => `${from} – ${to}`,
     hint: "Tarih seçince kapalı yerler plana girmez ve hava durumu gösterilir.",
   },
-  mode: { label: "Ulaşım", WALK: "Yürüyerek", DRIVE: "Araçla" },
+  mode: { label: "Ulaşım", WALK: "Yürüyerek", DRIVE: "Araçla", TRANSIT: "Toplu taşıma" },
   budget: {
     label: "Giriş ücreti bütçesi",
     optional: "isteğe bağlı",
@@ -204,6 +217,14 @@ const tr: Strings = {
       fromHotel
         ? `Otelden ${mode.toLocaleLowerCase("tr")} ${duration} · ${km} km`
         : `${mode} ${duration} · ${km} km`,
+    legMode: { WALK: "Yürüyerek", DRIVE: "Araçla", TRANSIT: "Toplu taşımayla" },
+    ride: (from, to, stops) => `${from} → ${to} · ${stops} durak`,
+    towards: (headsign) => `${headsign} yönü`,
+    walkingPart: (duration) => `${duration} yürüme dahil`,
+    alternative: { WALK: (d) => `yürüyerek ${d}`, TRANSIT: (d) => `toplu taşımayla ${d}` },
+    noTransit: "Burada toplu taşıma verisi bulunamadı; bütün yollar yürüyerek planlandı.",
+    mapLegend: "Haritada noktalı çizgiler yürüyüşü, düz çizgiler toplu taşımayı gösterir.",
+    attribution: "Rotalar ve süreler: Google Maps",
     backToHotel: "Otele dönüş",
     unknownCost: "—",
     estimated: "Yaklaşık süreler: canlı rota hesaplanamadı",
@@ -221,6 +242,7 @@ const tr: Strings = {
     unknownCity: "Bu şehir mevcut değil.",
     generic: "Planlama sırasında bir sorun oluştu. Lütfen tekrar dene.",
     loadCities: "Şehir listesi yüklenemedi.",
+    tooMany: "Kısa sürede çok fazla toplu taşıma planı istendi. Biraz sonra tekrar dene.",
   },
   categories: {
     MUSEUM: "Müze",

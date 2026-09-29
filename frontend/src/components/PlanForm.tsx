@@ -123,46 +123,46 @@ export function PlanForm({ cities, form, onChange, onSubmit, loading, lang }: Pr
         </div>
 
         <div className="field">
-          <span className="field-label">{t.mode.label}</span>
-          <div className="segmented" role="radiogroup" aria-label={t.mode.label}>
-            {(["WALK", "DRIVE"] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                role="radio"
-                aria-checked={form.mode === mode}
-                className={form.mode === mode ? "selected" : undefined}
-                onClick={() => onChange({ mode })}
-              >
-                {t.mode[mode]}
-              </button>
-            ))}
+          <label className="field-label" htmlFor="start-date">
+            {t.dates.label}
+          </label>
+          <div className="input-wrap">
+            <input
+              id="start-date"
+              type="date"
+              min={todayIso()}
+              max={addDays(todayIso(), MAX_DAYS_AHEAD)}
+              value={form.startDate}
+              onChange={(e) => onChange({ startDate: e.target.value })}
+            />
           </div>
+          <p className="hint">
+            {form.startDate
+              ? t.dates.range(
+                  formatDay(form.startDate, lang, false),
+                  formatDay(addDays(form.startDate, form.days - 1), lang, false),
+                )
+              : t.dates.hint}
+          </p>
         </div>
       </div>
 
       <div className="field">
-        <label className="field-label" htmlFor="start-date">
-          {t.dates.label}
-        </label>
-        <div className="input-wrap">
-          <input
-            id="start-date"
-            type="date"
-            min={todayIso()}
-            max={addDays(todayIso(), MAX_DAYS_AHEAD)}
-            value={form.startDate}
-            onChange={(e) => onChange({ startDate: e.target.value })}
-          />
+        <span className="field-label">{t.mode.label}</span>
+        <div className="segmented" role="radiogroup" aria-label={t.mode.label}>
+          {(["WALK", "TRANSIT", "DRIVE"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="radio"
+              aria-checked={form.mode === mode}
+              className={form.mode === mode ? "selected" : undefined}
+              onClick={() => onChange({ mode })}
+            >
+              {t.mode[mode]}
+            </button>
+          ))}
         </div>
-        <p className="hint">
-          {form.startDate
-            ? t.dates.range(
-                formatDay(form.startDate, lang, false),
-                formatDay(addDays(form.startDate, form.days - 1), lang, false),
-              )
-            : t.dates.hint}
-        </p>
       </div>
 
       <div className="field">

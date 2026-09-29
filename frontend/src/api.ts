@@ -1,6 +1,7 @@
 // Types mirror the FastAPI schemas (app/schemas). Money fields arrive as strings (Python Decimal).
 
-export type TravelMode = "WALK" | "DRIVE";
+/** "TRANSIT": walking plus public transport, each leg taking whichever is better. */
+export type TravelMode = "WALK" | "DRIVE" | "TRANSIT";
 
 export interface City {
   id: string;
@@ -26,6 +27,34 @@ export interface PlanRequest {
   start_date?: string;
 }
 
+export interface TransitRide {
+  /** Google vehicle type: "SUBWAY", "BUS", "TRAM", "FERRY", "HEAVY_RAIL", … */
+  vehicle: string;
+  /** Short line name ("M2") when there is one, else the full name. */
+  line: string;
+  line_color: string | null;
+  line_text_color: string | null;
+  headsign: string | null;
+  from_stop: string;
+  to_stop: string;
+  stop_count: number;
+  minutes: number;
+  agency: string | null;
+}
+
+export type LegMode = "WALK" | "TRANSIT";
+
+/** How one leg of a transit plan is travelled. */
+export interface LegDetails {
+  mode: LegMode;
+  rides: TransitRide[];
+  /** Time on foot within the leg, including walks to and from stops. */
+  walk_minutes: number | null;
+  /** The option not taken: walking instead of transit, or a faster transit option. */
+  alternative_mode: LegMode | null;
+  alternative_minutes: number | null;
+}
+
 export interface PlannedStop {
   order_in_day: number;
   poi_id: string;
@@ -37,6 +66,8 @@ export interface PlannedStop {
   travel_minutes_from_previous: number;
   distance_km_from_previous: number;
   path_from_previous: string | null;
+  /** Transit plans only (missing from plans saved before transit existed). */
+  leg_from_previous?: LegDetails | null;
   entry_price: string | null;
   rating: number | null;
   /** Opening hours on that day, e.g. "09:00–18:00", "24/7", "closed". */
@@ -49,12 +80,15 @@ export interface DayPlan {
   return_travel_minutes: number;
   return_distance_km: number;
   return_path: string | null;
+  return_leg?: LegDetails | null;
   total_travel_minutes: number;
   total_visit_minutes: number;
   routing_source: "google" | "estimate";
   date: string | null;
   weather: DayWeather | null;
   rain_adjusted: boolean;
+  /** Transit plans: false when Google has no public transport data here (every leg is walked). */
+  transit_available?: boolean | null;
 }
 
 export type WeatherCondition =

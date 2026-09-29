@@ -52,6 +52,36 @@ class DayWeatherOut(BaseModel):
     is_rainy: bool
 
 
+LegMode = Literal["WALK", "TRANSIT"]
+
+
+class TransitRideOut(BaseModel):
+    vehicle: str = Field(description='Google vehicle type, e.g. "SUBWAY", "BUS", "TRAM", "FERRY", "HEAVY_RAIL".')
+    line: str = Field(description='The line\'s short name ("M2") when it has one, else its full name.')
+    line_color: str | None = Field(default=None, examples=["#e30613"])
+    line_text_color: str | None = None
+    headsign: str | None = Field(default=None, description="The direction to take, usually the last stop.")
+    from_stop: str
+    to_stop: str
+    stop_count: int
+    minutes: int
+    agency: str | None = Field(default=None, description="The operator, e.g. Metro Istanbul or RATP.")
+
+
+class LegDetails(BaseModel):
+    """How one leg of a transit plan is travelled: on foot, or by public transport."""
+
+    mode: LegMode
+    rides: list[TransitRideOut] = Field(default_factory=list, description="The rides in order; empty for a walk.")
+    walk_minutes: int | None = Field(
+        default=None, description="Time on foot, including walks to, from and between stops."
+    )
+    alternative_mode: LegMode | None = Field(
+        default=None, description="The option not taken: walking instead of transit, or a faster transit option."
+    )
+    alternative_minutes: int | None = None
+
+
 class PlannedStop(BaseModel):
     order_in_day: int
     poi_id: str
@@ -64,6 +94,8 @@ class PlannedStop(BaseModel):
     distance_km_from_previous: float
     # Google encoded polyline of the street path from the previous point; None for estimates.
     path_from_previous: str | None
+    # Transit plans only (and absent from plans saved before transit existed).
+    leg_from_previous: LegDetails | None = None
     entry_price: Decimal | None = Field(examples=["17.00"])
     rating: float | None
     hours: str | None = Field(default=None, description='Opening hours that day, e.g. "09:00–18:00".')
@@ -75,6 +107,7 @@ class DayPlan(BaseModel):
     return_travel_minutes: int
     return_distance_km: float
     return_path: str | None
+    return_leg: LegDetails | None = None
     total_travel_minutes: int
     total_visit_minutes: int
     # "google": times from the Routes API; "estimate": straight-line fallback when Google is unavailable.
@@ -83,6 +116,9 @@ class DayPlan(BaseModel):
     weather: DayWeatherOut | None = None
     # True when outdoor stops were moved away from this day because rain is expected.
     rain_adjusted: bool = False
+    # Transit plans routed by Google: False when Google has no public transport data here, so
+    # every leg is walked. None otherwise.
+    transit_available: bool | None = None
 
 
 class RoutePlanResponse(BaseModel):
