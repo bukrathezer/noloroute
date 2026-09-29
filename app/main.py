@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.v1 import routes_auth, routes_city, routes_places, routes_poi, routes_route, routes_suggestions
 from app.core.config import get_settings
+from app.services.events import EventsClient
 from app.services.place_search import PlaceSearchClient
 from app.services.routes_client import RoutesClient
 from app.services.weather import WeatherClient
@@ -28,8 +29,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.routes_client = RoutesClient(api_key) if api_key else None
     app.state.place_search_client = PlaceSearchClient(api_key) if api_key else None
     app.state.weather_client = WeatherClient()  # Open-Meteo needs no key
+    ticketmaster_key = (get_settings().ticketmaster_api_key or "").strip()
+    app.state.events_client = EventsClient(ticketmaster_key) if ticketmaster_key else None
     yield
-    for client in (app.state.routes_client, app.state.place_search_client, app.state.weather_client):
+    clients = (
+        app.state.routes_client,
+        app.state.place_search_client,
+        app.state.weather_client,
+        app.state.events_client,
+    )
+    for client in clients:
         if client is not None:
             await client.aclose()
 
