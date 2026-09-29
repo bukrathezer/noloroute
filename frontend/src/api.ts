@@ -89,6 +89,8 @@ export interface DayPlan {
   rain_adjusted: boolean;
   /** Transit plans: false when Google has no public transport data here (every leg is walked). */
   transit_available?: boolean | null;
+  /** Stops left out because the day ran well over 8 hours. */
+  dropped_stops?: string[];
 }
 
 export type WeatherCondition =
@@ -121,6 +123,10 @@ export interface PlanResponse {
   start_date: string | null;
   total_entry_cost: string;
   unpriced_stop_count: number;
+  /** Which ticket entry prices are: standard adult, or the Turkish citizens' price. */
+  price_basis?: "adult" | "tr_citizen" | null;
+  /** YYYY-MM-DD */
+  prices_checked_on?: string | null;
   days: DayPlan[];
 }
 

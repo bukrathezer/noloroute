@@ -22,6 +22,11 @@ export function addDays(iso: string, days: number): string {
 
 export const todayIso = () => isoDate(new Date());
 
+/** "September 2026" / "Eylül 2026". */
+export function formatMonth(iso: string, lang: string): string {
+  return fromIso(iso).toLocaleDateString(lang, { month: "long", year: "numeric" });
+}
+
 export function formatDay(iso: string, lang: string, withWeekday = true): string {
   return fromIso(iso).toLocaleDateString(lang, {
     weekday: withWeekday ? "long" : undefined,

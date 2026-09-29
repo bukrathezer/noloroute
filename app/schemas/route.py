@@ -119,6 +119,9 @@ class DayPlan(BaseModel):
     # Transit plans routed by Google: False when Google has no public transport data here, so
     # every leg is walked. None otherwise.
     transit_available: bool | None = None
+    dropped_stops: list[str] = Field(
+        default_factory=list, description="Stops left out because the day ran well over 8 hours."
+    )
 
 
 class RoutePlanResponse(BaseModel):
@@ -131,6 +134,12 @@ class RoutePlanResponse(BaseModel):
     start_date: dt.date | None = None
     total_entry_cost: Decimal = Field(examples=["34.00"])
     unpriced_stop_count: int = Field(description="Stops whose entry price is unknown (not counted in the cost).")
+    price_basis: Literal["adult", "tr_citizen"] | None = Field(
+        default=None,
+        description='Which ticket the entry prices are: "adult" (standard adult ticket, the non-EU price where '
+        'that differs) or "tr_citizen" (the price for Turkish citizens; foreign visitors pay more).',
+    )
+    prices_checked_on: dt.date | None = Field(default=None, description="When the entry prices were last checked.")
     days: list[DayPlan] = Field(max_length=MAX_TRIP_DAYS)
 
 

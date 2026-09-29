@@ -1,5 +1,6 @@
 """Test data shared by the database-backed tests."""
 
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
@@ -9,11 +10,21 @@ from app.models import POI, City
 CITY_ID = "test-city"
 HOTEL = {"lat": 48.8566, "lng": 2.3522}
 POI_COUNT = 12
+PRICES_CHECKED_ON = date(2026, 9, 1)
 
 
 def seed_city(session: Session) -> None:
     """A small city whose POIs sit around HOTEL; half of them have an entry price."""
-    session.add(City(id=CITY_ID, name="Test City", currency_code="EUR", timezone="Europe/Paris"))
+    session.add(
+        City(
+            id=CITY_ID,
+            name="Test City",
+            currency_code="EUR",
+            timezone="Europe/Paris",
+            price_basis="adult",
+            prices_checked_on=PRICES_CHECKED_ON,
+        )
+    )
     for i in range(POI_COUNT):
         session.add(
             POI(
