@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.v1 import routes_auth, routes_city, routes_places, routes_poi, routes_route
+from app.api.v1 import routes_auth, routes_city, routes_places, routes_poi, routes_route, routes_suggestions
 from app.core.config import get_settings
 from app.services.place_search import PlaceSearchClient
 from app.services.routes_client import RoutesClient
@@ -39,7 +39,7 @@ app = FastAPI(title="NoloRoute API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 API_V1_PREFIX = "/api/v1"
-for module in (routes_auth, routes_city, routes_places, routes_poi, routes_route):
+for module in (routes_auth, routes_city, routes_places, routes_poi, routes_route, routes_suggestions):
     app.include_router(module.router, prefix=API_V1_PREFIX)
 
 

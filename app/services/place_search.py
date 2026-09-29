@@ -1,7 +1,8 @@
-"""Async Google Places (New) Autocomplete + Place Details, used to find an accommodation by name.
+"""Async Google Places (New) client for requests made while planning: Autocomplete + Place
+Details to find an accommodation by name, and Nearby Search for suggestions along a route.
 
-All keystrokes of one search and the final details lookup share a session token, so Google
-bills them as a single session instead of per request.
+All keystrokes of one accommodation search and the final details lookup share a session token,
+so Google bills them as a single session instead of per request.
 """
 
 from dataclasses import dataclass
@@ -83,6 +84,30 @@ class PlaceSearchClient:
             location=LatLng(loc["latitude"], loc["longitude"]),
             address=data.get("formattedAddress", ""),
         )
+
+    async def search_nearby(
+        self,
+        center: LatLng,
+        radius_m: float,
+        included_types: list[str],
+        field_mask: str,
+        language: str,
+        excluded_primary_types: list[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Up to 20 places of the given types within the circle, most popular first."""
+        body: dict[str, Any] = {
+            "includedTypes": included_types,
+            "maxResultCount": 20,
+            "rankPreference": "POPULARITY",
+            "languageCode": language,
+            "locationRestriction": {
+                "circle": {"center": {"latitude": center.lat, "longitude": center.lng}, "radius": radius_m}
+            },
+        }
+        if excluded_primary_types:
+            body["excludedPrimaryTypes"] = excluded_primary_types
+        data = await self._request("POST", "/places:searchNearby", field_mask, json=body)
+        return data.get("places", [])
 
     async def _request(self, method: str, path: str, field_mask: str, **kwargs: Any) -> dict[str, Any]:
         try:

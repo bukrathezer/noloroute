@@ -3,6 +3,7 @@ import type { DayWeather, LegDetails, PlanResponse, TravelMode } from "../api";
 import { formatDay, formatMonth } from "../dates";
 import { type Lang, STRINGS } from "../i18n";
 import { dayColor } from "../theme";
+import { FoodSuggestions } from "./FoodSuggestions";
 
 // "dirty": a saved route was edited and the changes are not stored yet.
 export type SaveState = "idle" | "saving" | "saved" | "dirty" | "error";
@@ -210,6 +211,13 @@ export function PlanResult(props: Props) {
               </li>
             </ol>
           )}
+          {/* Keyed by the day's date and stops: a change starts the suggestions afresh. */}
+          <FoodSuggestions
+            key={`${day.date ?? ""}|${day.stops.map((s) => s.poi_id).join(",")}`}
+            day={day}
+            currencyCode={plan.currency_code}
+            lang={lang}
+          />
         </article>
       ))}
       {plan.days.some((d) => d.routing_source === "google") && <p className="attribution">{r.attribution}</p>}

@@ -133,6 +133,19 @@ weeks ahead, so for later trips the same weekday in the coming week is used. Whe
 transit data, every leg is walked and the plan says so. Transit plans cost the most Google calls
 (two route matrices per day), so they are rate-limited per client.
 
+## Places to eat along a route
+Meals are not planned into the route (when and where to eat is personal); instead each day can
+list places to eat near its route: `POST /api/v1/suggestions/food` with the day's stops.
+
+- Two stops about a third and two thirds of the way through the day are the anchors; around each,
+  one Nearby Search asks for the 20 most popular restaurants, bakeries and dessert shops within
+  700 m (fast food and takeaways excluded).
+- Places rated 4.2+ with 200+ reviews that are open for at least an hour at lunch or dinner time
+  that day are ranked by popularity and listed under the nearer anchor, a chain only once.
+- Each shows its cuisine, rating, price level, that day's hours, distance and a Google Maps link.
+- Looked up only when the traveller asks (two paid requests), rate-limited per client, and never
+  stored: Google's terms allow storing only place IDs.
+
 ## Editing a plan and finding the accommodation
 - `POST /api/v1/routes/plan/remove-stop` drops a stop and re-routes only that day.
 - `GET /api/v1/places/autocomplete` and `GET /api/v1/places/{place_id}` find a hotel or address
