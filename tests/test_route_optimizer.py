@@ -15,7 +15,10 @@ from app.services.route_optimizer import (
     HotelTooFarError,
     build_day,
     estimate_loop,
+    fill_days,
     fit_to_dates,
+    location,
+    loop_minutes,
     order_day,
     plan_trip,
     popularity,
@@ -368,3 +371,36 @@ def test_estimated_days_are_trimmed_too() -> None:
     routed = asyncio.run(order_day(HOTEL, long_day(5, duration=110), MODE, None))  # 9 h 10 min of visits
     assert routed.source == "estimate"
     assert len(routed.loop.order) == 4
+
+
+# --- filling days that have time left ------------------------------------------------------------
+
+
+def test_a_short_day_gets_the_best_sights_that_still_fit() -> None:
+    chosen = make_poi("chosen", 0.5, category="A", duration=120)
+    famous = make_poi("famous", 0.6, category="B", duration=60, reviews=200_000)
+    other = make_poi("other", -0.5, category="C", duration=60, reviews=20_000)
+    too_long = make_poi("too-long", 0.4, category="D", duration=400, reviews=900_000)
+    [day] = fill_days([[chosen]], [chosen, famous, other, too_long], HOTEL, MODE, None)
+    assert {p.id for p in day} == {"chosen", "famous", "other"}  # the 400-minute one doesn't fit
+    assert loop_minutes(day, estimate_loop(HOTEL, [location(p) for p in day], MODE)) <= DAY_MINUTES
+
+
+def test_filling_respects_hours_rain_budget_and_duplicates() -> None:
+    chosen = make_poi("louvre", 0.5, name="Louvre Museum", category="MUSEUM", duration=60, price="30")
+    closed = make_poi("closed", 0.6, category="A", hours=CLOSED_TUESDAYS)
+    park = make_poi("park", 0.6, category="PARK")
+    pricey = make_poi("pricey", 0.6, category="B", price="50")
+    pyramid = make_poi("pyramid", 0.52, name="Louvre Pyramid", category="C")
+    fine = make_poi("fine", -0.6, category="D", reviews=100)
+    pois = [chosen, closed, park, pricey, pyramid, fine]
+    [day] = fill_days([[chosen]], pois, HOTEL, MODE, Decimal("60"), dates=[TUESDAY], rainy=[True])
+    assert {p.id for p in day} == {"louvre", "fine"}
+
+
+def test_filling_varies_categories() -> None:
+    chosen = make_poi("m0", 0.5, category="MUSEUM", duration=60)
+    museum = make_poi("m1", 0.6, category="MUSEUM", duration=250, reviews=12_000)
+    park = make_poi("p1", 0.6, category="PARK", duration=250, reviews=10_000)  # only one of the two fits
+    [day] = fill_days([[chosen]], [chosen, museum, park], HOTEL, MODE, None)
+    assert [p.id for p in day if p.id != "m0"] == ["p1"]  # slightly less popular, but a new category

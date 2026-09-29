@@ -19,8 +19,10 @@ PASSWORD = "s3cure-enough-password"
 
 @pytest.fixture
 def fake(client: TestClient) -> FakeTransitClient:
-    """Google routing replaced by the fake (the `client` fixture clears the override afterwards)."""
-    fake = FakeTransitClient()
+    """Google routing replaced by the fake (the `client` fixture clears the override afterwards).
+
+    The seed city is small, so transit is offered from 0.5 km on."""
+    fake = FakeTransitClient(transit_min_km=0.5)
     app.dependency_overrides[get_routes_client] = lambda: fake
     return fake
 
