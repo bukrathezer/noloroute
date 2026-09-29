@@ -30,6 +30,7 @@ class POI(Base):
     place_id: Mapped[str] = mapped_column(String, unique=True)  # Google Place ID, used for dedup
     name: Mapped[str] = mapped_column(String, nullable=False)
     category: Mapped[str] = mapped_column(String, nullable=False)
+    google_type: Mapped[str | None] = mapped_column(String(64), nullable=True)  # Places primaryType
     latitude: Mapped[float] = mapped_column(Float)
     longitude: Mapped[float] = mapped_column(Float)
     avg_duration_min: Mapped[int] = mapped_column(Integer)

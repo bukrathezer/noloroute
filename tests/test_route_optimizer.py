@@ -10,9 +10,13 @@ from app.models import POI
 from app.services.geo import LatLng
 from app.services.route_optimizer import (
     DAY_MINUTES,
+    MAX_DAY_MINUTES,
+    MAX_TRIMS_PER_DAY,
     HotelTooFarError,
+    build_day,
     estimate_loop,
     fit_to_dates,
+    order_day,
     plan_trip,
     popularity,
     select_stops,
@@ -142,7 +146,8 @@ def test_split_keeps_each_direction_on_one_day() -> None:
     east = [make_poi(f"e{i}", i * 0.2, 3) for i in range(3)]
     west = [make_poi(f"w{i}", i * 0.2, -3) for i in range(3)]
     groups = split_into_days(east + west, HOTEL, days=2, mode=MODE)
-    assert sorted({p.id[0] for p in g} for g in groups) == [{"e"}, {"w"}]
+    # Each side on a day of its own (in either order).
+    assert sorted("".join(sorted({p.id[0] for p in g})) for g in groups) == ["e", "w"]
 
 
 def test_split_pads_with_empty_days_when_stops_run_out() -> None:
@@ -310,3 +315,56 @@ def test_plan_trip_without_dates_is_unchanged() -> None:
     [day] = asyncio.run(plan_trip(ring(6), HOTEL, 1, None, MODE, None))
     assert day.date is None and day.weather is None and not day.rain_adjusted
     assert all(s.hours is None for s in day.stops)
+
+
+# --- keeping clusters together and days short enough --------------------------------------------
+
+
+def test_a_cluster_of_sights_stays_on_one_day() -> None:
+    # Four sights together 3 km north, and four scattered right around the hotel. Sorting by
+    # direction alone would cut the northern cluster in half; cutting a round trip keeps it whole.
+    cluster = [make_poi(f"x{i}", 3.0 + 0.1 * (i % 2), 0.15 * (i - 1.5), category=f"X{i}") for i in range(4)]
+    around = [make_poi(f"n{i}", dlat, dlng, category=f"N{i}") for i, (dlat, dlng) in
+              enumerate([(0.4, 0.4), (-0.4, 0.4), (-0.4, -0.4), (0.4, -0.4)])]  # fmt: skip
+    groups = split_into_days(cluster + around, HOTEL, days=2, mode=MODE)
+    days_of_cluster = {d for d, group in enumerate(groups) for p in group if p.id.startswith("x")}
+    assert len(days_of_cluster) == 1
+    assert [len(g) for g in groups] == [4, 4]
+
+
+def long_day(n: int, duration: int) -> list[POI]:
+    """n stops close to the hotel, the first one the least popular."""
+    return [make_poi(f"s{i}", 0.3 * (i + 1), category=f"C{i}", duration=duration, reviews=1_000 * (i + 1))
+            for i in range(n)]  # fmt: skip
+
+
+def test_a_day_that_runs_long_drops_its_least_popular_stop() -> None:
+    stops = long_day(4, duration=120)  # 8 h of visits plus 5 legs of 10 min: 8 h 50 min
+    client = FakeRoutesClient()
+    routed = asyncio.run(order_day(HOTEL, stops, MODE, client))
+    assert sorted(routed.loop.order) == [1, 2, 3]  # s0, the least popular, is gone
+    assert client.calls == 2  # routed once more without it
+    day = build_day(1, stops, routed)
+    assert day.dropped_stops == ["s0"]
+    assert day.total_visit_minutes + day.total_travel_minutes <= MAX_DAY_MINUTES
+
+
+def test_hand_picked_must_sees_are_dropped_last() -> None:
+    stops = long_day(4, duration=120)
+    stops[0] = make_poi("montmartre", 0.3, category="C0", duration=120, rating=None, reviews=None)
+    routed = asyncio.run(order_day(HOTEL, stops, MODE, FakeRoutesClient()))
+    assert 0 in routed.loop.order
+    assert build_day(1, stops, routed).dropped_stops == ["s1"]
+
+
+def test_trimming_stops_after_a_few_rounds() -> None:
+    client = FakeRoutesClient()
+    routed = asyncio.run(order_day(HOTEL, long_day(6, duration=200), MODE, client))
+    assert client.calls == MAX_TRIMS_PER_DAY + 1  # every round costs a Google request
+    assert len(routed.loop.order) == 6 - MAX_TRIMS_PER_DAY
+
+
+def test_estimated_days_are_trimmed_too() -> None:
+    routed = asyncio.run(order_day(HOTEL, long_day(5, duration=110), MODE, None))  # 9 h 10 min of visits
+    assert routed.source == "estimate"
+    assert len(routed.loop.order) == 4

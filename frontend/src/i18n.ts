@@ -73,6 +73,13 @@ const en = {
     open247: "Open 24/7",
     openHours: (hours: string) => `Open ${hours}`,
     removeStop: (name: string) => `Remove ${name} from the route`,
+    free: "free",
+    priceBasis: {
+      adult: (month: string) => `Entry fees are adult tickets (the non-EU price where it differs), checked ${month}.`,
+      tr_citizen: (month: string) =>
+        `Entry fees are the prices for Turkish citizens, checked ${month}. Foreign visitors pay more.`,
+    },
+    dropped: (names: string) => `Left out to keep the day under 8½ hours: ${names}`,
     removeFailed: "Couldn't remove that stop. Please try again.",
   },
   errors: {
@@ -234,6 +241,13 @@ const tr: Strings = {
     open247: "7/24 açık",
     openHours: (hours) => `Açık ${hours}`,
     removeStop: (name) => `${name} durağını rotadan çıkar`,
+    free: "ücretsiz",
+    priceBasis: {
+      adult: (month) => `Giriş ücretleri yetişkin biletidir (fark varsa AB dışı fiyatı), ${month} itibarıyla.`,
+      tr_citizen: (month) =>
+        `Giriş ücretleri T.C. vatandaşı fiyatıdır, ${month} itibarıyla. Yabancı ziyaretçiler daha fazla öder.`,
+    },
+    dropped: (names) => `Gün 8,5 saati aşmasın diye çıkarıldı: ${names}`,
     removeFailed: "Durak çıkarılamadı. Lütfen tekrar dene.",
   },
   errors: {

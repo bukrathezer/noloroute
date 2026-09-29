@@ -305,3 +305,15 @@ def test_transit_order_cannot_be_optimized_by_google() -> None:
     client = RoutesClient("key", transport=httpx.MockTransport(lambda _: httpx.Response(500)))
     with pytest.raises(ValueError):
         asyncio.run(client.optimize_loop(HOTEL, [east(1)], TRANSIT))
+
+
+def test_a_long_transit_day_is_trimmed_without_more_api_calls() -> None:
+    client = FakeTransitClient()
+    stops = [east(0.4), east(0.8), east(1.2)]
+    values = [5.0, 1.0, 9.0]  # the middle stop is worth least
+    loop, _ = asyncio.run(
+        order_day_transit(HOTEL, stops, [200, 200, 200], client, None, PARIS_TZ, values=values, max_minutes=510)
+    )
+    assert sorted(loop.order) == [0, 2]
+    assert len(client.matrix_calls) == 2  # the matrices already had every pair
+    assert len(client.leg_calls) == len(loop.legs) == 3  # only the final legs are routed

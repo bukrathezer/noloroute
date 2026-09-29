@@ -5,7 +5,8 @@
 2. choose_leg picks walking or transit for every pair. Short walks are always walked, and
    transit has to save a few minutes to be worth the waiting, stairs and tickets.
 3. Google can't optimize the order of transit waypoints, so our own TSP solver (tsp.py) orders
-   the stops on the chosen times.
+   the stops on the chosen times. If the day runs too long, its least valuable stop is dropped
+   and the rest re-ordered; the matrices already cover every pair, so this costs no API calls.
 4. Each leg of the final order is routed once more in its chosen mode, departing when the
    traveller would actually leave (09:00 plus the travel and visits before it). That gives the
    street path, the lines to take and the time for that exact departure.
@@ -82,8 +83,13 @@ async def order_day_transit(
     client: RoutesClient,
     day: date | None,
     tz: tzinfo,
+    values: Sequence[float] | None = None,
+    max_minutes: int | None = None,
 ) -> tuple[LoopRoute, bool]:
     """Order a day and route its legs. Also returns whether Google had any transit route here.
+
+    While the day (visits plus travel) runs over `max_minutes`, the stop with the lowest value
+    in `values` is dropped: it is left out of the returned order.
 
     Raises RoutesAPIError when the matrices can't be fetched; the caller falls back to estimates.
     """
@@ -100,8 +106,14 @@ async def order_day_transit(
         [choose_leg(walk[i][j], transit[i][j]) or _straight_walk(points[i], points[j]) for j in range(n)]
         for i in range(n)
     ]
-    order = shortest_loop([[choice.cost for choice in row] for row in choices])  # points 1..n-1
-    path = list(pairwise([0, *order, 0]))
+    kept = list(range(1, n))  # point indexes of the stops still in the day
+    while True:
+        order = _best_order(choices, kept)
+        path = list(pairwise([0, *order, 0]))
+        minutes = sum(choices[a][b].seconds for a, b in path) / 60 + sum(visit_minutes[k - 1] for k in kept)
+        if max_minutes is None or values is None or minutes <= max_minutes or len(kept) == 1:
+            break
+        kept.remove(min(kept, key=lambda k: values[k - 1]))
 
     # When each leg starts: leave the hotel at DAY_START, then travel and visit in turn.
     departures: list[datetime] = []
@@ -141,6 +153,13 @@ async def _route_leg(client: RoutesClient, a: LatLng, b: LatLng, choice: LegChoi
     # leg is a walk, and the alternative we had in mind no longer applies.
     alternative = choice.alternative if leg.mode is choice.mode else None
     return Leg(leg.seconds, leg.meters, leg.polyline, leg.mode, leg.rides, leg.walk_seconds, alternative)
+
+
+def _best_order(choices: list[list[LegChoice]], kept: list[int]) -> list[int]:
+    """The best visiting order of the `kept` points (hotel = 0), as point indexes."""
+    points = [0, *kept]
+    order = shortest_loop([[choices[a][b].cost for b in points] for a in points])
+    return [points[i] for i in order]
 
 
 def _straight_walk(a: LatLng, b: LatLng) -> LegChoice:

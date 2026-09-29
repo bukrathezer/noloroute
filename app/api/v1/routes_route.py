@@ -112,6 +112,8 @@ async def plan_route(
         duration_days=req.duration_days,
         start_date=req.start_date,
         days=days,
+        price_basis=city.price_basis,
+        prices_checked_on=city.prices_checked_on,
         **_plan_totals(days),
     )
 
@@ -137,6 +139,7 @@ async def remove_stop(
     new_day = build_day(
         day.day_number, pois, routed, day_date=day.date, weather=day.weather, rain_adjusted=day.rain_adjusted
     )
+    new_day.dropped_stops = day.dropped_stops + new_day.dropped_stops
 
     days = [new_day if d.day_number == day.day_number else d for d in plan.days]
     return plan.model_copy(update={"days": days, **_plan_totals(days)})

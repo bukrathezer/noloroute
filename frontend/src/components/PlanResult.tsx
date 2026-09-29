@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { DayWeather, LegDetails, PlanResponse, TravelMode } from "../api";
-import { formatDay } from "../dates";
+import { formatDay, formatMonth } from "../dates";
 import { type Lang, STRINGS } from "../i18n";
 import { dayColor } from "../theme";
 
@@ -35,6 +35,15 @@ export function PlanResult(props: Props) {
   const days = activeDay ? plan.days.filter((d) => d.day_number === activeDay) : plan.days;
   const transit = plan.travel_mode === "TRANSIT";
   const noTransitData = transit && plan.days.some((d) => d.transit_available === false);
+  const money = (amount: string) => {
+    const value = Number(amount);
+    if (value === 0) return r.free;
+    return value.toLocaleString(lang, {
+      style: "currency",
+      currency: plan.currency_code,
+      maximumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    });
+  };
 
   return (
     <section className="plan-result" aria-live="polite">
@@ -74,6 +83,9 @@ export function PlanResult(props: Props) {
         </div>
       </dl>
       {plan.unpriced_stop_count > 0 && <p className="hint">{r.unpriced(plan.unpriced_stop_count)}</p>}
+      {plan.price_basis && plan.prices_checked_on && (
+        <p className="hint">{r.priceBasis[plan.price_basis](formatMonth(plan.prices_checked_on, lang))}</p>
+      )}
       {transit && <p className="hint">{noTransitData ? r.noTransit : r.mapLegend}</p>}
 
       {plan.days.length > 1 && (
@@ -123,6 +135,9 @@ export function PlanResult(props: Props) {
           </header>
           {day.weather && <WeatherLine weather={day.weather} lang={lang} />}
           {day.rain_adjusted && <p className="hint rain-note">{r.rainNote}</p>}
+          {day.dropped_stops && day.dropped_stops.length > 0 && (
+            <p className="hint">{r.dropped(day.dropped_stops.join(", "))}</p>
+          )}
           {day.routing_source === "estimate" && day.stops.length > 0 && <p className="badge">{r.estimated}</p>}
           {day.stops.length === 0 ? (
             <p className="hint">{r.emptyDay}</p>
@@ -155,6 +170,7 @@ export function PlanResult(props: Props) {
                         <span className="muted">
                           {t.categories[stop.category] ?? stop.category} · {t.minutes(stop.visit_minutes)} {r.visit}
                           {stop.rating != null && ` · ★ ${stop.rating.toFixed(1)}`}
+                          {stop.entry_price != null && ` · ${money(stop.entry_price)}`}
                         </span>
                         {stop.hours && stop.hours !== "closed" && (
                           <span className="muted small">

@@ -69,12 +69,32 @@ optional budget returns a day-by-day plan:
 1. **Select** — every POI gets a score: popularity (rating × log of review count), discounted by
    distance from the accommodation. The best POIs are picked greedily until the trip's time
    (8 h/day) or budget runs out; each pick lowers the score of its category to keep days varied.
-2. **Split into days** — a *sweep*: stops are sorted by direction from the accommodation and the
-   circle is cut into slices of roughly equal time, so each day heads one way.
+2. **Split into days** — *route first, split second*: one round trip through all chosen stops
+   (the TSP solver below, on straight-line distances) is cut into consecutive stretches of roughly
+   equal time, trying every stop as the start and keeping the cut with the least total distance.
+   Neighbouring sights sit next to each other on a round trip, so a cluster stays on one day.
 3. **Order each day** — the Google Routes API optimizes the visiting order of the
    accommodation → stops → accommodation loop and returns real travel times. If Google is
    unavailable, a nearest-neighbour order with straight-line estimates is used instead.
    For public transport (`"travel_mode": "TRANSIT"`) the order is computed differently, see below.
+4. **Keep days realistic** — with real travel times a day may run a little over 8 hours, but not
+   past 8½: until it fits, its least popular stop is dropped and the day re-routed (at most three
+   times, as each costs a Google request; transit days re-use their travel-time matrices for free).
+   The plan lists what was left out.
+
+## Visit times and entry prices
+Google Places has neither, so `scripts/sight_details.py` sets them during ingestion:
+
+- **Visit time** comes from the place's Google type (a statue 10 min, a square 20, a palace 90),
+  scaled by fame: every 10× more reviews adds 30%, between ×0.75 and ×1.5, since well-known
+  places tend to be bigger and busier.
+- **Entry price** is zero for types that are free to visit (parks, squares, bridges, mosques,
+  churches, markets) and unknown otherwise.
+- The **most visited sights** have hand-checked visit times and prices, each with its source.
+  Paris uses the adult price for visitors from outside the EU (several museums raised it in
+  2026), Istanbul the price for Turkish citizens; plans say which, and when prices were checked.
+  Google entries that are part of another sight (the Louvre Pyramid, Napoleon's Tomb) are
+  left out so a plan never visits and pays for the same place twice.
 
 ## Trip dates, opening hours and weather
 With a `start_date`, every day gets a date:

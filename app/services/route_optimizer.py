@@ -3,15 +3,19 @@
 1. select_stops     Score every POI (popularity, discounted by distance from the hotel) and
                     repeatedly take the best one that still fits the trip's time and budget. Each
                     pick lowers the score of its category, so the trip stays varied.
-2. split_into_days  "Sweep": sort the chosen stops by direction from the hotel and cut the circle
-                    into `days` consecutive slices of roughly equal time, so each day heads one way.
+2. split_into_days  "Route first, split second": one round trip through all chosen stops (our TSP
+                    solver on straight-line distances), cut into `days` consecutive stretches of
+                    roughly equal time. Neighbouring sights sit next to each other on the round
+                    trip, so they stay on the same day; of all places to start cutting, the one
+                    with the least total distance wins.
 3. fit_to_dates     With trip dates: a stop that is closed on its day moves to the least busy day
                     it is open on (or is dropped); on rainy days, outdoor stops move to a dry day.
 4. order_day        Walking and driving: Google Routes API optimizes the visiting order (hotel ->
                     stops -> hotel) and returns real travel times. Transit: each leg is walked or
                     ridden, and our own TSP solver orders the day (see transit_planner.py). If
                     Google fails, fall back to nearest-neighbour ordering with straight-line time
-                    estimates so a plan is always returned.
+                    estimates so a plan is always returned. A day that still runs well over 8 hours
+                    with real travel times loses its least popular stops.
 """
 
 import asyncio
@@ -20,7 +24,7 @@ import math
 import re
 import unicodedata
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, tzinfo
 from decimal import Decimal
@@ -29,15 +33,18 @@ from typing import Literal
 
 from app.models import POI
 from app.schemas.route import DayPlan, DayWeatherOut, LegDetails, PlannedStop, TransitRideOut
-from app.services.geo import DETOUR_FACTOR, LatLng, bearing_rad, haversine_km
+from app.services.geo import DETOUR_FACTOR, LatLng, haversine_km
 from app.services.opening_hours import hours_on, is_open_long_enough
 from app.services.routes_client import Leg, LoopRoute, RoutesAPIError, RoutesClient, TravelMode
 from app.services.transit_planner import order_day_transit
+from app.services.tsp import shortest_loop
 from app.services.weather import DayWeather
 
 logger = logging.getLogger(__name__)
 
 DAY_MINUTES = 8 * 60  # sightseeing time per day, travel included
+MAX_DAY_MINUTES = DAY_MINUTES + 30  # with real travel times a day may run a little over, not more
+MAX_TRIMS_PER_DAY = 3  # dropping a stop re-routes the day: one more Google request each time
 CATEGORY_REPEAT_DECAY = 0.75  # each pick from a category scales that category's scores by this
 CURATED_POPULARITY_PERCENTILE = 0.95  # hand-entered POIs have no Google rating: treat as top 5%
 MAX_HOTEL_DISTANCE_KM = 25.0  # from the nearest POI; beyond this the hotel isn't in the city
@@ -81,6 +88,8 @@ class HotelTooFarError(ValueError):
 
 @dataclass(frozen=True)
 class RoutedDay:
+    """A routed day. Stops missing from loop.order were dropped to keep the day short enough."""
+
     loop: LoopRoute
     source: RoutingSource
     transit_available: bool | None = None  # transit plans only: whether Google had any transit route
@@ -194,11 +203,13 @@ def select_stops(
         # Unknown prices are treated as free; the response reports how many stops were unpriced.
         if budget is not None and poi.entry_price is not None and spent + poi.entry_price > budget:
             return False
-        return not is_near_duplicate(poi, chosen)
+        # Earlier picks were already checked in earlier rounds; only the newest one is new.
+        return not (chosen and is_near_duplicate(poi, chosen[-1:]))
 
     candidates = list(pois)
     while True:
-        # Time and money only get used up, so a POI that doesn't fit now never will.
+        # Time and money only get used up, and picks only accumulate, so a POI that doesn't fit
+        # now never will.
         candidates = [poi for poi in candidates if fits(poi)]
         if not candidates:
             return chosen
@@ -225,17 +236,34 @@ def _distinctive_words(name: str) -> set[str]:
 
 
 def split_into_days(stops: Sequence[POI], hotel: LatLng, days: int, mode: TravelMode) -> list[list[POI]]:
-    """Sweep: walk around the hotel by direction, closing a day once it reaches its share of time."""
-    ordered = _sort_by_direction(stops, hotel)
-    remaining_minutes = sum(stop_minutes(s, mode) for s in ordered)
+    """Route first, split second: cut one round trip through all stops into `days` stretches."""
+    if len(stops) <= days:
+        return [[stop] for stop in stops] + [[] for _ in range(days - len(stops))]
+    points = [hotel, *(location(s) for s in stops)]
+    km = [[haversine_km(a, b) for b in points] for a in points]
+    index = {stop.id: i for i, stop in enumerate(stops, start=1)}  # position in `points`
+    tour = [stops[i - 1] for i in shortest_loop(km)]
+
+    def day_km(group: list[POI]) -> float:
+        path = [0, *(index[stop.id] for stop in group), 0]
+        return sum(km[a][b] for a, b in pairwise(path))
+
+    # The round trip is a circle: try every stop as the start of day 1.
+    candidates = (_cut_evenly(tour[start:] + tour[:start], days, mode) for start in range(len(tour)))
+    return min(candidates, key=lambda groups: sum(day_km(g) for g in groups))
+
+
+def _cut_evenly(sequence: Sequence[POI], days: int, mode: TravelMode) -> list[list[POI]]:
+    """Cut the sequence into `days` consecutive groups of roughly equal time."""
+    remaining_minutes = sum(stop_minutes(s, mode) for s in sequence)
     groups: list[list[POI]] = []
     current: list[POI] = []
     current_minutes = 0
 
-    for i, stop in enumerate(ordered):
+    for i, stop in enumerate(sequence):
         minutes = stop_minutes(stop, mode)
         days_left = days - len(groups)  # including the current day
-        stops_left = len(ordered) - i  # including this stop
+        stops_left = len(sequence) - i  # including this stop
         target = (current_minutes + remaining_minutes) / days_left
         # Close the day if this stop would push it past its fair share (by more than half the
         # stop), or if every later day still needs at least one stop.
@@ -249,18 +277,6 @@ def split_into_days(stops: Sequence[POI], hotel: LatLng, days: int, mode: Travel
 
     groups.append(current)
     return groups + [[] for _ in range(days - len(groups))]
-
-
-def _sort_by_direction(stops: Sequence[POI], hotel: LatLng) -> list[POI]:
-    if len(stops) < 2:
-        return list(stops)
-    by_angle = sorted(stops, key=lambda s: bearing_rad(hotel, location(s)))
-    angles = [bearing_rad(hotel, location(s)) for s in by_angle]
-    n = len(angles)
-    # Start just after the widest empty direction, so no day is split across a dense cluster.
-    gaps = [(angles[(i + 1) % n] - angles[i]) % (2 * math.pi) for i in range(n)]
-    start = (max(range(n), key=gaps.__getitem__) + 1) % n
-    return by_angle[start:] + by_angle[:start]
 
 
 def fit_to_dates(
@@ -312,21 +328,65 @@ async def order_day(
     routes_client: RoutesClient | None,
     day: date | None = None,
     tz: tzinfo = UTC,
+    max_minutes: int | None = MAX_DAY_MINUTES,
 ) -> RoutedDay:
-    """Order one day's stops and route its legs. `day` and `tz` pick the transit timetable."""
+    """Order one day's stops and route its legs. `day` and `tz` pick the transit timetable.
+
+    If the day runs over `max_minutes` (visits plus real travel), its least popular stops are
+    dropped until it fits.
+    """
     if not stops:
         return RoutedDay(LoopRoute(order=[], legs=[Leg(seconds=0, meters=0)]), "estimate")
     points = [location(s) for s in stops]
     if routes_client is not None:
         try:
             if mode is TravelMode.TRANSIT:
+                # The transit planner trims with its travel-time matrices, at no extra cost.
                 visits = [s.avg_duration_min for s in stops]
-                loop, has_transit = await order_day_transit(hotel, points, visits, routes_client, day, tz)
+                values = [trim_value(s) for s in stops]
+                loop, has_transit = await order_day_transit(
+                    hotel, points, visits, routes_client, day, tz, values=values, max_minutes=max_minutes
+                )
                 return RoutedDay(loop, "google", transit_available=has_transit)
-            return RoutedDay(await routes_client.optimize_loop(hotel, points, mode), "google")
+
+            async def optimize(kept: list[int]) -> LoopRoute:
+                return await routes_client.optimize_loop(hotel, [points[i] for i in kept], mode)
+
+            return RoutedDay(await route_trimmed(stops, optimize, max_minutes), "google")
         except RoutesAPIError as exc:
             logger.warning("Routes API failed, falling back to estimates: %s", exc)
-    return RoutedDay(estimate_loop(hotel, points, mode), "estimate")
+
+    async def estimate(kept: list[int]) -> LoopRoute:
+        return estimate_loop(hotel, [points[i] for i in kept], mode)
+
+    return RoutedDay(await route_trimmed(stops, estimate, max_minutes), "estimate")
+
+
+def trim_value(poi: POI) -> float:
+    """What a stop is worth when a day must lose one: its popularity. Hand-picked must-sees
+    (no Google rating) are dropped last."""
+    return popularity(poi) or math.inf
+
+
+async def route_trimmed(
+    stops: Sequence[POI], route: Callable[[list[int]], Awaitable[LoopRoute]], max_minutes: int | None
+) -> LoopRoute:
+    """Route the day with `route` (given the indexes of the stops to keep); while it runs over
+    `max_minutes`, drop the least popular stop and route again."""
+    kept = list(range(len(stops)))
+    for attempt in range(MAX_TRIMS_PER_DAY + 1):
+        loop = await route(kept)
+        loop = LoopRoute(order=[kept[i] for i in loop.order], legs=loop.legs)  # indexes into `stops`
+        too_long = max_minutes is not None and loop_minutes(stops, loop) > max_minutes
+        if not too_long or len(kept) == 1 or attempt == MAX_TRIMS_PER_DAY:
+            return loop
+        kept.remove(min(kept, key=lambda i: trim_value(stops[i])))
+    raise AssertionError("unreachable")
+
+
+def loop_minutes(stops: Sequence[POI], loop: LoopRoute) -> float:
+    """Visits plus travel for a routed day."""
+    return sum(stops[i].avg_duration_min for i in loop.order) + sum(leg.seconds for leg in loop.legs) / 60
 
 
 def estimate_loop(hotel: LatLng, points: Sequence[LatLng], mode: TravelMode) -> LoopRoute:
@@ -359,6 +419,8 @@ def build_day(
 ) -> DayPlan:
     loop = routed.loop
     ordered = [stops[i] for i in loop.order]
+    visited = set(loop.order)
+    dropped = [stop.name for i, stop in enumerate(stops) if i not in visited]
     planned = [
         PlannedStop(
             order_in_day=position,
@@ -394,6 +456,7 @@ def build_day(
         date=day_date,
         weather=weather,
         rain_adjusted=rain_adjusted,
+        dropped_stops=dropped,
     )
 
 

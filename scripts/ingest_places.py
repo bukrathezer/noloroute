@@ -5,7 +5,8 @@ circle and category we ask Nearby Search for the 20 most *popular* places, then 
 Google's place_id, drop obscure/irrelevant places and upsert the rest. A couple of text searches
 fill gaps that Google's type system misses (scenic viewpoints, bazaars). Famous streets and
 districts (e.g. Champs-Elysees, Istiklal Avenue) are poorly represented in Places, so they are
-added from a small hand-entered list (CURATED_POIS).
+added from a small hand-entered list (CURATED_POIS). Visit times and entry prices come from
+scripts/sight_details.py: rules for every place, hand-checked values for the most visited ones.
 
 Safe to re-run: existing POIs are updated, and POIs that no longer pass the filters are removed
 (unless a saved route references them).
@@ -24,6 +25,7 @@ import os
 import sys
 from collections import Counter
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +39,7 @@ from app.models import POI, City
 from app.models.poi import POICategory
 from app.services.geo import LatLng
 from app.services.places_client import BoundingBox, PlacesAPIError, PlacesClient
+from scripts.sight_details import CITY_PRICES, SIGHTS, estimate_entry_price, estimate_visit_minutes
 
 # Raw API results are cached here. Override with PLACES_CACHE_DIR where the repo folder is
 # read-only (the Docker image points it at /tmp).
@@ -151,16 +154,6 @@ TYPE_TO_CATEGORY: dict[str, POICategory] = {
 # Minimum Google review count: filters out obscure places, keeps what tourists actually visit.
 MIN_RATING_COUNT = 300
 
-DEFAULT_DURATION_MIN = {
-    POICategory.MUSEUM: 120,
-    POICategory.LANDMARK: 60,
-    POICategory.PARK: 60,
-    POICategory.RELIGIOUS_SITE: 45,
-    POICategory.VIEWPOINT: 30,
-    POICategory.MARKET: 60,
-    POICategory.OTHER: 45,
-}
-
 RawResult = dict[str, Any]  # {"source": <search that found it>, "place": <Places API place dict>}
 
 
@@ -227,15 +220,22 @@ def is_relevant(place: dict[str, Any], bounds: BoundingBox) -> bool:
 
 def to_row(place: dict[str, Any], city_id: str, category: POICategory) -> dict[str, Any]:
     periods = place.get("regularOpeningHours", {}).get("periods")
+    google_type = place.get("primaryType")
+    sight = SIGHTS.get(place["id"])  # hand-checked values win over the rules
+    reviews = place.get("userRatingCount")
     return {
         "id": new_id(),
         "city_id": city_id,
         "place_id": place["id"],
         "name": place["displayName"]["text"],
         "category": category.value,
+        "google_type": google_type,
         "latitude": place["location"]["latitude"],
         "longitude": place["location"]["longitude"],
-        "avg_duration_min": DEFAULT_DURATION_MIN[category],
+        "avg_duration_min": (sight and sight.visit_minutes) or estimate_visit_minutes(google_type, category, reviews),
+        "entry_price": sight.entry_price
+        if sight and sight.entry_price is not None
+        else estimate_entry_price(google_type),
         "opening_hours": json.dumps(periods) if periods else None,
         "rating": place.get("rating"),
         "user_rating_count": place.get("userRatingCount"),
@@ -249,6 +249,8 @@ def build_rows(raw: list[RawResult], city: CityConfig) -> list[dict[str, Any]]:
         place = item["place"]
         if place["id"] in rows_by_place_id or not is_relevant(place, city.bounds):
             continue
+        if (sight := SIGHTS.get(place["id"])) and sight.same_as:
+            continue  # part of another sight, e.g. the Louvre Pyramid
         category = categorize(place)
         if category is not None:
             rows_by_place_id[place["id"]] = to_row(place, city.id, category)
@@ -263,9 +265,11 @@ def curated_rows(city: CityConfig) -> list[dict[str, Any]]:
             "place_id": f"curated:{city.id}:{poi.slug}",  # not a Google ID; keeps upserts idempotent
             "name": poi.name,
             "category": poi.category.value,
+            "google_type": None,
             "latitude": poi.lat,
             "longitude": poi.lng,
             "avg_duration_min": poi.avg_duration_min,
+            "entry_price": Decimal(0),  # streets and districts: free to walk around
             "opening_hours": None,  # open-air, always accessible
             "rating": None,
             "user_rating_count": None,
@@ -277,20 +281,38 @@ def curated_rows(city: CityConfig) -> list[dict[str, Any]]:
 def save_city(city: CityConfig, rows: list[dict[str, Any]]) -> int:
     """Upsert the city and its POIs; return how many stale POIs were removed."""
     with SessionLocal() as db:
+        prices = CITY_PRICES.get(city.id)
         city_stmt = pg_insert(City).values(
-            id=city.id, name=city.name, currency_code=city.currency_code, timezone=city.timezone
+            id=city.id,
+            name=city.name,
+            currency_code=city.currency_code,
+            timezone=city.timezone,
+            price_basis=prices.basis if prices else None,
+            prices_checked_on=prices.checked_on if prices else None,
         )
+        city_columns = ("name", "currency_code", "timezone", "price_basis", "prices_checked_on")
         db.execute(
             city_stmt.on_conflict_do_update(
                 index_elements=[City.id],
-                set_={col: city_stmt.excluded[col] for col in ("name", "currency_code", "timezone")},
+                set_={col: city_stmt.excluded[col] for col in city_columns},
             )
         )
         if rows:
             poi_stmt = pg_insert(POI).values(rows)
-            # Refresh Google-sourced fields; keep id, avg_duration_min and entry_price, which may
-            # have been tuned by hand.
-            refreshed = ["name", "category", "latitude", "longitude", "opening_hours", "rating", "user_rating_count"]
+            # Refresh everything but the id (saved routes point at it). Hand-tuned visit times
+            # and prices live in scripts/sight_details.py, so they are refreshed too.
+            refreshed = [
+                "name",
+                "category",
+                "google_type",
+                "latitude",
+                "longitude",
+                "avg_duration_min",
+                "entry_price",
+                "opening_hours",
+                "rating",
+                "user_rating_count",
+            ]
             db.execute(
                 poi_stmt.on_conflict_do_update(
                     index_elements=[POI.place_id],
