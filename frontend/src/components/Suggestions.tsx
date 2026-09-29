@@ -1,14 +1,31 @@
 import { useState } from "react";
-import { ApiError, type DayPlan, type FoodGroup, foodSuggestions } from "../api";
+import {
+  ApiError,
+  type DayPlan,
+  foodSuggestions,
+  type LatLng,
+  nightlifeSuggestions,
+  type SuggestionGroup,
+} from "../api";
 import { type Lang, STRINGS } from "../i18n";
 
+export type SuggestionKind = "food" | "nightlife";
+
 interface Props {
+  kind: SuggestionKind;
   day: DayPlan;
+  accommodation: LatLng;
   currencyCode: string;
   lang: Lang;
 }
 
-type State = { status: "closed" } | { status: "loading" } | { status: "error"; message: string } | { status: "open"; groups: FoodGroup[] };
+type State =
+  | { status: "closed" }
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "open"; groups: SuggestionGroup[] };
+
+const ICONS: Record<SuggestionKind, string> = { food: "🍽️", nightlife: "🌙" };
 
 function openText(hours: string | null, lang: Lang): string | null {
   const r = STRINGS[lang].result;
@@ -16,31 +33,34 @@ function openText(hours: string | null, lang: Lang): string | null {
   return hours === "24/7" ? r.open247 : r.openHours(hours);
 }
 
-/** Places to eat near a day's route, loaded only when asked for (each lookup is a paid Google search). */
-export function FoodSuggestions({ day, currencyCode, lang }: Props) {
-  const t = STRINGS[lang].food;
+/** Places to eat along a day's route, or to go out near where it ends: loaded only when asked
+ * for, as each lookup is a paid Google search. */
+export function Suggestions({ kind, day, accommodation, currencyCode, lang }: Props) {
+  const s = STRINGS[lang].suggestions;
+  const t = s[kind];
   const [state, setState] = useState<State>({ status: "closed" });
-  const [groups, setGroups] = useState<FoodGroup[] | null>(null);
-
-  if (day.stops.length === 0) return null;
+  const [loaded, setLoaded] = useState<SuggestionGroup[] | null>(null);
 
   const toggle = async () => {
     if (state.status === "open") {
       setState({ status: "closed" });
       return;
     }
-    if (groups) {
-      setState({ status: "open", groups }); // already loaded for this day
+    if (loaded) {
+      setState({ status: "open", groups: loaded }); // already fetched for this day
       return;
     }
     setState({ status: "loading" });
     try {
-      const stops = day.stops.map((s) => ({ name: s.name, lat: s.latitude, lng: s.longitude }));
-      const result = await foodSuggestions(stops, day.date, lang);
-      setGroups(result);
-      setState({ status: "open", groups: result });
+      const stops = day.stops.map((stop) => ({ name: stop.name, lat: stop.latitude, lng: stop.longitude }));
+      const groups =
+        kind === "food"
+          ? await foodSuggestions(stops, day.date, lang)
+          : await nightlifeSuggestions(accommodation, stops, day.date, lang);
+      setLoaded(groups);
+      setState({ status: "open", groups });
     } catch (e) {
-      setState({ status: "error", message: e instanceof ApiError && e.status === 429 ? t.tooMany : t.error });
+      setState({ status: "error", message: e instanceof ApiError && e.status === 429 ? s.tooMany : s.error });
     }
   };
 
@@ -50,15 +70,15 @@ export function FoodSuggestions({ day, currencyCode, lang }: Props) {
       .find((p) => p.type === "currency")?.value ?? "$";
 
   return (
-    <div className="food">
+    <div className="suggestion-block">
       <button
         type="button"
-        className="link-button food-toggle"
+        className="link-button suggestion-toggle"
         aria-expanded={state.status === "open"}
         disabled={state.status === "loading"}
         onClick={toggle}
       >
-        <span aria-hidden="true">🍽️ </span>
+        <span aria-hidden="true">{ICONS[kind]} </span>
         {state.status === "loading" ? t.loading : state.status === "open" ? t.hide : t.show}
       </button>
       {state.status === "error" && (
@@ -67,28 +87,28 @@ export function FoodSuggestions({ day, currencyCode, lang }: Props) {
         </p>
       )}
       {state.status === "open" && (
-        <div className="food-list">
+        <div className="suggestion-list">
           {state.groups.length === 0 && <p className="hint">{t.empty}</p>}
           {state.groups.map((group) => (
-            <div key={group.near} className="food-group">
-              <p className="food-near">{t.near(group.near)}</p>
+            <div key={group.near ?? "hotel"}>
+              <p className="suggestion-near">{group.near === null ? s.nearHotel : s.near(group.near)}</p>
               <ul>
                 {group.places.map((place) => (
                   <li key={place.place_id}>
                     {place.maps_url ? (
-                      <a href={place.maps_url} target="_blank" rel="noreferrer" className="food-name">
+                      <a href={place.maps_url} target="_blank" rel="noreferrer" className="suggestion-name">
                         {place.name}
                       </a>
                     ) : (
-                      <span className="food-name">{place.name}</span>
+                      <span className="suggestion-name">{place.name}</span>
                     )}
                     <span className="muted small">
                       {[
-                        place.cuisine,
+                        place.category,
                         `★ ${place.rating.toFixed(1)} (${place.rating_count.toLocaleString(lang)})`,
                         place.price_level ? symbol.repeat(place.price_level) : null,
                         openText(place.hours, lang),
-                        t.distance(place.distance_m),
+                        s.distance(place.distance_m),
                       ]
                         .filter(Boolean)
                         .join(" · ")}
@@ -98,7 +118,7 @@ export function FoodSuggestions({ day, currencyCode, lang }: Props) {
               </ul>
             </div>
           ))}
-          <p className="hint small">{t.note}</p>
+          <p className="hint small">{s.note}</p>
         </div>
       )}
     </div>
