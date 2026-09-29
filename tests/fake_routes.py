@@ -8,12 +8,19 @@ from app.services.routes_client import Leg, LoopRoute, MatrixCell, RoutesAPIErro
 WALK_KMH = 5.0
 TRANSIT_KMH = 20.0
 TRANSIT_WAIT_SECONDS = 6 * 60
-TRANSIT_MIN_KM = 1.5  # closer than this, the fake has no transit route (as if there were no line)
+TRANSIT_MIN_KM = 1.5  # by default, closer than this the fake has no transit route (as if there were no line)
 
 
 class FakeTransitClient:
-    def __init__(self, has_transit: bool = True, fail_matrix: bool = False, fail_legs: bool = False) -> None:
+    def __init__(
+        self,
+        has_transit: bool = True,
+        fail_matrix: bool = False,
+        fail_legs: bool = False,
+        transit_min_km: float = TRANSIT_MIN_KM,
+    ) -> None:
         self.has_transit = has_transit
+        self.transit_min_km = transit_min_km
         self.fail_matrix = fail_matrix
         self.fail_legs = fail_legs
         self.matrix_calls: list[tuple[TravelMode, int, datetime | None]] = []  # mode, points, departure
@@ -23,7 +30,7 @@ class FakeTransitClient:
         km = haversine_km(a, b)
         if mode is TravelMode.WALK:
             return round(km / WALK_KMH * 3600)
-        if not self.has_transit or km < TRANSIT_MIN_KM:
+        if not self.has_transit or km < self.transit_min_km:
             return None
         return TRANSIT_WAIT_SECONDS + round(km / TRANSIT_KMH * 3600)
 

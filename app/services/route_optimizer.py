@@ -10,6 +10,9 @@
                     with the least total distance wins.
 3. fit_to_dates     With trip dates: a stop that is closed on its day moves to the least busy day
                     it is open on (or is dropped); on rainy days, outdoor stops move to a dry day.
+   fill_days        Selection reserves a fixed travel time per stop, too much where sights are
+                    close together. Each day's time is re-estimated from its real distances, and
+                    days with room get the best nearby sights that still fit.
 4. order_day        Walking and driving: Google Routes API optimizes the visiting order (hotel ->
                     stops -> hotel) and returns real travel times. Transit: each leg is walked or
                     ridden, and our own TSP solver orders the day (see transit_planner.py). If
@@ -24,7 +27,7 @@ import math
 import re
 import unicodedata
 from collections import Counter
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, tzinfo
 from decimal import Decimal
@@ -123,6 +126,7 @@ async def plan_trip(
     rain_adjusted = [False] * days
     if dates:
         groups, rain_adjusted = fit_to_dates(groups, dates, rainy, mode)
+    groups = fill_days(groups, pois, hotel, mode, budget, dates=dates, rainy=rainy)
 
     # Days are independent, so route them concurrently.
     routed = await asyncio.gather(
@@ -180,14 +184,12 @@ def select_stops(
 ) -> list[POI]:
     """Greedy: repeatedly take the highest (category-adjusted) score that still fits."""
     half_score_km = MODE_PROFILES[mode].distance_half_score_km
-    known = sorted(p for p in map(popularity, pois) if p is not None)
-    curated_popularity = known[int(CURATED_POPULARITY_PERCENTILE * (len(known) - 1))] if known else 1.0
+    worth = popularity_with_default(pois)
     # The rainier the trip, the less parks and viewpoints are worth.
     outdoor_factor = 1 - RAIN_OUTDOOR_PENALTY * rainy_share
 
     def base_score(poi: POI) -> float:
-        pop = popularity(poi) or curated_popularity
-        score = pop / (1 + haversine_km(hotel, location(poi)) / half_score_km)
+        score = worth(poi) / (1 + haversine_km(hotel, location(poi)) / half_score_km)
         return score * outdoor_factor if poi.category in OUTDOOR_CATEGORIES else score
 
     scores = {poi.id: base_score(poi) for poi in pois}
@@ -220,6 +222,13 @@ def select_stops(
         per_category[best.category] += 1
         if best.entry_price is not None:
             spent += best.entry_price
+
+
+def popularity_with_default(pois: Iterable[POI]) -> Callable[[POI], float]:
+    """popularity(), with hand-picked sights (no Google rating) counted among the top 5%."""
+    known = sorted(p for p in map(popularity, pois) if p is not None)
+    default = known[int(CURATED_POPULARITY_PERCENTILE * (len(known) - 1))] if known else 1.0
+    return lambda poi: popularity(poi) or default
 
 
 def is_near_duplicate(poi: POI, chosen: Sequence[POI]) -> bool:
@@ -319,6 +328,93 @@ def fit_to_dates(
             if move(poi, day, [d for d in days if not rainy[d] and open_on(poi, d)]):
                 rain_adjusted[day] = True
     return groups, rain_adjusted
+
+
+def fill_days(
+    groups: list[list[POI]],
+    pois: Sequence[POI],
+    hotel: LatLng,
+    mode: TravelMode,
+    budget: Decimal | None,
+    dates: Sequence[date] | None = None,
+    rainy: Sequence[bool] | None = None,
+) -> list[list[POI]]:
+    """Add sights to days that have time left, before they are routed (so at no API cost).
+
+    Each day's time is estimated from straight-line distances along its best loop. While a day
+    has room, the unchosen sight worth most (popularity, less for the detour it adds, less for a
+    category the trip already has) that still fits is inserted where it lengthens the loop least.
+    It must be open that day, not an outdoor sight on a rainy day, within the budget and not a
+    duplicate of a chosen sight. Days that end up longer with real travel times are trimmed later.
+    """
+    worth = popularity_with_default(pois)
+    half_score_km = MODE_PROFILES[mode].distance_half_score_km
+    groups = [list(g) for g in groups]
+    chosen = [stop for group in groups for stop in group]
+    spent = sum((s.entry_price for s in chosen if s.entry_price is not None), Decimal(0))
+    per_category = Counter(s.category for s in chosen)
+    chosen_ids = {s.id for s in chosen}
+    candidates = [p for p in pois if p.id not in chosen_ids and not is_near_duplicate(p, chosen)]
+
+    for day, group in enumerate(groups):
+        path = [hotel, *(location(s) for s in _estimated_order(hotel, group)), hotel]
+        minutes = sum(s.avg_duration_min for s in group) + sum(_travel_minutes(a, b, mode) for a, b in pairwise(path))
+
+        while True:
+            best: tuple[float, POI, int, float] | None = None  # value, sight, insert position, minutes
+            for poi in candidates:
+                if not _suits_day(poi, day, dates, rainy):
+                    continue
+                if budget is not None and poi.entry_price is not None and spent + poi.entry_price > budget:
+                    continue
+                here = location(poi)
+                # Cheapest place in the loop to fit it in: between path[i] and path[i + 1].
+                detour_km, i = min(
+                    (haversine_km(a, here) + haversine_km(here, b) - haversine_km(a, b), i)
+                    for i, (a, b) in enumerate(pairwise(path))
+                )
+                a, b = path[i], path[i + 1]
+                added = (
+                    poi.avg_duration_min
+                    + _travel_minutes(a, here, mode)
+                    + _travel_minutes(here, b, mode)
+                    - _travel_minutes(a, b, mode)
+                )
+                if minutes + added > DAY_MINUTES:
+                    continue
+                value = worth(poi) * CATEGORY_REPEAT_DECAY ** per_category[poi.category]
+                value /= 1 + detour_km / half_score_km
+                if best is None or value > best[0]:
+                    best = (value, poi, i, added)
+            if best is None:
+                break
+            _, poi, i, added = best
+            group.insert(i, poi)  # path has the hotel first, so path position i+1 is group index i
+            path.insert(i + 1, location(poi))
+            minutes += added
+            per_category[poi.category] += 1
+            if poi.entry_price is not None:
+                spent += poi.entry_price
+            candidates = [c for c in candidates if c is not poi and not is_near_duplicate(c, [poi])]
+    return groups
+
+
+def _suits_day(poi: POI, day: int, dates: Sequence[date] | None, rainy: Sequence[bool] | None) -> bool:
+    """Open that day, and not an outdoor sight on a rainy day."""
+    if dates and not is_open_long_enough(poi.opening_hours, dates[day], poi.avg_duration_min):
+        return False
+    return not (rainy and rainy[day] and poi.category in OUTDOOR_CATEGORIES)
+
+
+def _estimated_order(hotel: LatLng, stops: Sequence[POI]) -> list[POI]:
+    """The shortest straight-line loop through the stops."""
+    points = [hotel, *(location(s) for s in stops)]
+    km = [[haversine_km(a, b) for b in points] for a in points]
+    return [stops[i - 1] for i in shortest_loop(km)]
+
+
+def _travel_minutes(a: LatLng, b: LatLng, mode: TravelMode) -> float:
+    return haversine_km(a, b) * DETOUR_FACTOR / MODE_PROFILES[mode].fallback_speed_kmh * 60
 
 
 async def order_day(
