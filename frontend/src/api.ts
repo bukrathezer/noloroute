@@ -252,11 +252,11 @@ export interface PlaceLocation {
   address: string;
 }
 
-export interface FoodPlace {
+export interface Suggestion {
   place_id: string;
   name: string;
-  /** e.g. "Turkish restaurant", in the requested language. */
-  cuisine: string | null;
+  /** e.g. "Turkish restaurant", "Cocktail bar", in the requested language. */
+  category: string | null;
   lat: number;
   lng: number;
   rating: number;
@@ -269,16 +269,24 @@ export interface FoodPlace {
   maps_url: string | null;
 }
 
-export interface FoodGroup {
-  /** The stop these places are close to. */
-  near: string;
-  places: FoodPlace[];
+export interface SuggestionGroup {
+  /** The stop these places are close to; null for the accommodation. */
+  near: string | null;
+  places: Suggestion[];
 }
 
-export const foodSuggestions = (stops: { name: string; lat: number; lng: number }[], date: string | null, lang: string) =>
-  request<FoodGroup[]>("/api/v1/suggestions/food", {
+type StopPoint = { name: string; lat: number; lng: number };
+
+export const foodSuggestions = (stops: StopPoint[], date: string | null, lang: string) =>
+  request<SuggestionGroup[]>("/api/v1/suggestions/food", {
     method: "POST",
     body: JSON.stringify({ stops, date, lang }),
+  });
+
+export const nightlifeSuggestions = (accommodation: LatLng, stops: StopPoint[], date: string | null, lang: string) =>
+  request<SuggestionGroup[]>("/api/v1/suggestions/nightlife", {
+    method: "POST",
+    body: JSON.stringify({ accommodation, stops, date, lang }),
   });
 
 export const placeAutocomplete = (q: string, near: LatLng, sessionToken: string, lang: string) =>

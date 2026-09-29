@@ -3,7 +3,7 @@ import type { DayWeather, LegDetails, PlanResponse, TravelMode } from "../api";
 import { formatDay, formatMonth } from "../dates";
 import { type Lang, STRINGS } from "../i18n";
 import { dayColor } from "../theme";
-import { FoodSuggestions } from "./FoodSuggestions";
+import { Suggestions } from "./Suggestions";
 
 // "dirty": a saved route was edited and the changes are not stored yet.
 export type SaveState = "idle" | "saving" | "saved" | "dirty" | "error";
@@ -211,13 +211,21 @@ export function PlanResult(props: Props) {
               </li>
             </ol>
           )}
-          {/* Keyed by the day's date and stops: a change starts the suggestions afresh. */}
-          <FoodSuggestions
-            key={`${day.date ?? ""}|${day.stops.map((s) => s.poi_id).join(",")}`}
-            day={day}
-            currencyCode={plan.currency_code}
-            lang={lang}
-          />
+          {day.stops.length > 0 && (
+            // Keyed by the day's date and stops: a change starts the suggestions afresh.
+            <div className="suggestions" key={`${day.date ?? ""}|${day.stops.map((s) => s.poi_id).join(",")}`}>
+              {(["food", "nightlife"] as const).map((kind) => (
+                <Suggestions
+                  key={kind}
+                  kind={kind}
+                  day={day}
+                  accommodation={plan.accommodation}
+                  currencyCode={plan.currency_code}
+                  lang={lang}
+                />
+              ))}
+            </div>
+          )}
         </article>
       ))}
       {plan.days.some((d) => d.routing_source === "google") && <p className="attribution">{r.attribution}</p>}

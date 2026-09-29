@@ -93,10 +93,15 @@ class PlaceSearchClient:
         field_mask: str,
         language: str,
         excluded_primary_types: list[str] | None = None,
+        primary_types_only: bool = False,
     ) -> list[dict[str, Any]]:
-        """Up to 20 places of the given types within the circle, most popular first."""
+        """Up to 20 places of the given types within the circle, most popular first.
+
+        With `primary_types_only`, a place's main type must be one of them (a restaurant that
+        also has a bar doesn't count as a bar).
+        """
         body: dict[str, Any] = {
-            "includedTypes": included_types,
+            "includedPrimaryTypes" if primary_types_only else "includedTypes": included_types,
             "maxResultCount": 20,
             "rankPreference": "POPULARITY",
             "languageCode": language,

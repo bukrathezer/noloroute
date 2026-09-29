@@ -133,18 +133,24 @@ weeks ahead, so for later trips the same weekday in the coming week is used. Whe
 transit data, every leg is walked and the plan says so. Transit plans cost the most Google calls
 (two route matrices per day), so they are rate-limited per client.
 
-## Places to eat along a route
-Meals are not planned into the route (when and where to eat is personal); instead each day can
-list places to eat near its route: `POST /api/v1/suggestions/food` with the day's stops.
+## Places to eat and nightlife
+Meals and evenings are not planned into the route (when and where to eat or go out is personal);
+instead each day can list suggestions, looked up only when the traveller asks
+(`app/services/suggestions.py`):
 
-- Two stops about a third and two thirds of the way through the day are the anchors; around each,
-  one Nearby Search asks for the 20 most popular restaurants, bakeries and dessert shops within
-  700 m (fast food and takeaways excluded).
-- Places rated 4.2+ with 200+ reviews that are open for at least an hour at lunch or dinner time
-  that day are ranked by popularity and listed under the nearer anchor, a chain only once.
-- Each shows its cuisine, rating, price level, that day's hours, distance and a Google Maps link.
-- Looked up only when the traveller asks (two paid requests), rate-limited per client, and never
-  stored: Google's terms allow storing only place IDs.
+- **Places to eat along the route** (`POST /api/v1/suggestions/food`): around two stops a third
+  and two thirds of the way through the day, the most popular restaurants, bakeries and dessert
+  shops within 700 m (no fast food or takeaways), rated 4.2+ with 200+ reviews and open for at
+  least an hour at lunch or dinner time that day.
+- **Nightlife for the evening** (`POST /api/v1/suggestions/nightlife`): near the accommodation,
+  and near the day's last stop if it is 1.5 km+ away, bars, pubs, clubs, live music and comedy
+  within 1 km whose main type is one of these (not restaurants that also have a bar), rated 4.2+
+  with 100+ reviews and open for at least an hour between 20:00 and 02:00 that night.
+- Each lookup is one Nearby Search per anchor. Places are ranked by popularity, listed under the
+  nearer anchor, and a chain appears once, with its best branch. Each shows its category, rating,
+  price level, that day's hours, distance and a Google Maps link.
+- Lookups are rate-limited per client (food and nightlife together) and never stored: Google's
+  terms allow storing only place IDs.
 
 ## Editing a plan and finding the accommodation
 - `POST /api/v1/routes/plan/remove-stop` drops a stop and re-routes only that day.
