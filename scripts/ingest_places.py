@@ -48,13 +48,16 @@ class CityConfig:
     id: str
     name: str
     currency_code: str
+    timezone: str  # IANA name; transit timetables are read in local time
     bounds: BoundingBox
 
 
 CITIES = {
-    "paris": CityConfig("paris", "Paris", "EUR", BoundingBox(48.815, 2.224, 48.902, 2.470)),
+    "paris": CityConfig("paris", "Paris", "EUR", "Europe/Paris", BoundingBox(48.815, 2.224, 48.902, 2.470)),
     # Historic peninsula, Beyoglu, Besiktas, Uskudar, Kadikoy and the Bosphorus shore up to Sariyer.
-    "istanbul": CityConfig("istanbul", "Istanbul", "TRY", BoundingBox(40.960, 28.840, 41.130, 29.100)),
+    "istanbul": CityConfig(
+        "istanbul", "Istanbul", "TRY", "Europe/Istanbul", BoundingBox(40.960, 28.840, 41.130, 29.100)
+    ),
 }
 
 
@@ -274,11 +277,13 @@ def curated_rows(city: CityConfig) -> list[dict[str, Any]]:
 def save_city(city: CityConfig, rows: list[dict[str, Any]]) -> int:
     """Upsert the city and its POIs; return how many stale POIs were removed."""
     with SessionLocal() as db:
-        city_stmt = pg_insert(City).values(id=city.id, name=city.name, currency_code=city.currency_code)
+        city_stmt = pg_insert(City).values(
+            id=city.id, name=city.name, currency_code=city.currency_code, timezone=city.timezone
+        )
         db.execute(
             city_stmt.on_conflict_do_update(
                 index_elements=[City.id],
-                set_={"name": city_stmt.excluded.name, "currency_code": city_stmt.excluded.currency_code},
+                set_={col: city_stmt.excluded[col] for col in ("name", "currency_code", "timezone")},
             )
         )
         if rows:

@@ -46,17 +46,28 @@ function stopIcon(n: number, color: string, highlighted: boolean) {
   });
 }
 
+interface Segment {
+  points: Point[];
+  /** A walk within a transit plan: drawn dotted, so rides stand out. */
+  walk: boolean;
+}
+
 /** Street geometry for each leg of a day, falling back to straight lines for estimates. */
-function dayPath(day: DayPlan, hotel: Point): Point[] {
-  const path: Point[] = [];
+function daySegments(day: DayPlan, hotel: Point): Segment[] {
+  const legs = [
+    ...day.stops.map((s) => ({
+      to: [s.latitude, s.longitude] as Point,
+      path: s.path_from_previous,
+      mode: s.leg_from_previous?.mode,
+    })),
+    { to: hotel, path: day.return_path, mode: day.return_leg?.mode },
+  ];
   let previous = hotel;
-  for (const stop of day.stops) {
-    const here: Point = [stop.latitude, stop.longitude];
-    path.push(...(stop.path_from_previous ? decodePolyline(stop.path_from_previous) : [previous, here]));
-    previous = here;
-  }
-  path.push(...(day.return_path ? decodePolyline(day.return_path) : [previous, hotel]));
-  return path;
+  return legs.map((leg) => {
+    const points = leg.path ? decodePolyline(leg.path) : [previous, leg.to];
+    previous = leg.to;
+    return { points, walk: leg.mode === "WALK" };
+  });
 }
 
 function ClickToPlaceHotel({ enabled, onPick }: { enabled: boolean; onPick: (p: LatLng) => void }) {
@@ -127,14 +138,20 @@ export function RouteMap(props: Props) {
         plan.days.map((day) => {
           const dimmed = activeDay !== null && activeDay !== day.day_number;
           const color = dayColor(day.day_number);
-          return (
+          return daySegments(day, hotelPoint).map((segment, i) => (
             <Polyline
-              key={`path-${day.day_number}`}
-              positions={dayPath(day, hotelPoint)}
+              key={`path-${day.day_number}-${i}`}
+              positions={segment.points}
               interactive={false}
-              pathOptions={{ color, weight: dimmed ? 3 : 5, opacity: dimmed ? 0.2 : 0.85 }}
+              pathOptions={{
+                color,
+                weight: dimmed ? 3 : 5,
+                opacity: dimmed ? 0.2 : 0.85,
+                dashArray: segment.walk ? "1 9" : undefined,
+                lineCap: "round",
+              }}
             />
-          );
+          ));
         })}
 
       {plan &&

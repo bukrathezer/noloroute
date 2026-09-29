@@ -369,6 +369,7 @@ function errorMessage(error: unknown, lang: Lang): string {
   if (!(error instanceof ApiError)) return e.generic;
   if (error.status === 0) return e.network;
   if (error.status === 404) return e.unknownCity;
+  if (error.status === 429) return e.tooMany;
   if (error.status === 422 && error.message.includes("km from every sight")) return e.tooFar;
   return e.generic;
 }

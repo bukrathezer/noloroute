@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { DayWeather, PlanResponse } from "../api";
+import type { DayWeather, LegDetails, PlanResponse, TravelMode } from "../api";
 import { formatDay } from "../dates";
 import { type Lang, STRINGS } from "../i18n";
 import { dayColor } from "../theme";
@@ -32,8 +32,9 @@ export function PlanResult(props: Props) {
   const travel = plan.days.reduce((n, d) => n + d.total_travel_minutes, 0);
   const cost = Number(plan.total_entry_cost);
   const allUnpriced = plan.unpriced_stop_count === stopCount;
-  const km = (value: number) => value.toLocaleString(lang, { maximumFractionDigits: 1 });
   const days = activeDay ? plan.days.filter((d) => d.day_number === activeDay) : plan.days;
+  const transit = plan.travel_mode === "TRANSIT";
+  const noTransitData = transit && plan.days.some((d) => d.transit_available === false);
 
   return (
     <section className="plan-result" aria-live="polite">
@@ -73,6 +74,7 @@ export function PlanResult(props: Props) {
         </div>
       </dl>
       {plan.unpriced_stop_count > 0 && <p className="hint">{r.unpriced(plan.unpriced_stop_count)}</p>}
+      {transit && <p className="hint">{noTransitData ? r.noTransit : r.mapLegend}</p>}
 
       {plan.days.length > 1 && (
         <div className="day-tabs" role="tablist">
@@ -137,14 +139,14 @@ export function PlanResult(props: Props) {
                   onMouseEnter={() => onHighlightStop(stop.poi_id)}
                   onMouseLeave={() => onHighlightStop(null)}
                 >
-                  <div className="leg">
-                    {r.leg(
-                      t.mode[plan.travel_mode],
-                      t.minutes(stop.travel_minutes_from_previous),
-                      km(stop.distance_km_from_previous),
-                      stop.order_in_day === 1,
-                    )}
-                  </div>
+                  <LegLine
+                    mode={plan.travel_mode}
+                    details={stop.leg_from_previous}
+                    minutes={stop.travel_minutes_from_previous}
+                    km={stop.distance_km_from_previous}
+                    fromHotel={stop.order_in_day === 1}
+                    lang={lang}
+                  />
                   <div className="stop-row">
                     <button type="button" className="stop" onClick={() => onHighlightStop(stop.poi_id)}>
                       <span className="stop-number">{stop.order_in_day}</span>
@@ -175,9 +177,14 @@ export function PlanResult(props: Props) {
                 </li>
               ))}
               <li className="return">
-                <div className="leg">
-                  {r.leg(t.mode[plan.travel_mode], t.minutes(day.return_travel_minutes), km(day.return_distance_km), false)}
-                </div>
+                <LegLine
+                  mode={plan.travel_mode}
+                  details={day.return_leg}
+                  minutes={day.return_travel_minutes}
+                  km={day.return_distance_km}
+                  fromHotel={false}
+                  lang={lang}
+                />
                 <div className="stop">
                   <span className="stop-number hotel" aria-hidden="true">
                     ⌂
@@ -189,7 +196,74 @@ export function PlanResult(props: Props) {
           )}
         </article>
       ))}
+      {plan.days.some((d) => d.routing_source === "google") && <p className="attribution">{r.attribution}</p>}
     </section>
+  );
+}
+
+const VEHICLE_ICONS: Record<string, string> = {
+  SUBWAY: "🚇",
+  METRO_RAIL: "🚇",
+  TRAM: "🚊",
+  LIGHT_RAIL: "🚊",
+  MONORAIL: "🚝",
+  BUS: "🚌",
+  INTERCITY_BUS: "🚌",
+  TROLLEYBUS: "🚎",
+  SHARE_TAXI: "🚐",
+  FERRY: "⛴️",
+  CABLE_CAR: "🚡",
+  GONDOLA_LIFT: "🚡",
+  FUNICULAR: "🚞",
+  RAIL: "🚆",
+  HEAVY_RAIL: "🚆",
+  COMMUTER_TRAIN: "🚆",
+  LONG_DISTANCE_TRAIN: "🚆",
+  HIGH_SPEED_TRAIN: "🚄",
+};
+
+interface LegLineProps {
+  mode: TravelMode;
+  /** Set in transit plans: whether this leg is walked or ridden, and on which lines. */
+  details: LegDetails | null | undefined;
+  minutes: number;
+  km: number;
+  fromHotel: boolean;
+  lang: Lang;
+}
+
+/** The travel line above a stop: "Walking 12 min · 0.9 km", plus the rides of a transit leg. */
+function LegLine({ mode, details, minutes, km, fromHotel, lang }: LegLineProps) {
+  const t = STRINGS[lang];
+  const r = t.result;
+  const distance = km.toLocaleString(lang, { maximumFractionDigits: 1 });
+  const extras: string[] = [];
+  if (details?.mode === "TRANSIT" && details.walk_minutes) extras.push(r.walkingPart(t.minutes(details.walk_minutes)));
+  if (details?.alternative_mode && details.alternative_minutes != null) {
+    extras.push(r.alternative[details.alternative_mode](t.minutes(details.alternative_minutes)));
+  }
+
+  return (
+    <div className="leg">
+      <span>
+        {details?.mode === "WALK" && <span aria-hidden="true">🚶 </span>}
+        {r.leg(r.legMode[details?.mode ?? mode], t.minutes(minutes), distance, fromHotel)}
+        {extras.map((extra) => ` · ${extra}`).join("")}
+      </span>
+      {details?.rides.map((ride) => (
+        <span className="ride" key={`${ride.line}|${ride.from_stop}|${ride.to_stop}`}>
+          <span
+            className="line-chip"
+            style={{ background: ride.line_color ?? undefined, color: ride.line_text_color ?? undefined }}
+            title={[ride.agency, ride.headsign && r.towards(ride.headsign)].filter(Boolean).join(" · ") || undefined}
+          >
+            <span aria-hidden="true">{VEHICLE_ICONS[ride.vehicle] ?? "🚍"}</span>
+            {ride.line}
+          </span>
+          <span>{r.ride(ride.from_stop, ride.to_stop, ride.stop_count)}</span>
+        </span>
+      ))}
+    </div>
   );
 }
 
