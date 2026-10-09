@@ -5,6 +5,8 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
+from starlette.types import Scope
 
 from app.api.v1 import routes_auth, routes_city, routes_places, routes_poi, routes_route, routes_suggestions
 from app.core.config import get_settings
@@ -57,8 +59,25 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+class FrontendFiles(StaticFiles):
+    """The built frontend, with caching that lets visitors see a new deploy at once.
+
+    Vite puts a content hash in every file name under assets/, so those can be cached for good.
+    index.html keeps its name across deploys: browsers must check it each time (a cheap 304
+    while it hasn't changed), or they keep running last week's bundle.
+    """
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        response = await super().get_response(path, scope)
+        if Path(path).parts[:1] == ("assets",):  # path uses the OS's separators
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 # The built web frontend (frontend/dist) is served from the same origin as the API, so one
 # Cloud Run service hosts both and no CORS setup is needed. Mounted last: API routes win.
 FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 if FRONTEND_DIST.is_dir():
-    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
+    app.mount("/", FrontendFiles(directory=FRONTEND_DIST, html=True), name="frontend")

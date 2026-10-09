@@ -214,7 +214,7 @@ export function PlanResult(props: Props) {
           )}
           {day.stops.length > 0 && (
             // Keyed by the day's date and stops: a change starts the suggestions afresh.
-            <div className="suggestions" key={`${day.date ?? ""}|${day.stops.map((s) => s.poi_id).join(",")}`}>
+            <div className="day-extras" key={`${day.date ?? ""}|${day.stops.map((s) => s.poi_id).join(",")}`}>
               {(["food", "nightlife"] as const).map((kind) => (
                 <Suggestions
                   key={kind}

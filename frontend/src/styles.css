@@ -2,6 +2,7 @@
   --brand: #0f766e;
   --brand-strong: #0d5f59;
   --brand-soft: #e6f4f2;
+  --on-brand: #ffffff; /* text on a --brand background */
   --bg: #f6f6f3;
   --surface: #ffffff;
   --surface-2: #f1f1ed;
@@ -20,6 +21,7 @@
     --brand: #2dd4bf;
     --brand-strong: #5eead4;
     --brand-soft: #123532;
+    --on-brand: #062a27;
     --bg: #0f1211;
     --surface: #171b1a;
     --surface-2: #1f2523;
@@ -181,12 +183,6 @@ a {
   flex-direction: column;
   gap: 7px;
   min-width: 0;
-}
-
-.field-row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 16px;
 }
 
 .field-label {
@@ -397,6 +393,133 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- trip dates ---------- */
+
+.date-range {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.date-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.date-trigger {
+  width: 100%;
+  height: 42px;
+  padding: 0 40px 0 38px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.date-trigger.empty {
+  color: var(--muted);
+}
+
+.date-trigger[aria-expanded="true"] {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.trip-calendar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 10px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+/* Holds the space while the calendar code downloads on first open. */
+.calendar-loading {
+  height: 300px;
+}
+
+/* DayPicker's look, in this app's colours. Cells are sized to fit the narrowest panel. */
+.trip-calendar .rdp-root {
+  --rdp-accent-color: var(--brand);
+  --rdp-accent-background-color: var(--brand-soft);
+  --rdp-range_start-color: var(--on-brand);
+  --rdp-range_end-color: var(--on-brand);
+  --rdp-day-width: 40px;
+  --rdp-day-height: 40px;
+  --rdp-day_button-width: 38px;
+  --rdp-day_button-height: 38px;
+  --rdp-nav-height: 40px;
+  --rdp-disabled-opacity: 0.35;
+}
+
+.trip-calendar .rdp-month_caption {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.trip-calendar .rdp-weekday {
+  color: var(--muted);
+  font-size: 12px;
+  opacity: 1;
+}
+
+.trip-calendar .rdp-selected {
+  font-size: inherit;
+  font-weight: 600;
+}
+
+/* The first day while the last one is being picked. */
+.trip-calendar .trip-start .rdp-day_button {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.trip-calendar .trip-preview {
+  background: color-mix(in srgb, var(--brand-soft) 65%, transparent);
+}
+
+.trip-calendar .rdp-footer {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.calendar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  align-self: stretch;
+  margin-top: 8px;
+}
+
+.calendar-actions .link-button {
+  margin-left: 0;
+}
+
+.calendar-actions .pill-button {
+  margin-left: auto;
+  padding: 5px 16px;
+  font-weight: 600;
+}
+
+.no-dates {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
 .segmented {
   display: grid;
   grid-auto-flow: column;
@@ -428,16 +551,10 @@ a {
   border: none;
   border-radius: 10px;
   background: var(--brand);
-  color: #fff;
+  color: var(--on-brand);
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s;
-}
-
-@media (prefers-color-scheme: dark) {
-  .primary-button {
-    color: #062a27;
-  }
 }
 
 .primary-button:hover:not(:disabled) {
@@ -930,7 +1047,8 @@ button.stop:hover,
   background: color-mix(in srgb, #2563eb 12%, var(--surface));
 }
 
-.suggestions {
+/* Places to eat, nightlife and events under a day ("suggestions" is the search dropdowns). */
+.day-extras {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -990,10 +1108,6 @@ a.suggestion-name:hover {
 .rain-note {
   margin-top: 6px;
   font-size: 13px;
-}
-
-.input-wrap input[type="date"] {
-  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- footer ---------- */
