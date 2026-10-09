@@ -7,7 +7,8 @@ the rest upserted. A couple of text searches fill gaps that Google's type system
 viewpoints, bazaars). Famous streets and districts (e.g. Champs-Elysees, Istiklal Avenue) are
 poorly represented in Places, so they are added from a small hand-entered list (CURATED_POIS).
 Visit times and entry prices come from scripts/sight_details.py: rules for every place,
-hand-checked values for the most visited ones.
+hand-checked values for the most visited ones. New places then get a short description from
+Wikipedia (scripts/describe_pois.py).
 
 Paris and Istanbul have hand-drawn search areas (CITIES); the other cities come from
 scripts/city_catalog.py, searched around the centre Google gives for their name.
@@ -47,6 +48,7 @@ from app.models.poi import POICategory
 from app.services.geo import LatLng
 from app.services.places_client import MAX_NEARBY_RESULTS, BoundingBox, PlacesAPIError, PlacesClient
 from scripts.city_catalog import CATALOG, CatalogCity
+from scripts.describe_pois import describe_new_places
 from scripts.sight_details import CITY_PRICES, SIGHTS, estimate_entry_price, estimate_visit_minutes
 
 # Raw API results are cached here. Override with PLACES_CACHE_DIR where the repo folder is
@@ -514,6 +516,7 @@ def main() -> None:
             if not args.dry_run:
                 removed = save_city(city, rows, requests)
                 print(f"  saved {len(rows)} POIs, removed {removed} stale")
+                describe_new_places(city.id)
     print("requests:", dict(client.requests))
 
 

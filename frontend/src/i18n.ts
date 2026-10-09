@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { City, TravelMode } from "./api";
 
 export type Lang = "tr" | "en";
@@ -89,6 +90,15 @@ const en = {
     },
     dropped: (names: string) => `Left out to keep the day under 8½ hours: ${names}`,
     removeFailed: "Couldn't remove that stop. Please try again.",
+    wikipedia: "Wikipedia",
+    // The two links are passed in: the Wikipedia home page and the licence.
+    descriptionsNote: (wiki: ReactNode, license: ReactNode): ReactNode[] => [
+      "Place descriptions are shortened from ",
+      wiki,
+      " articles (",
+      license,
+      ").",
+    ],
   },
   errors: {
     network: "Can't reach the server. Check your connection and try again.",
@@ -305,6 +315,8 @@ const tr: Strings = {
     },
     dropped: (names) => `Gün 8,5 saati aşmasın diye çıkarıldı: ${names}`,
     removeFailed: "Durak çıkarılamadı. Lütfen tekrar dene.",
+    wikipedia: "Vikipedi",
+    descriptionsNote: (wiki, license) => ["Yer açıklamaları ", wiki, " maddelerinden kısaltılmıştır (", license, ")."],
   },
   errors: {
     network: "Sunucuya ulaşılamıyor. Bağlantını kontrol edip tekrar dene.",

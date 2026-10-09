@@ -533,6 +533,9 @@ def build_day(
             entry_price=poi.entry_price,
             rating=poi.rating,
             hours=hours_on(poi.opening_hours, day_date) if day_date else None,
+            wikidata_id=poi.wikidata_id,
+            description_tr=poi.description_tr,
+            description_en=poi.description_en,
         )
         # legs has one extra entry (the way back to the hotel), handled separately below.
         for position, (poi, leg) in enumerate(zip(ordered, loop.legs, strict=False), start=1)

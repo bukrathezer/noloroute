@@ -22,7 +22,7 @@ budget instead.
 ## Tech Stack
 - **Backend:** Python, FastAPI, SQLAlchemy 2.0
 - **Database:** PostgreSQL
-- **POI data:** Google Places API (New)
+- **POI data:** Google Places API (New); short descriptions from Wikipedia, matched through Wikidata
 - **Routing:** Google Routes API (waypoint optimization)
 - **Frontend:** React + TypeScript (Vite), Leaflet with OpenStreetMap tiles, Turkish/English UI
 - **CI/CD:** GitHub Actions
@@ -101,6 +101,27 @@ Google Places has neither, so `scripts/sight_details.py` sets them during ingest
   2026), Istanbul the price for Turkish citizens; plans say which, and when prices were checked.
   Google entries that are part of another sight (the Louvre Pyramid, Napoleon's Tomb) are
   left out so a plan never visits and pays for the same place twice.
+
+## Place descriptions
+Each stop shows a sentence or two about the place from Wikipedia (Turkish when there is a Turkish
+article, English otherwise) with a link to the article. `scripts/describe_pois.py` looks each place
+up once, for free, and the ingestion runs it for the places it adds:
+
+- The place is matched to its **Wikidata** item. English Wikipedia is searched for its name, and an
+  article counts if it lies near the place (600 m; parks, viewpoints and districts 1-1.5 km).
+  Failing that, the Wikidata items around the place are compared with its name, which finds
+  articles under another name ("Kariye Mosque" is "The Chora") or in Turkish only.
+- Names must agree word for word, and words for the kind of place must not contradict each other:
+  "Jardin du Luxembourg" is not the Luxembourg Palace, and "Galata Tower" is not the Galata
+  neighbourhood (a bare name only counts when the item's description says what the place is).
+- The text is the article's first sentence (two if the first is short), without the parentheses.
+  Wikipedia's text is CC BY-SA 4.0, so plans link every description to its article and say that
+  it was shortened.
+
+```bash
+python -m scripts.describe_pois                            # places not looked up yet
+python -m scripts.describe_pois --city paris --dry-run     # print the matches only
+```
 
 ## Trip dates, opening hours and weather
 With a `start_date`, every day gets a date:

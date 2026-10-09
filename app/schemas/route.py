@@ -99,6 +99,12 @@ class PlannedStop(BaseModel):
     entry_price: Decimal | None = Field(examples=["17.00"])
     rating: float | None
     hours: str | None = Field(default=None, description='Opening hours that day, e.g. "09:00–18:00".')
+    # A sentence or two from Wikipedia (CC BY-SA). Absent from plans saved before descriptions.
+    wikidata_id: str | None = Field(
+        default=None, description="The place's Wikidata item; links to its Wikipedia article in any language."
+    )
+    description_tr: str | None = None
+    description_en: str | None = None
 
 
 class DayPlan(BaseModel):

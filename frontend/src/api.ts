@@ -76,6 +76,10 @@ export interface PlannedStop {
   rating: number | null;
   /** Opening hours on that day, e.g. "09:00–18:00", "24/7", "closed". */
   hours: string | null;
+  /** From Wikipedia, with the Wikidata item that links to the article (missing from older saved plans). */
+  wikidata_id?: string | null;
+  description_tr?: string | null;
+  description_en?: string | null;
 }
 
 export interface DayPlan {
