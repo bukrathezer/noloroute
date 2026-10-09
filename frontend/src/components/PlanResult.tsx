@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { DayWeather, LegDetails, PlanResponse, TravelMode } from "../api";
+import type { DayWeather, LegDetails, PlannedStop, PlanResponse, TravelMode } from "../api";
 import { formatDay, formatMonth } from "../dates";
 import { type Lang, STRINGS } from "../i18n";
 import { dayColor } from "../theme";
@@ -192,6 +192,7 @@ export function PlanResult(props: Props) {
                       ×
                     </button>
                   </div>
+                  <StopDescription stop={stop} lang={lang} />
                 </li>
               ))}
               <li className="return">
@@ -233,7 +234,47 @@ export function PlanResult(props: Props) {
         </article>
       ))}
       {plan.days.some((d) => d.routing_source === "google") && <p className="attribution">{r.attribution}</p>}
+      {plan.days.some((d) => d.stops.some((s) => descriptionOf(s, lang))) && (
+        <p className="attribution">
+          {r.descriptionsNote(
+            <a key="wiki" href={`https://${lang}.wikipedia.org/`} target="_blank" rel="noreferrer">
+              {r.wikipedia}
+            </a>,
+            <a
+              key="license"
+              href={`https://creativecommons.org/licenses/by-sa/4.0/deed.${lang}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              CC BY-SA 4.0
+            </a>,
+          )}
+        </p>
+      )}
     </section>
+  );
+}
+
+/** The stop's description in the page's language; a Turkish page falls back to the English one. */
+function descriptionOf(stop: PlannedStop, lang: Lang): { text: string; lang: Lang } | null {
+  if (!stop.wikidata_id) return null;
+  if (lang === "tr" && stop.description_tr) return { text: stop.description_tr, lang: "tr" };
+  if (stop.description_en) return { text: stop.description_en, lang: "en" };
+  return null;
+}
+
+function StopDescription({ stop, lang }: { stop: PlannedStop; lang: Lang }) {
+  const description = descriptionOf(stop, lang);
+  if (!description) return null;
+  // Wikidata forwards to the item's article in that language.
+  const article = `https://www.wikidata.org/wiki/Special:GoToLinkedPage/${description.lang}wiki/${stop.wikidata_id}`;
+  return (
+    <p className="stop-description">
+      <span lang={description.lang}>{description.text}</span>{" "}
+      <a href={article} target="_blank" rel="noreferrer">
+        {STRINGS[lang].result.wikipedia}
+      </a>
+    </p>
   );
 }
 

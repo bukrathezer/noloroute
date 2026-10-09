@@ -796,6 +796,24 @@ button.stop:hover,
   font-size: 13px;
 }
 
+/* Wikipedia's sentence about the stop, lined up under its name. */
+.stop-description {
+  margin: -2px 0 6px 36px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.stop-description a {
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.stop-description a:hover {
+  text-decoration: underline;
+}
+
 .stops li.return {
   padding-bottom: 4px;
 }
