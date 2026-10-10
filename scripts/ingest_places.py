@@ -2,10 +2,12 @@
 
 How it works: Nearby Search, asking for the most *popular* places of our types, over an adaptive
 grid (see fetch_adaptive: Nearby Search costs about $35 per 1,000 requests, so a city takes as few
-as it can). Results are deduplicated on Google's place_id, obscure/irrelevant places dropped and
-the rest upserted. A couple of text searches fill gaps that Google's type system misses (scenic
-viewpoints, bazaars). Famous streets and districts (e.g. Champs-Elysees, Istiklal Avenue) are
-poorly represented in Places, so they are added from a small hand-entered list (CURATED_POIS).
+as it can). Results are deduplicated on Google's place_id, obscure/irrelevant places dropped (and
+"markets" that are shops, and second listings of a place at the same spot) and the rest upserted.
+A couple of text searches fill gaps that Google's type system misses (scenic viewpoints, bazaars),
+and famous sights the popularity search missed are looked up by name (find_famous_sights).
+Famous streets and districts (e.g. Champs-Elysees, Istiklal Avenue) are poorly represented in
+Places, so they are added from a small hand-entered list (CURATED_POIS).
 Visit times and entry prices come from scripts/sight_details.py: rules for every place,
 hand-checked values for the most visited ones. New places then get a short description from
 Wikipedia (scripts/describe_pois.py).
@@ -22,6 +24,7 @@ Usage (from the repo root):
     python -m scripts.ingest_places --refresh --max-requests 900   # the monthly refresh
     python -m scripts.ingest_places --city rome --dry-run          # fetch and summarize only
     python -m scripts.ingest_places --city rome --use-cache        # reuse the last raw results
+    python -m scripts.ingest_places --repair                       # cities in the DB, current rules
 """
 
 import argparse
@@ -29,6 +32,7 @@ import heapq
 import json
 import math
 import os
+import re
 import sys
 from collections import Counter
 from dataclasses import asdict, dataclass
@@ -45,8 +49,10 @@ from app.db.base import new_id
 from app.db.session import SessionLocal
 from app.models import POI, City
 from app.models.poi import POICategory
-from app.services.geo import LatLng
+from app.services.geo import LatLng, haversine_km
 from app.services.places_client import MAX_NEARBY_RESULTS, BoundingBox, PlacesAPIError, PlacesClient
+from app.services.route_optimizer import SAME_SPOT_KM
+from app.services.wikipedia import WikiClient, WikiError, name_score
 from scripts.city_catalog import CATALOG, CatalogCity
 from scripts.describe_pois import describe_new_places
 from scripts.sight_details import CITY_PRICES, SIGHTS, estimate_entry_price, estimate_visit_minutes
@@ -191,6 +197,17 @@ TYPE_TO_CATEGORY: dict[str, POICategory] = {
 # Minimum Google review count: filters out obscure places, keeps what tourists actually visit.
 MIN_RATING_COUNT = 300
 
+# "Markets" that are shops. Google files Rome's "Mercatino dell'Usato" second-hand chain under
+# flea_market, usually along with shop types, and some supermarkets under market. Markets that
+# are also tourist attractions (the Grand Bazaar) always stay.
+SHOP_TYPES = {"store", "supermarket", "grocery_store", "car_repair", "service", "wholesaler", "manufacturer"}
+SECOND_HAND_NAME = re.compile(r"\b(usato|used|second[- ]?hand|thrift|franchising|franchise)\b", re.IGNORECASE)
+
+# Famous sights the popularity search missed (see add_famous_sights).
+FAMOUS_MAX_LOOKUPS = 25  # Google searches per city
+FAMOUS_MATCH_M = 500  # how far Google's place may lie from Wikidata's point
+FAMOUS_SAME_SPOT_M = 75  # a sight we have this close covers it (the obelisk in Place de la Concorde)
+
 RawResult = dict[str, Any]  # {"source": <search that found it>, "place": <Places API place dict>}
 
 
@@ -318,6 +335,16 @@ def to_row(place: dict[str, Any], city_id: str, category: POICategory) -> dict[s
     }
 
 
+def is_shop(place: dict[str, Any]) -> bool:
+    """Whether a "market" is really a shop (see SHOP_TYPES)."""
+    types = set(place.get("types", []))
+    if "tourist_attraction" in types:
+        return False
+    if types & SHOP_TYPES or any(t.endswith("_store") for t in types):
+        return True
+    return bool(SECOND_HAND_NAME.search(place["displayName"]["text"]))
+
+
 def build_rows(raw: list[RawResult], city: CityConfig) -> list[dict[str, Any]]:
     """Deduplicate on place_id, filter, categorize and convert to DB rows."""
     rows_by_place_id: dict[str, dict[str, Any]] = {}
@@ -328,9 +355,80 @@ def build_rows(raw: list[RawResult], city: CityConfig) -> list[dict[str, Any]]:
         if (sight := SIGHTS.get(place["id"])) and sight.same_as:
             continue  # part of another sight, e.g. the Louvre Pyramid
         category = categorize(place)
-        if category is not None:
-            rows_by_place_id[place["id"]] = to_row(place, city.id, category)
-    return list(rows_by_place_id.values()) + curated_rows(city)
+        if category is None or (category is POICategory.MARKET and is_shop(place)):
+            continue
+        rows_by_place_id[place["id"]] = to_row(place, city.id, category)
+    return drop_same_spot(list(rows_by_place_id.values())) + curated_rows(city)
+
+
+def drop_same_spot(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep one listing per place: of rows of one category at the same spot (SAME_SPOT_KM), the
+    most reviewed. Google lists the Spice Bazaar as "Egyptian Bazaar" and "Mercado egipcio"."""
+    kept: list[dict[str, Any]] = []
+    for row in sorted(rows, key=lambda r: -(r["user_rating_count"] or 0)):
+        here = LatLng(row["latitude"], row["longitude"])
+        if any(
+            other["category"] == row["category"]
+            and haversine_km(here, LatLng(other["latitude"], other["longitude"])) < SAME_SPOT_KM
+            for other in kept
+        ):
+            continue
+        kept.append(row)
+    return kept
+
+
+def find_famous_sights(
+    client: PlacesClient, wiki: WikiClient, city_id: str, bounds: BoundingBox, rows: list[dict[str, Any]]
+) -> list[RawResult]:
+    """Famous sights the popularity search missed, looked up on Google by name.
+
+    The search ranks places by Google's review count, which can be far too low for a famous
+    sight with split listings (the British Museum showed 3,000 reviews). So the sights with the
+    most Wikipedia articles around the city are checked against `rows`; each one that no row
+    covers (one next to it, or one nearby with its name) is searched for by name, at most
+    FAMOUS_MAX_LOOKUPS per city (Text Search: about $35 per 1,000, the first 1,000 a month free).
+    The result must be near the sight and pass the usual filters. Returned as raw results, so
+    they are cached and rebuilt like the search's own.
+    """
+    centre = LatLng((bounds.south + bounds.north) / 2, (bounds.west + bounds.east) / 2)
+    radius_km = haversine_km(centre, LatLng(bounds.north, bounds.east))
+    known_ids = {row["place_id"] for row in rows}
+    have = list(rows)
+    found: list[RawResult] = []
+    lookups = 0
+    for famous in wiki.famous_places(centre, radius_km):
+        if lookups >= FAMOUS_MAX_LOOKUPS:
+            break
+        if not (bounds.south <= famous.where.lat <= bounds.north and bounds.west <= famous.where.lng <= bounds.east):
+            continue
+        if _covered(famous.label, famous.where, have):
+            continue
+        lookups += 1
+        place = client.find_place_near(famous.label, famous.where, FAMOUS_MATCH_M)
+        if place is None or place["id"] in known_ids or not is_relevant(place, bounds):
+            continue
+        category = categorize(place)
+        if category is None or (category is POICategory.MARKET and is_shop(place)):
+            continue
+        found_at = LatLng(place["location"]["latitude"], place["location"]["longitude"])
+        reach_m = FAMOUS_MATCH_M * (3 if category is POICategory.PARK else 1)  # parks are big
+        if haversine_km(found_at, famous.where) * 1000 > reach_m:
+            continue  # Google found something else of that name
+        found.append({"source": f"famous:{famous.qid}", "place": place})
+        have.append(to_row(place, city_id, category))
+        known_ids.add(place["id"])
+    names = ", ".join(item["place"]["displayName"]["text"] for item in found) or "-"
+    print(f"  famous sights: {lookups} looked up on Google, added {len(found)}: {names}")
+    return found
+
+
+def _covered(label: str, where: LatLng, rows: list[dict[str, Any]]) -> bool:
+    """Whether a row stands for this sight: one right next to it, or one nearby with its name."""
+    for row in rows:
+        km = haversine_km(where, LatLng(row["latitude"], row["longitude"]))
+        if km * 1000 < FAMOUS_SAME_SPOT_M or (km * 1000 < FAMOUS_MATCH_M and name_score(row["name"], label) >= 0.75):
+            return True
+    return False
 
 
 def curated_rows(city: CityConfig) -> list[dict[str, Any]]:
@@ -447,6 +545,55 @@ def refresh_candidates() -> list[tuple[str, datetime | None, int | None]]:
     return [(r.id, r.refreshed_at, r.last_ingest_requests) for r in rows if r.id in known]
 
 
+def repair_city(client: PlacesClient, wiki: WikiClient, city_id: str, dry_run: bool = False) -> None:
+    """Bring a city already in the database up to the current rules without a new Nearby search:
+    drop second-hand shops (by name, as shop types aren't stored) and second listings at the same
+    spot, and add the famous sights the popularity search missed."""
+    with SessionLocal() as db:
+        pois = list(db.scalars(select(POI).where(POI.city_id == city_id)))
+        rows = [
+            {
+                "place_id": p.place_id,
+                "name": p.name,
+                "category": p.category,
+                "latitude": p.latitude,
+                "longitude": p.longitude,
+                "user_rating_count": p.user_rating_count,
+            }
+            for p in pois
+        ]
+        google = [r for r in rows if not r["place_id"].startswith("curated:")]
+        single = {r["place_id"] for r in drop_same_spot(google)}
+        unwanted = {
+            r["place_id"]: r["name"]
+            for r in google
+            if r["place_id"] not in single
+            or (r["category"] == POICategory.MARKET.value and SECOND_HAND_NAME.search(r["name"]))
+        }
+        print(f"  dropping {len(unwanted)}: {', '.join(unwanted.values()) or '-'}")
+        bounds = CITIES[city_id].bounds if city_id in CITIES else _extent(rows, pad_km=1.0)
+        famous = find_famous_sights(client, wiki, city_id, bounds, [r for r in rows if r["place_id"] not in unwanted])
+        if dry_run:
+            return
+        if unwanted:
+            # Places on a saved route stay: the route points at them.
+            db.execute(delete(POI).where(POI.place_id.in_(list(unwanted)), ~POI.route_stops.any()))
+        if famous:
+            new_rows = [to_row(item["place"], city_id, categorize(item["place"])) for item in famous]
+            db.execute(pg_insert(POI).values(new_rows).on_conflict_do_nothing(index_elements=[POI.place_id]))
+        db.commit()
+    describe_new_places(city_id)
+
+
+def _extent(rows: list[dict[str, Any]], pad_km: float) -> BoundingBox:
+    """The box around the rows, widened by `pad_km` on every side."""
+    lats = [r["latitude"] for r in rows]
+    lngs = [r["longitude"] for r in rows]
+    dlat = pad_km / KM_PER_DEG_LAT
+    dlng = pad_km / (KM_PER_DEG_LAT * math.cos(math.radians(sum(lats) / len(lats))))
+    return BoundingBox(min(lats) - dlat, min(lngs) - dlng, max(lats) + dlat, max(lngs) + dlng)
+
+
 def print_summary(rows: list[dict[str, Any]]) -> None:
     counts = Counter(row["category"] for row in rows)
     print(f"  kept {len(rows)}: " + "  ".join(f"{cat}={n}" for cat, n in sorted(counts.items())))
@@ -467,8 +614,30 @@ def main() -> None:
     parser.add_argument(
         "--refresh", action="store_true", help="refresh the stalest cities in the database that fit --max-requests"
     )
+    parser.add_argument(
+        "--repair",
+        action="store_true",
+        help="for cities already in the database: drop second-hand shops and second listings, add famous sights "
+        "the search missed (no Nearby search)",
+    )
     args = parser.parse_args()
     sys.stdout.reconfigure(errors="replace")  # place names in any script, on any console
+    api_key = get_settings().google_places_api_key
+
+    if args.repair:
+        if not api_key:
+            sys.exit("GOOGLE_PLACES_API_KEY is not set in .env")
+        with PlacesClient(api_key) as client, WikiClient() as wiki:
+            if args.city:
+                city_ids = args.city
+            else:
+                with SessionLocal() as db:
+                    city_ids = list(db.scalars(select(City.id).order_by(City.id)))
+            for city_id in city_ids:
+                print(f"== {city_id}")
+                repair_city(client, wiki, city_id, dry_run=args.dry_run)
+            print("requests:", dict(client.requests))
+        return
 
     if args.refresh:
         if args.max_requests is None:
@@ -477,12 +646,11 @@ def main() -> None:
         print(f"refreshing {len(city_ids)} cities: {', '.join(city_ids) or '-'}")
     else:
         city_ids = args.city or list(CITIES)
-    api_key = get_settings().google_places_api_key
     if not args.use_cache and not api_key:
         sys.exit("GOOGLE_PLACES_API_KEY is not set in .env")
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    with PlacesClient(api_key or "") as client:
+    with PlacesClient(api_key or "") as client, WikiClient() as wiki:
         for city_id in city_ids:
             cache_file = CACHE_DIR / f"{city_id}.json"
             requests = None
@@ -507,6 +675,10 @@ def main() -> None:
                     # Saving half a city would delete the places the search didn't get to.
                     print("  the request budget ran out before the search finished: not saved")
                     break
+                try:
+                    raw += find_famous_sights(client, wiki, city.id, city.bounds, build_rows(raw, city))
+                except WikiError as e:
+                    print(f"  famous sights skipped, Wikidata didn't answer: {e}")
                 cache_file.write_text(
                     json.dumps({"city": asdict(city), "raw": raw}, ensure_ascii=False), encoding="utf-8"
                 )
