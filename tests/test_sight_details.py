@@ -1,3 +1,4 @@
+import itertools
 from decimal import Decimal
 
 from app.models.poi import POICategory
@@ -66,13 +67,17 @@ def test_hand_checked_values_are_sensible() -> None:
 # --- ingestion ---------------------------------------------------------------------------------------
 
 
+_spots = itertools.count()
+
+
 def place(place_id: str, name: str, primary_type: str | None, reviews: int = 5_000) -> dict:
     return {
         "source": "test",
         "place": {
             "id": place_id,
             "displayName": {"text": name},
-            "location": {"latitude": 48.86, "longitude": 2.34},  # inside Paris
+            # Inside Paris, 200 m apart: places at one spot count as one place listed twice.
+            "location": {"latitude": 48.86 + next(_spots) * 0.002, "longitude": 2.34},
             "primaryType": primary_type,
             "types": [primary_type] if primary_type else [],
             "rating": 4.5,

@@ -33,6 +33,7 @@ from app.services.geo import LatLng, haversine_km
 
 WIKIDATA_API = "https://www.wikidata.org/w/api.php"
 WIKIPEDIA_API = "https://{lang}.wikipedia.org/w/api.php"
+WDQS_URL = "https://query.wikidata.org/sparql"  # Wikidata's SPARQL endpoint, for famous_places
 # Wikimedia asks API clients to say who they are and how to reach them.
 USER_AGENT = "NoloRoute/0.1 (https://github.com/bukrathezer/noloroute)"
 
@@ -41,6 +42,24 @@ MATCH_THRESHOLD = 0.75
 SEARCH_RESULTS = 5
 NEARBY_LIMIT = 100
 RETRIES = 5  # for throttled or busy answers, with a growing wait in between
+FAMOUS_MIN_SITELINKS = 20  # Wikipedia articles in this many languages make a place famous
+# What Wikidata's classes for an item must say for famous_places to count it as a sight: a
+# museum, church, bridge, square... A university, a station or an event is not, nor is a work of
+# art kept in a museum (the Venus de Milo is in the Louvre), nor a building that is gone.
+_SIGHT_CLASS = re.compile(
+    r"museum|gallery|church|cathedral|basilica|chapel|abbey|monastery|mosque|synagogue|temple|shrine|palace|"
+    r"castle|fortress|\bfort\b|citadel|tower|bridge|square|plaza|park|garden|cemetery|monument|memorial|fountain|"
+    r"gate|arch\b|column|obelisk|market|bazaar|observatory|skyscraper|opera house|amphitheat|ruins|"
+    r"archaeological site|forum|aqueduct|city wall|cistern|mausoleum|tomb|pagoda|viewpoint|aquarium|landmark|"
+    r"tourist attraction|historic house|villa|statue",
+    re.IGNORECASE,
+)
+_NOT_SIGHT_CLASS = re.compile(
+    r"station|university|school|college|hospital|embassy|hotel|company|ministry|district|neighbo|arrondissement|"
+    r"commune|municipality|railway|metro|transit|event|battle|treaty|language|sports team|club|stadium|airport|"
+    r"painting|artefact|artifact|destroyed|demolished|former|official residence",
+    re.IGNORECASE,
+)
 DEFAULT_RADIUS_M = 600
 # How far an article's coordinates may lie from Google's pin. Parks and districts are big.
 RADIUS_M = {"PARK": 1500, "VIEWPOINT": 1000}
@@ -362,8 +381,12 @@ class WikiClient:
             if attempt:
                 time.sleep(self.retry_wait_s * attempt)
             self.requests += 1
+            # The MediaWiki APIs take formatversion 2 (lists instead of id-keyed objects); SPARQL doesn't.
+            query = (
+                {**params, "format": "json"} if url == WDQS_URL else {**params, "format": "json", "formatversion": 2}
+            )
             try:
-                resp = self._http.get(url, params={**params, "format": "json", "formatversion": 2})
+                resp = self._http.get(url, params=query)
             except httpx.HTTPError as e:
                 problem = str(e)
                 continue
@@ -481,6 +504,55 @@ class WikiClient:
                 if page.get("extract") and title in batch:
                     result[title] = page["extract"]
         return result
+
+    def famous_places(
+        self, centre: LatLng, radius_km: float, min_sitelinks: int = FAMOUS_MIN_SITELINKS
+    ) -> list["FamousPlace"]:
+        """Sights with Wikipedia articles in at least `min_sitelinks` languages around a point,
+        most famous first (see is_sight_class for what counts as a sight)."""
+        query = f"""
+SELECT ?item ?label ?links ?coord (GROUP_CONCAT(DISTINCT ?classLabel; separator="|") AS ?classes) WHERE {{
+  SERVICE wikibase:around {{
+    ?item wdt:P625 ?coord .
+    bd:serviceParam wikibase:center "Point({centre.lng} {centre.lat})"^^geo:wktLiteral .
+    bd:serviceParam wikibase:radius "{radius_km:.1f}" .
+  }}
+  ?item wikibase:sitelinks ?links . FILTER(?links >= {min_sitelinks})
+  ?item rdfs:label ?label . FILTER(LANG(?label) = "en")
+  ?item wdt:P31 ?class . ?class rdfs:label ?classLabel . FILTER(LANG(?classLabel) = "en")
+}} GROUP BY ?item ?label ?links ?coord ORDER BY DESC(?links)"""
+        rows = self._get(WDQS_URL, {"query": query}).get("results", {}).get("bindings", [])
+        places, seen = [], set()
+        for row in rows:
+            qid = row["item"]["value"].rsplit("/", 1)[-1]
+            point = re.findall(r"-?\d+(?:\.\d+)?", row["coord"]["value"])  # "Point(lng lat)"
+            if qid in seen or len(point) < 2 or not is_sight_class(row["classes"]["value"]):
+                continue
+            seen.add(qid)
+            places.append(
+                FamousPlace(
+                    qid=qid,
+                    label=row["label"]["value"],
+                    classes=row["classes"]["value"],
+                    sitelink_count=int(row["links"]["value"]),
+                    where=LatLng(float(point[1]), float(point[0])),
+                )
+            )
+        return places
+
+
+@dataclass(frozen=True)
+class FamousPlace:
+    qid: str
+    label: str  # in English, what Google is searched for
+    classes: str  # what Wikidata says it is, e.g. "minor basilica|Catholic cathedral"
+    sitelink_count: int
+    where: LatLng
+
+
+def is_sight_class(classes: str) -> bool:
+    """Whether an item's Wikidata classes ("arch bridge|stone bridge") make it a sight."""
+    return bool(_SIGHT_CLASS.search(classes)) and not _NOT_SIGHT_CLASS.search(classes)
 
 
 def _retry_after(resp: httpx.Response) -> float:

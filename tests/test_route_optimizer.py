@@ -125,6 +125,22 @@ def test_selection_skips_near_duplicate_sights() -> None:
     assert ids == {"louvre", "other"}
 
 
+def test_selection_skips_a_second_listing_at_the_same_spot() -> None:
+    bazaar = make_poi("bazaar", 0.5, name="Egyptian Bazaar", category="MARKET", reviews=190_000)
+    listing = make_poi("listing", 0.5001, name="Mercado egipcio", category="MARKET", reviews=2_000)
+    # Next door, but another kind of place.
+    mosque = make_poi("mosque", 0.5002, name="New Mosque", category="RELIGIOUS_SITE", reviews=40_000)
+    ids = {p.id for p in select_stops([bazaar, listing, mosque], HOTEL, 1, None, MODE)}
+    assert ids == {"bazaar", "mosque"}
+
+
+def test_selection_skips_listings_of_the_same_wikidata_item() -> None:
+    mosque = make_poi("mosque", 0.5, name="Şişli Camii", category="RELIGIOUS_SITE", reviews=9_000)
+    foundation = make_poi("foundation", 0.6, name="Şişli Cami Şerifi Vakfı", category="RELIGIOUS_SITE", reviews=900)
+    mosque.wikidata_id = foundation.wikidata_id = "Q6061170"
+    assert [p.id for p in select_stops([mosque, foundation], HOTEL, 1, None, MODE)] == ["mosque"]
+
+
 def test_category_decay_keeps_the_trip_varied() -> None:
     churches = [make_poi(f"church{i}", 1, i * 0.3, category="RELIGIOUS_SITE", reviews=50_000) for i in range(5)]
     parks = [make_poi(f"park{i}", -1, i * 0.3, category="PARK", reviews=20_000) for i in range(2)]

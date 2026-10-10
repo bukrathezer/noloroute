@@ -84,6 +84,18 @@ class PlacesClient:
         places = self._post("/places:searchText", body, "places.id").get("places", [])
         return places[0]["id"] if places else None
 
+    def find_place_near(self, query: str, near: LatLng, radius_m: float) -> dict[str, Any] | None:
+        """The best match for a name around a point, with the fields we store (Text Search)."""
+        body = {
+            "textQuery": query,
+            "pageSize": 1,
+            "languageCode": self._language,
+            "locationBias": {"circle": {"center": {"latitude": near.lat, "longitude": near.lng}, "radius": radius_m}},
+        }
+        self.requests["text"] += 1
+        places = self._post("/places:searchText", body, PLACES_FIELD_MASK).get("places", [])
+        return places[0] if places else None
+
     def place_location(self, place_id: str) -> LatLng:
         """A place's coordinates (Place Details, Essentials SKU)."""
         self.requests["details"] += 1

@@ -218,6 +218,14 @@ per 1,000 requests and returns at most 20 places per request, so the search is *
   viewports proved unreliable (country-sized for one city, 200 m for another).
 - A run can be given a request budget (`--max-requests`); a city whose search doesn't finish
   within it is not saved, so a half-searched city never loses its places.
+- Popularity comes from Google's review counts, which can be wrong for a famous sight with split
+  listings (the British Museum showed 3,000 reviews and was missed). So the sights around the city
+  with Wikipedia articles in 20+ languages (from Wikidata) are checked against the list, and the
+  missing ones are looked up on Google by name: at most 25 Text Searches per city, within the
+  1,000 free each month. Paris gained Pont Neuf, Palais-Royal, Bois de Vincennes and the Grande Arche.
+- Left out: "markets" that are shops (Google files Rome's second-hand chain under flea markets)
+  and second listings of a place at the same spot ("Egyptian Bazaar" and "Mercado egipcio"). Plans
+  also never visit two places matched to the same Wikidata item.
 - **Monthly refresh:** `--refresh` updates the cities with the oldest data (at least 25 days old)
   for as long as their last run's request count fits the budget. Run monthly with a budget of 900
   it stays inside the free 1,000 Nearby requests a month, and every city is refreshed every few
@@ -226,6 +234,7 @@ per 1,000 requests and returns at most 20 places per request, so the search is *
 ```bash
 python -m scripts.ingest_places --city rome --city kyoto --max-requests 200
 python -m scripts.ingest_places --refresh --max-requests 900
+python -m scripts.ingest_places --repair    # cities in the DB: apply the current rules, no Nearby search
 ```
 
 ## Deployment

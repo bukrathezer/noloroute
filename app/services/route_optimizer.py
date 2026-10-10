@@ -53,8 +53,11 @@ CURATED_POPULARITY_PERCENTILE = 0.95  # hand-entered POIs have no Google rating:
 MAX_HOTEL_DISTANCE_KM = 25.0  # from the nearest POI; beyond this the hotel isn't in the city
 
 # Google sometimes lists one sight twice (e.g. "Louvre Museum" and "Louvre Pyramid"). Two POIs
-# are treated as the same sight if they are this close and share a distinctive name word.
+# are treated as the same sight if they are this close and share a distinctive name word...
 NEAR_DUPLICATE_KM = 0.25
+# ...or if they are of one category at the same spot ("Egyptian Bazaar" and "Mercado egipcio"),
+# or matched to the same Wikidata item (two listings of Şişli Camii).
+SAME_SPOT_KM = 0.03
 GENERIC_NAME_WORDS = {
     "museum", "musee", "muzesi", "park", "parc", "parki", "garden", "gardens", "jardin", "jardins",
     "mosque", "camii", "church", "eglise", "basilica", "basilique", "cathedral", "cathedrale",
@@ -233,10 +236,15 @@ def popularity_with_default(pois: Iterable[POI]) -> Callable[[POI], float]:
 
 def is_near_duplicate(poi: POI, chosen: Sequence[POI]) -> bool:
     words = _distinctive_words(poi.name)
-    return any(
-        haversine_km(location(poi), location(other)) < NEAR_DUPLICATE_KM and words & _distinctive_words(other.name)
-        for other in chosen
-    )
+    for other in chosen:
+        if poi.wikidata_id and poi.wikidata_id == other.wikidata_id:
+            return True
+        km = haversine_km(location(poi), location(other))
+        if km < SAME_SPOT_KM and poi.category == other.category:
+            return True
+        if km < NEAR_DUPLICATE_KM and words & _distinctive_words(other.name):
+            return True
+    return False
 
 
 def _distinctive_words(name: str) -> set[str]:

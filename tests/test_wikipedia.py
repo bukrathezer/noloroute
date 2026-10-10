@@ -15,6 +15,7 @@ from app.services.wikipedia import (
     describe,
     describes_area,
     head_kind,
+    is_sight_class,
     match_place,
     name_score,
     shorten,
@@ -267,6 +268,53 @@ def test_client_reads_the_api_answers() -> None:
         assert (tower.description, tower.sitelink_count) == ("tower in Istanbul", 3)
         assert tower.articles == {"tr": "Galata Kulesi", "en": "Galata Tower"}
         assert api.intros("tr", ["Galata_Kulesi"]) == {"Galata_Kulesi": "Galata Kulesi, bir kuledir."}
+
+
+@pytest.mark.parametrize(
+    ("classes", "sight"),
+    [
+        ("arch bridge|stone bridge", True),
+        ("forest|urban park", True),
+        ("minor basilica|Catholic cathedral", True),
+        ("statue", True),  # an outdoor statue, like the Little Mermaid
+        # A work of art in a museum, an official residence, a building that is gone, a school.
+        ("statue|archaeological artefact", False),
+        ("official residence|city palace", False),
+        ("palace|destroyed building or structure", False),
+        ("museum|art academy|university", False),
+        ("treaty", False),
+    ],
+)
+def test_sight_classes(classes: str, sight: bool) -> None:
+    assert is_sight_class(classes) is sight
+
+
+def test_client_reads_famous_places_from_wikidatas_query_service() -> None:
+    def row(qid: str, label: str, links: int, point: str, classes: str) -> dict:
+        return {
+            "item": {"value": f"http://www.wikidata.org/entity/{qid}"},
+            "label": {"value": label},
+            "links": {"value": str(links)},
+            "coord": {"value": point},
+            "classes": {"value": classes},
+        }
+
+    rows = [
+        row("Q6373", "British Museum", 130, "Point(-0.126944444 51.519444444)", "national museum|art museum"),
+        row("Q795691", "King's Cross station", 60, "Point(-0.1236 51.5309)", "railway station"),
+        row("Q6373", "British Museum", 130, "Point(-0.127 51.519)", "national museum"),  # a second coordinate
+    ]
+    sent = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        sent.append(request)
+        return httpx.Response(200, json={"results": {"bindings": rows}})
+
+    with WikiClient(transport=httpx.MockTransport(answer), pause_s=0) as api:
+        places = api.famous_places(LatLng(51.5074, -0.1278), 12.0)
+    assert [(p.qid, p.label, p.sitelink_count) for p in places] == [("Q6373", "British Museum", 130)]
+    assert (round(places[0].where.lat, 3), round(places[0].where.lng, 3)) == (51.519, -0.127)
+    assert "formatversion" not in sent[0].url.params  # the SPARQL endpoint doesn't take it
 
 
 def test_client_skips_articles_that_redirect_elsewhere() -> None:
