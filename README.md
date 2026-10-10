@@ -111,9 +111,10 @@ up once, for free, and the ingestion runs it for the places it adds:
   article counts if it lies near the place (600 m; parks, viewpoints and districts 1-1.5 km).
   Failing that, the Wikidata items around the place are compared with its name, which finds
   articles under another name ("Kariye Mosque" is "The Chora") or in Turkish only.
-- Names must agree word for word, and words for the kind of place must not contradict each other:
-  "Jardin du Luxembourg" is not the Luxembourg Palace, and "Galata Tower" is not the Galata
-  neighbourhood (a bare name only counts when the item's description says what the place is).
+- Names must agree word for word, and words for the kind of place must not contradict each other
+  or the place's category: "Jardin du Luxembourg" is not the Luxembourg Palace, "Galata Tower" is
+  not the Galata neighbourhood, and the gardens along Avenue Foch are not the avenue (a bare name
+  only counts when the item's description says what the place is).
 - The text is the article's first sentence (two if the first is short), without the parentheses.
   Wikipedia's text is CC BY-SA 4.0, so plans link every description to its article and say that
   it was shortened.
