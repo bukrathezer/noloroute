@@ -42,6 +42,9 @@ class POI(Base):
     # A sentence or two from the place's Wikipedia article (CC BY-SA, shown with a link to it),
     # found through its Wikidata item, e.g. "Q91274". Filled by scripts/describe_pois.py.
     wikidata_id: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # How many Wikimedia sites have an article on it (Wikipedias in many languages): fame that
+    # Google's review count can miss (see route_optimizer.popularity).
+    wikidata_sitelinks: Mapped[int | None] = mapped_column(Integer, nullable=True)
     description_tr: Mapped[str | None] = mapped_column(String(300), nullable=True)
     description_en: Mapped[str | None] = mapped_column(String(300), nullable=True)
     # When that lookup last ran, found or not: later runs only look at places added since.

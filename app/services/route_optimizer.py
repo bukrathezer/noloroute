@@ -50,6 +50,7 @@ MAX_DAY_MINUTES = DAY_MINUTES + 30  # with real travel times a day may run a lit
 MAX_TRIMS_PER_DAY = 3  # dropping a stop re-routes the day: one more Google request each time
 CATEGORY_REPEAT_DECAY = 0.75  # each pick from a category scales that category's scores by this
 CURATED_POPULARITY_PERCENTILE = 0.95  # hand-entered POIs have no Google rating: treat as top 5%
+REVIEWS_PER_SITELINK_SQUARED = 10  # see popularity
 MAX_HOTEL_DISTANCE_KM = 25.0  # from the nearest POI; beyond this the hotel isn't in the city
 
 # Google sometimes lists one sight twice (e.g. "Louvre Museum" and "Louvre Pyramid"). Two POIs
@@ -170,10 +171,19 @@ def location(poi: POI) -> LatLng:
 
 
 def popularity(poi: POI) -> float | None:
-    """rating x log10(reviews)^2: grows with review count, with diminishing returns."""
-    if poi.rating is None or not poi.user_rating_count:
+    """rating x log10(reviews)^2: grows with review count, with diminishing returns.
+
+    Google's count can be far too low for a famous place listed several times (the British
+    Museum shows 3,000 reviews, Père-Lachaise 4,600), so fame on Wikipedia sets a floor:
+    REVIEWS_PER_SITELINK_SQUARED x sitelinks^2, which is about Google's count for the sights
+    whose counts are sound (the Louvre: 169 sites, 286,000 against 378,000 reviews).
+    """
+    if poi.rating is None:
         return None
-    return poi.rating * math.log10(1 + poi.user_rating_count) ** 2
+    reviews = max(poi.user_rating_count or 0, REVIEWS_PER_SITELINK_SQUARED * (poi.wikidata_sitelinks or 0) ** 2)
+    if not reviews:
+        return None
+    return poi.rating * math.log10(1 + reviews) ** 2
 
 
 def stop_minutes(poi: POI, mode: TravelMode) -> int:

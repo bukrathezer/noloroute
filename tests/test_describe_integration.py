@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.models import POI
 from app.services.geo import LatLng
 from app.services.wikipedia import Entity
-from scripts.describe_pois import describe_city
+from scripts.describe_pois import describe_city, fill_sitelinks
 from tests.seed import CITY_ID, HOTEL, POI_COUNT
 
 
@@ -46,6 +46,7 @@ def test_describe_city_stores_descriptions_and_skips_places_already_looked_up(se
 
     assert describe_city(seeded, CITY_ID, api, log=lambda _: None) == (POI_COUNT, 2)
     after = sights(seeded)
+    assert after["Sight 0"].wikidata_sitelinks == 12
     assert (after["Sight 0"].wikidata_id, after["Sight 0"].description_en, after["Sight 0"].description_tr) == (
         "Q-Sight 0",
         "Sight 0 is a sight in Test City, known for its old walls and gardens, in en.",
@@ -57,6 +58,20 @@ def test_describe_city_stores_descriptions_and_skips_places_already_looked_up(se
     # A second run has nothing left to look up, unless asked to look again.
     assert describe_city(seeded, CITY_ID, api, log=lambda _: None) == (0, 0)
     assert describe_city(seeded, CITY_ID, api, again=True, log=lambda _: None) == (POI_COUNT, 2)
+
+
+class CountingWiki(FakeWiki):
+    def sitelink_counts(self, qids: Sequence[str]) -> dict[str, int]:
+        return {qid: 40 for qid in qids}
+
+
+def test_fill_sitelinks_stores_counts_for_places_matched_earlier(seeded: Session) -> None:
+    for poi in sights(seeded).values():
+        poi.wikidata_id = f"Q-{poi.name}"
+    seeded.flush()
+    assert fill_sitelinks(seeded, CountingWiki({}), CITY_ID) == POI_COUNT
+    assert {p.wikidata_sitelinks for p in sights(seeded).values()} == {40}
+    assert fill_sitelinks(seeded, CountingWiki({}), CITY_ID) == 0  # nothing left to fill
 
 
 def test_dry_run_writes_nothing(seeded: Session) -> None:

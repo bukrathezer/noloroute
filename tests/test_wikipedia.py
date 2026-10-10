@@ -317,6 +317,13 @@ def test_client_reads_famous_places_from_wikidatas_query_service() -> None:
     assert "formatversion" not in sent[0].url.params  # the SPARQL endpoint doesn't take it
 
 
+def test_client_reads_sitelink_counts() -> None:
+    rows = [{"item": {"value": "http://www.wikidata.org/entity/Q6373"}, "links": {"value": "150"}}]
+    answer = httpx.MockTransport(lambda _: httpx.Response(200, json={"results": {"bindings": rows}}))
+    with WikiClient(transport=answer, pause_s=0) as api:
+        assert api.sitelink_counts(["Q6373", "Q404"]) == {"Q6373": 150}  # unknown ids are left out
+
+
 def test_client_skips_articles_that_redirect_elsewhere() -> None:
     grave = {
         "labels": {"en": {"value": "grave of Jim Morrison"}},
