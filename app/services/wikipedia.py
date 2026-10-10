@@ -390,7 +390,7 @@ class WikiClient:
             except httpx.HTTPError as e:
                 problem = str(e)
                 continue
-            if resp.status_code in (429, 503):  # throttled or overloaded: wait as long as asked
+            if resp.status_code in (429, 500, 502, 503, 504):  # throttled or overloaded: wait and retry
                 problem = f"answered {resp.status_code}"
                 time.sleep(_retry_after(resp))
                 continue

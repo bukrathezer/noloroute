@@ -55,9 +55,12 @@ MAX_HOTEL_DISTANCE_KM = 25.0  # from the nearest POI; beyond this the hotel isn'
 # Google sometimes lists one sight twice (e.g. "Louvre Museum" and "Louvre Pyramid"). Two POIs
 # are treated as the same sight if they are this close and share a distinctive name word...
 NEAR_DUPLICATE_KM = 0.25
-# ...or if they are of one category at the same spot ("Egyptian Bazaar" and "Mercado egipcio"),
-# or matched to the same Wikidata item (two listings of Şişli Camii).
+# ...or if they are of one category at the same spot and one has a tiny share of the other's
+# reviews: a second listing ("Mercado egipcio", 2,000 reviews, on the Egyptian Bazaar's 190,000).
+# Neighbours of comparable fame stay apart: the Propylaea next to the Temple of Athena Nike.
 SAME_SPOT_KM = 0.03
+SECOND_LISTING_SHARE = 0.05
+# Two POIs matched to the same Wikidata item are one place too (two listings of Şişli Camii).
 GENERIC_NAME_WORDS = {
     "museum", "musee", "muzesi", "park", "parc", "parki", "garden", "gardens", "jardin", "jardins",
     "mosque", "camii", "church", "eglise", "basilica", "basilique", "cathedral", "cathedrale",
@@ -235,19 +238,26 @@ def popularity_with_default(pois: Iterable[POI]) -> Callable[[POI], float]:
 
 
 def is_near_duplicate(poi: POI, chosen: Sequence[POI]) -> bool:
-    words = _distinctive_words(poi.name)
+    # The city's own name is in many names ("Amsterdam Tulip Museum", "Amsterdam Cheese Museum").
+    words = distinctive_words(poi.name) - distinctive_words(poi.city_id or "")
     for other in chosen:
         if poi.wikidata_id and poi.wikidata_id == other.wikidata_id:
             return True
         km = haversine_km(location(poi), location(other))
-        if km < SAME_SPOT_KM and poi.category == other.category:
+        if km < SAME_SPOT_KM and poi.category == other.category and is_second_listing(poi, other):
             return True
-        if km < NEAR_DUPLICATE_KM and words & _distinctive_words(other.name):
+        if km < NEAR_DUPLICATE_KM and words & distinctive_words(other.name):
             return True
     return False
 
 
-def _distinctive_words(name: str) -> set[str]:
+def is_second_listing(a: POI, b: POI) -> bool:
+    """Whether one of two POIs has a tiny share of the other's reviews (see SECOND_LISTING_SHARE)."""
+    few, many = sorted((a.user_rating_count or 0, b.user_rating_count or 0))
+    return many > 0 and few <= SECOND_LISTING_SHARE * many
+
+
+def distinctive_words(name: str) -> set[str]:
     ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
     return {w for w in re.findall(r"[a-z]+", ascii_name) if len(w) >= 4 and w not in GENERIC_NAME_WORDS}
 
