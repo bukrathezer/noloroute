@@ -9,6 +9,7 @@ Usage (from the repo root):
     python -m scripts.describe_pois --city paris    # one city (repeatable)
     python -m scripts.describe_pois --again         # look every place up again
     python -m scripts.describe_pois --dry-run       # print the matches, write nothing
+    python -m scripts.describe_pois --sitelinks     # only the sitelink counts of earlier matches
 """
 
 import argparse
@@ -97,6 +98,7 @@ def describe_city(
                     .where(POI.id == place.id)
                     .values(
                         wikidata_id=match.qid if match else None,
+                        wikidata_sitelinks=match.sitelink_count if match else None,
                         description_tr=text.get("tr"),
                         description_en=text.get("en"),
                         wiki_checked_at=checked_at,
@@ -105,6 +107,24 @@ def describe_city(
         if not dry_run:
             db.commit()
     return len(places), described
+
+
+def fill_sitelinks(db: Session, api: WikiClient, city_id: str | None = None) -> int:
+    """Store the sitelink counts of places matched before the counts were kept (one Wikidata
+    query per 200 places); returns how many places were updated."""
+    query = select(POI.id, POI.wikidata_id).where(POI.wikidata_id.is_not(None), POI.wikidata_sitelinks.is_(None))
+    if city_id:
+        query = query.where(POI.city_id == city_id)
+    rows = db.execute(query).all()
+    db.commit()
+    counts = api.sitelink_counts(sorted({row.wikidata_id for row in rows}))
+    updated = 0
+    for row in rows:
+        if row.wikidata_id in counts:
+            db.execute(update(POI).where(POI.id == row.id).values(wikidata_sitelinks=counts[row.wikidata_id]))
+            updated += 1
+    db.commit()
+    return updated
 
 
 def describe_new_places(city_id: str) -> None:
@@ -122,8 +142,19 @@ def main() -> None:
     parser.add_argument("--city", action="append", help="city id (repeatable); default: every city")
     parser.add_argument("--again", action="store_true", help="look up places that were looked up before too")
     parser.add_argument("--dry-run", action="store_true", help="print the matches, write nothing")
+    parser.add_argument(
+        "--sitelinks",
+        action="store_true",
+        help="only store the sitelink counts of places matched before they were kept",
+    )
     args = parser.parse_args()
     sys.stdout.reconfigure(errors="replace")  # place names in any script, on any console
+
+    if args.sitelinks:
+        with SessionLocal() as db, WikiClient() as api:
+            for city_id in args.city or [None]:
+                print(f"sitelink counts stored for {fill_sitelinks(db, api, city_id)} places")
+        return
 
     with SessionLocal() as db, WikiClient() as api:
         city_ids = args.city or list(db.scalars(select(City.id).order_by(City.id)))

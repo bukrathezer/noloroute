@@ -90,6 +90,17 @@ def test_popularity_grows_with_reviews() -> None:
     assert popularity(make_poi("famous", reviews=100_000)) > popularity(make_poi("local", reviews=500))
 
 
+def test_fame_on_wikipedia_lifts_a_place_google_undercounts() -> None:
+    # The British Museum's Google listing shows 3,064 reviews; Wikipedias in ~150 languages.
+    museum = make_poi("british-museum", reviews=3_064)
+    museum.wikidata_sitelinks = 150
+    assert popularity(museum) >= popularity(make_poi("popular", reviews=200_000))
+    # Google's count stays when it is the higher one.
+    tower = make_poi("tower", reviews=495_000)
+    tower.wikidata_sitelinks = 191
+    assert popularity(tower) == popularity(make_poi("same", reviews=495_000))
+
+
 def test_selection_fits_time_capacity() -> None:
     chosen = select_stops(ring(40), HOTEL, days=2, budget=None, mode=MODE)
     assert chosen

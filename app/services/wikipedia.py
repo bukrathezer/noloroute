@@ -540,6 +540,16 @@ SELECT ?item ?label ?links ?coord (GROUP_CONCAT(DISTINCT ?classLabel; separator=
             )
         return places
 
+    def sitelink_counts(self, qids: Sequence[str]) -> dict[str, int]:
+        """How many Wikimedia sites have an article on each item: {Wikidata id: count}."""
+        counts: dict[str, int] = {}
+        for i in range(0, len(qids), 200):  # a few hundred ids keep a query short
+            values = " ".join(f"wd:{qid}" for qid in qids[i : i + 200])
+            query = f"SELECT ?item ?links WHERE {{ VALUES ?item {{ {values} }} ?item wikibase:sitelinks ?links }}"
+            for row in self._get(WDQS_URL, {"query": query}).get("results", {}).get("bindings", []):
+                counts[row["item"]["value"].rsplit("/", 1)[-1]] = int(row["links"]["value"])
+        return counts
+
 
 @dataclass(frozen=True)
 class FamousPlace:

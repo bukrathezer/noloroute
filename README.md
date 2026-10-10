@@ -69,6 +69,10 @@ optional budget returns a day-by-day plan:
 1. **Select** — every POI gets a score: popularity (rating × log of review count), discounted by
    distance from the accommodation. The best POIs are picked greedily until the trip's time
    (8 h/day) or budget runs out; each pick lowers the score of its category to keep days varied.
+   Google's review count can be far too low for a famous place listed several times (the British
+   Museum shows 3,000), so fame on Wikipedia sets a floor: 10 × (number of Wikimedia sites with an
+   article on it)², about Google's count for sights whose counts are sound (the Louvre: 169 sites,
+   286,000 against 378,000 reviews).
 2. **Split into days** — *route first, split second*: one round trip through all chosen stops
    (the TSP solver below, on straight-line distances) is cut into consecutive stretches of roughly
    equal time, trying every stop as the start and keeping the cut with the least total distance.
