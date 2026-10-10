@@ -13,6 +13,8 @@ from app.services.wikipedia import (
     WikiClient,
     WikiError,
     describe,
+    describes_area,
+    head_kind,
     match_place,
     name_score,
     shorten,
@@ -29,6 +31,7 @@ from app.services.wikipedia import (
         ("Nidec Kyoto Tower", "Kyoto Tower", "observation tower in Kyoto, Japan"),
         ("Sanjūsangendō Temple", "Sanjūsangen-dō", "Buddhist temple in Kyoto, Japan"),
         ("Topkapi Palace Museum", "Topkapı Palace", "palace in Istanbul, Turkey"),
+        ("Basilica Cistern", "Basilica Cistern", "ancient cistern in Istanbul"),  # only kind words
         ("Parc des Buttes-Chaumont", "Parc des Buttes Chaumont", "public park in Paris"),
     ],
 )
@@ -52,10 +55,75 @@ def test_names_that_match(place: str, candidate: str, description: str) -> None:
         ("Bebek Coast", "Bebek Camii", "mosque in Istanbul"),
         ("İBB Kadıköy Yoğurtçu Parkı", "Yoğurtçu Parkı Çeşmesi", "fountain in Istanbul"),
         ("Zippline Nakkaştepe", "Nakkaştepe Mezarlığı", "cemetery in Istanbul"),
+        # The person buried there, and the statue standing on the forecourt.
+        ("Tomb of Jim Morrison", "Jim Morrison", "American singer-songwriter and poet"),
+        ("Parvis de la Défense", "La Défense de Paris", "bronze statue by Louis-Ernest Barrias"),
+        # The gardens along the avenue, and at the foot of the tower.
+        ("Jardins de l'avenue Foch", "Avenue Foch", "avenue in Paris"),
+        ("Jardin de la Tour Eiffel", "Eiffel Tower", "lattice tower on the Champ de Mars"),
+        # A cistern in a park, a market by a square, a tram stop named after a mosque.
+        ("Gülhane Park Cistern", "Gülhane Parkı", "park in Istanbul"),
+        ("Uskudar Fishermen's Market", "Üsküdar Meydanı", "square in Istanbul"),
+        ("Mescid-i Selam", "Mescid-i Selam", "tram stop in İstanbul, Turkey"),
+        # Nearly the same letters, a different word.
+        ("Walls of Constantinople", "Fall of Constantinople", "1453 capture of the Byzantine capital"),
     ],
 )
 def test_names_that_do_not_match(place: str, candidate: str, description: str) -> None:
     assert name_score(place, candidate, description) < MATCH_THRESHOLD
+
+
+@pytest.mark.parametrize(
+    ("name", "kind"),
+    [
+        ("Jardin de la Tour Eiffel", "garden"),
+        ("Square of Saint-Jacques Tower", "square"),
+        ("Musée d'Orsay", "museum"),
+        ("Topkapı Palace Museum", "museum"),
+        ("Yoğurtçu Parkı Çeşmesi", "fountain"),
+        ("Kadıköy Moda Sahil Parkı ve Yürüyüş Yolu", "park"),
+        ("Hôtel des Invalides", None),
+    ],
+)
+def test_head_kind(name: str, kind: str | None) -> None:
+    assert head_kind(name) == kind
+
+
+@pytest.mark.parametrize(
+    ("place", "category", "candidate", "description"),
+    [
+        # A name that doesn't say what the place is: its category does.
+        ("La Madeleine", "RELIGIOUS_SITE", "Boulevard de la Madeleine", "boulevard in Paris"),
+        ("La Villette", "PARK", "Bassin de la Villette", "canal in Paris"),
+    ],
+)
+def test_the_category_rules_out_other_kinds_of_place(
+    place: str, category: str, candidate: str, description: str
+) -> None:
+    assert name_score(place, candidate, description) >= MATCH_THRESHOLD  # the names alone agree
+    assert name_score(place, candidate, description, category) == 0
+
+
+def test_the_exact_kind_of_place_beats_a_related_one() -> None:
+    museum = name_score("Musée du Luxembourg", "Musée du Luxembourg", "art museum in Paris", "MUSEUM")
+    palace = name_score("Musée du Luxembourg", "Luxembourg Palace", "palace in Paris", "MUSEUM")
+    assert museum > palace >= MATCH_THRESHOLD
+
+
+@pytest.mark.parametrize(
+    ("description", "area"),
+    [
+        ("mahalle (administrative quarter) in Beşiktaş, İstanbul", True),
+        ("historic district of Paris, France", True),
+        ("capital and largest city of France", True),
+        # Saying where a place is doesn't make it an area.
+        ("square in the 8th arrondissement of Paris", False),
+        ("Roman Catholic church in the 1st arrondissement of Paris", False),
+        ("city park in Istanbul", False),
+    ],
+)
+def test_area_descriptions(description: str, area: bool) -> None:
+    assert describes_area(description) is area
 
 
 def test_shorten_drops_parentheses_and_keeps_one_long_sentence() -> None:
@@ -135,6 +203,15 @@ def test_match_ignores_articles_too_far_away() -> None:
     assert match_place(api, "Galata Tower", GALATA, "LANDMARK", "tr") is None
 
 
+def test_the_place_right_there_beats_a_more_famous_namesake_further_away() -> None:
+    church_here = Entity("Q10", ["Saint-Pierre"], "church in Paris", {"en": "Saint-Pierre (Montmartre)"}, 10)
+    church_there = Entity("Q11", ["Saint-Pierre"], "church in Paris", {"en": "Saint-Pierre (Montrouge)"}, 40)
+    there = LatLng(GALATA.lat + 0.0045, GALATA.lng)  # 500 m
+    api = FakeApi(found=[("Q11", there)], near={"Q10": 20.0}, entities={"Q10": church_here, "Q11": church_there})
+    match = match_place(api, "Saint-Pierre", GALATA, "RELIGIOUS_SITE", "fr")
+    assert match is not None and (match.qid, match.via) == ("Q10", "nearby")
+
+
 def test_districts_only_match_places_that_are_districts() -> None:
     api = FakeApi(found=[("Q1", GALATA)], near={}, entities={"Q1": DISTRICT})
     assert match_place(api, "Galata", GALATA, "LANDMARK", "tr") is None
@@ -190,6 +267,18 @@ def test_client_reads_the_api_answers() -> None:
         assert (tower.description, tower.sitelink_count) == ("tower in Istanbul", 3)
         assert tower.articles == {"tr": "Galata Kulesi", "en": "Galata Tower"}
         assert api.intros("tr", ["Galata_Kulesi"]) == {"Galata_Kulesi": "Galata Kulesi, bir kuledir."}
+
+
+def test_client_skips_articles_that_redirect_elsewhere() -> None:
+    grave = {
+        "labels": {"en": {"value": "grave of Jim Morrison"}},
+        "descriptions": {"en": {"value": "tomb at Père-Lachaise cemetery in Paris"}},
+        # "Grave of Jim Morrison" is a redirect to the singer's article.
+        "sitelinks": {"enwiki": {"title": "Grave of Jim Morrison", "badges": ["Q70893996"]}},
+    }
+    answer = httpx.MockTransport(lambda _: httpx.Response(200, json={"entities": {"Q24265482": grave}}))
+    with WikiClient(transport=answer, pause_s=0) as api:
+        assert api.entities(["Q24265482"], ["en"])["Q24265482"].articles == {}
 
 
 def test_client_retries_when_throttled() -> None:

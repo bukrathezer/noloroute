@@ -45,6 +45,7 @@ DEFAULT_RADIUS_M = 600
 # How far an article's coordinates may lie from Google's pin. Parks and districts are big.
 RADIUS_M = {"PARK": 1500, "VIEWPOINT": 1000}
 AREA_RADIUS_M = 1500
+NEAR_M = 300  # a match this close is the place itself, more likely than a farther namesake
 DESCRIPTION_MAX = 220  # characters; a longer first sentence is cut short with "…"
 DESCRIPTION_ENOUGH = 80  # a second sentence is added only to a shorter first one,
 DESCRIPTION_TWO_MAX = 180  # and only if both together stay this short
@@ -71,45 +72,64 @@ KIND_WORDS = {
     "garden": "garden gardens jardin jardins jardines jardim giardino giardini garten tuin bahcesi",
     "tower": "tower tour torre turm toren kulesi",
     "bridge": "bridge pont ponte puente brucke brug koprusu",
-    "square": "square place piazza plaza placa platz plein praca namesti meydani",
+    "square": "square place piazza plaza placa platz plein praca namesti meydani parvis esplanade",
     "market": "market marche mercato mercado mercat markt pazari carsi carsisi bazaar bazar",
     "temple": "temple tempel templo tempio tapinagi",
     "shrine": "shrine jinja taisha jingu",
-    "station": "station gare stazione estacion bahnhof hauptbahnhof istasyonu",
+    "station": "station stop gare stazione estacion bahnhof hauptbahnhof istasyonu",
     "fountain": "fountain fontaine fontana fuente brunnen cesmesi",
-    "castle": "castle chateau castello castillo castelo schloss kasteel fortress hisari kalesi",
+    "castle": "castle chateau castel castello castillo castelo schloss kasteel fortress hisari kalesi",
     "gate": "gate porte porta puerta tor kapisi",
     "hill": "hill colle tepesi butte",
     "street": "street rue via calle strasse straat gasse rua avenida avenue boulevard caddesi sokagi bulvari",
     "cemetery": "cemetery cimetiere cimitero cementerio cemiterio friedhof mezarligi",
+    "tomb": "tomb grave tombe tomba tumba grab mausoleum turbe turbesi kabri",
     "beach": "beach coast seaside shore waterfront plage spiaggia playa praia strand plaji sahil sahili",
+    "pool": "pool pools bassin bassins havuzu",
+    "cistern": "cistern cisterna sarnic sarnici",
+    "wall": "wall walls mura muralla surlari suru",
     "statue": "statue heykeli statua",
 }
 _KIND_OF = {word: kind for kind, words in KIND_WORDS.items() for word in words.split()}
-# Different words that can still name the same place: a palace or castle that is now a museum.
+# What a place of each of our categories can be, for names that don't say it themselves: "La
+# Madeleine" is a church, so "Boulevard de la Madeleine" is not it. Landmarks can be anything.
+CATEGORY_KINDS = {
+    "MUSEUM": {"museum", "palace", "castle"},
+    "RELIGIOUS_SITE": {"mosque", "church", "synagogue", "temple", "shrine", "tomb", "cemetery"},
+    "PARK": {"park", "garden", "square", "beach", "hill", "cemetery"},  # a Paris "square" is a park
+    "MARKET": {"market", "street", "square"},
+}
+# Different words that can still name the same place: a palace that is now a museum, a market
+# that is a street.
 _RELATED_KINDS = [
     {"park", "garden"},
     {"park", "beach"},
     {"museum", "palace"},
     {"museum", "castle"},
     {"tower", "castle"},
+    {"market", "street"},
 ]
-_STOPWORDS = frozenset(
-    {"the", "of", "and", "a", "an", "in", "on", "at", "e", "et", "ve", "al", "el"}
-    | {"de", "du", "des", "la", "le", "les", "l", "d", "di", "del", "della", "dello", "dei", "degli", "delle"}
+_PREPOSITIONS = frozenset({"of", "de", "du", "des", "d", "di", "del", "della", "dello", "dei", "degli", "delle"})
+_STOPWORDS = (
+    _PREPOSITIONS
+    | {"the", "and", "a", "an", "in", "on", "at", "e", "et", "ve", "al", "el", "la", "le", "les", "l"}
     | {"da", "do", "das", "dos", "ibb"}  # ibb: Istanbul's municipality, in front of many park names
 )
 # Kind words that mean something else in an English description ("place of worship").
 _NOT_KINDS_IN_ENGLISH = frozenset({"place", "via", "tour", "porte", "porta"})
 _SAME_WORD = {"st": "saint", "ste": "sainte", "san": "saint", "santo": "saint", "sankt": "saint"}
-# Descriptions of areas rather than sights. A neighbourhood's item can carry its square's name
+# What areas are called in Wikidata's descriptions: "mahalle (administrative quarter) in
+# Beşiktaş", "historic district of Paris". A neighbourhood's item can carry its square's name
 # ("Ortaköy Meydanı" on Ortaköy), so areas only match places that are districts themselves.
-_AREA = re.compile(
-    r"\b(neighbou?rhood|district|quarter|mahalle|arrondissement|municipality|commune|village|ward|borough|suburb|"
-    r"human settlement|rione|quartiere|capital|(city|town) (in|of))\b",
-    re.IGNORECASE,
+_AREA_NOUNS = frozenset(
+    {"neighbourhood", "neighborhood", "district", "quarter", "mahalle", "arrondissement", "municipality", "commune"}
+    | {"village", "hamlet", "ward", "borough", "suburb", "settlement", "rione", "quartiere", "capital", "city"}
+    | {"town", "area", "region", "province"}
 )
 _POSSESSIVE = re.compile(r"['’`]s\b")  # Peter's -> Peter
+# Wikidata's badges for a link to a redirect: the article it leads to is about something else
+# ("Grave of Jim Morrison" redirects to the singer's article).
+_REDIRECT_BADGES = frozenset({"Q70893996", "Q70894304"})
 
 
 class WikiError(Exception):
@@ -119,32 +139,49 @@ class WikiError(Exception):
 # ---------- names ----------
 
 
-def _words(name: str) -> list[str]:
+def _tokens(name: str) -> list[str]:
     text = name.replace("İ", "i").replace("ı", "i").casefold()
     text = "".join(c for c in unicodedata.normalize("NFKD", text) if not unicodedata.combining(c))
     text = re.sub(r"[^\w\s]", " ", _POSSESSIVE.sub("", text))
-    return [_SAME_WORD.get(w, w) for w in text.split() if w not in _STOPWORDS]
+    return [_SAME_WORD.get(w, w) for w in text.split()]
+
+
+def _words(name: str) -> list[str]:
+    return [w for w in _tokens(name) if w not in _STOPWORDS]
 
 
 def _split(name: str) -> tuple[list[str], set[str]]:
-    """A name's own words and the kinds of place it says it is."""
+    """A name's own words and all the kinds of place it mentions."""
     words, kinds = [], set()
     for word in _words(name):
         if word in _KIND_OF:
             kinds.add(_KIND_OF[word])
         else:
             words.append(word)
+    if not words:
+        # Only kind words, as in "Basilica Cistern": all but the head kind name the place.
+        head = head_kind(name)
+        words = [w for w in _words(name) if _KIND_OF.get(w) != head]
     return words, kinds
+
+
+def head_kind(name: str) -> str | None:
+    """The kind of place a name says its place is, when it says so: the first kind word when a
+    preposition follows it ("Jardin de la Tour Eiffel" is a garden, "Square of Saint-Jacques
+    Tower" a square), otherwise the last ("Topkapı Palace Museum" is a museum, "Yoğurtçu Parkı
+    Çeşmesi" a fountain)."""
+    tokens = _tokens(name)
+    kinds = [(i, _KIND_OF[t]) for i, t in enumerate(tokens) if t in _KIND_OF]
+    if not kinds:
+        return None
+    first, kind = kinds[0]
+    if first + 1 < len(tokens) and tokens[first + 1] in _PREPOSITIONS:
+        return kind
+    return kinds[-1][1]
 
 
 def _related(kind: str, kinds: set[str]) -> bool:
     return kind in kinds or any(kind in group and kinds & group for group in _RELATED_KINDS)
-
-
-def _kinds_agree(place: set[str], candidate: set[str]) -> bool:
-    """Every kind a candidate's name gives must fit the place's: "Yoğurtçu Parkı Çeşmesi" is a
-    fountain in the park, not the park."""
-    return not place or all(_related(kind, place) for kind in candidate)
 
 
 def _same_word(a: str, b: str) -> bool:
@@ -152,24 +189,41 @@ def _same_word(a: str, b: str) -> bool:
     return a == b or (min(len(a), len(b)) > 3 and SequenceMatcher(None, a, b).ratio() >= 0.8)
 
 
-def name_score(place_name: str, candidate_name: str, candidate_description: str = "") -> float:
-    """How well a Wikipedia/Wikidata name fits a place's name, from 0 to 1."""
+def describes_area(description: str) -> bool:
+    """Whether a Wikidata description says the item is an area ("historic district of Paris"),
+    not just where it is ("square in the 8th arrondissement of Paris")."""
+    text = re.sub(r"\([^)]*\)", " ", description.casefold())
+    head = re.split(r"\s(?:in|of|on|at|near|within)\s|,", text, maxsplit=1)[0].split()
+    return bool(head) and head[-1] in _AREA_NOUNS
+
+
+def name_score(place_name: str, candidate_name: str, candidate_description: str = "", category: str = "") -> float:
+    """How well a Wikipedia/Wikidata name fits a place's name, from 0 to 1. `category` is the
+    place's own (MUSEUM, PARK, ...)."""
     place_words, place_kinds = _split(place_name)
     cand_words, cand_kinds = _split(candidate_name)
+    place_head, cand_head = head_kind(place_name), head_kind(candidate_name)
     described_kinds = {
         _KIND_OF[w] for w in _words(candidate_description) if w in _KIND_OF and w not in _NOT_KINDS_IN_ENGLISH
     }
+    # What the place is: what its name says, or else what its category allows.
+    expected = {place_head} if place_head else CATEGORY_KINDS.get(category, set())
     if "disambiguation" in candidate_description.casefold():
         return 0.0
     if "station" in cand_kinds | described_kinds and "station" not in place_kinds:
         return 0.0  # "Kurumazaki-Jinja Station" is not Kurumazaki Shrine
-    if not _kinds_agree(place_kinds, cand_kinds):
-        return 0.0
-    if place_kinds and not cand_kinds and not any(_related(kind, place_kinds) for kind in described_kinds):
+    if expected and cand_head and not _related(cand_head, expected):
+        return 0.0  # the Luxembourg Palace is not the Jardin du Luxembourg, a fountain not its park
+    if place_head and not cand_head and not any(_related(kind, {place_head}) for kind in described_kinds):
         return 0.0  # a bare "Galata" for "Galata Tower": only if the item says it is a tower
     if not place_words or not cand_words:
         return 0.0
+    score = _word_score(place_words, cand_words, place_head is not None, cand_head is not None)
+    # A related kind (the Luxembourg Palace for the museum in it) loses to the exact one.
+    return score * 0.95 if place_head and cand_head and cand_head != place_head else score
 
+
+def _word_score(place_words: list[str], cand_words: list[str], place_has_kind: bool, cand_has_kind: bool) -> float:
     hits, used = 0, set()
     for word in place_words:
         match = next((j for j, other in enumerate(cand_words) if j not in used and _same_word(word, other)), None)
@@ -178,18 +232,20 @@ def name_score(place_name: str, candidate_name: str, candidate_description: str 
             hits += 1
     if hits == len(place_words) == len(cand_words):
         return 1.0
-    # Same letters, split differently: "Sanjūsangendō" and "Sanjūsangen-dō".
-    joined = SequenceMatcher(None, "".join(place_words), "".join(cand_words)).ratio()
-    if joined >= 0.9:
-        return joined
+    # Same letters, split into words differently: "Sanjūsangendō" and "Sanjūsangen-dō". (With as
+    # many words on both sides, "Walls of Constantinople" isn't "Fall of Constantinople".)
+    if len(place_words) != len(cand_words):
+        joined = SequenceMatcher(None, "".join(place_words), "".join(cand_words)).ratio()
+        if joined >= 0.9:
+            return joined
     if hits == len(cand_words):
         # Wikipedia's name is the shorter one: "Kyoto Tower" for "Nidec Kyoto Tower". Fine when
-        # the kinds were confirmed above, or when the shared words are half the name or more,
-        # but not when only the candidate names a kind ("Nakkaştepe Mezarlığı", a cemetery, for
+        # the kinds were confirmed, or when the shared words are half the name or more, but not
+        # when only the candidate names a kind ("Nakkaştepe Mezarlığı", a cemetery, for
         # "Zippline Nakkaştepe").
-        if cand_kinds and not place_kinds:
+        if cand_has_kind and not place_has_kind:
             return 0.0
-        return 0.85 if place_kinds or 2 * hits >= len(place_words) else 0.0
+        return 0.85 if place_has_kind or 2 * hits >= len(place_words) else 0.0
     return hits / max(len(place_words), len(cand_words))
 
 
@@ -262,7 +318,12 @@ class Match:
     articles: dict[str, str]
     score: float
     distance_m: float
+    sitelink_count: int
     via: str  # "search" or "nearby"
+
+    def rank(self) -> tuple[float, bool, int, float]:
+        """Better matches first: the name, then being right there, then fame, then closeness."""
+        return (round(self.score, 2), self.distance_m <= NEAR_M, self.sitelink_count, -self.distance_m)
 
 
 class WikiApi(Protocol):
@@ -379,13 +440,16 @@ class WikiClient:
                 names = [label["value"] for label in item.get("labels", {}).values()]
                 names += [alias["value"] for aliases in item.get("aliases", {}).values() for alias in aliases]
                 sitelinks = item.get("sitelinks", {})
+                own_articles = {
+                    lang: link["title"]
+                    for lang in LANGUAGES
+                    if (link := sitelinks.get(f"{lang}wiki")) and not _REDIRECT_BADGES & set(link.get("badges", []))
+                }
                 result[qid] = Entity(
                     qid=qid,
                     names=names,
                     description=item.get("descriptions", {}).get("en", {}).get("value", ""),
-                    articles={
-                        lang: sitelinks[f"{lang}wiki"]["title"] for lang in LANGUAGES if f"{lang}wiki" in sitelinks
-                    },
+                    articles=own_articles,
                     sitelink_count=len(sitelinks),
                 )
         return result
@@ -430,21 +494,26 @@ def _retry_after(resp: httpx.Response) -> float:
 
 
 def _best(
-    place_name: str, entities: dict[str, Entity], distances: dict[str, float], via: str, is_area: bool
+    place_name: str,
+    category: str,
+    entities: dict[str, Entity],
+    distances: dict[str, float],
+    via: str,
+    place_is_area: bool,
 ) -> Match | None:
-    best: tuple[tuple[float, int, float], Match] | None = None
+    best: Match | None = None
     for qid, entity in entities.items():
         if not entity.articles:
             continue  # nothing to describe it with
-        if not is_area and _AREA.search(entity.description):
+        if not place_is_area and describes_area(entity.description):
             continue
-        score = max((name_score(place_name, name, entity.description) for name in entity.names), default=0.0)
+        score = max((name_score(place_name, name, entity.description, category) for name in entity.names), default=0.0)
         if score < MATCH_THRESHOLD:
             continue
-        key = (round(score, 2), entity.sitelink_count, -distances[qid])
-        if best is None or key > best[0]:
-            best = (key, Match(qid, entity.articles, score, distances[qid], via))
-    return best[1] if best else None
+        match = Match(qid, entity.articles, score, distances[qid], entity.sitelink_count, via)
+        if best is None or match.rank() > best.rank():
+            best = match
+    return best
 
 
 def match_place(
@@ -461,11 +530,15 @@ def match_place(
         distance_m = haversine_km(where, at) * 1000
         if distance_m <= radius_m:
             found.setdefault(qid, distance_m)
-    match = _best(name, api.entities(list(found), languages), found, "search", is_area) if found else None
-    if match is None:
+    match = None
+    if found:
+        match = _best(name, category, api.entities(list(found), languages), found, "search", is_area)
+    # Unless the search found the place itself, right there, the items around it may do better.
+    if match is None or match.score < 1 or match.distance_m > NEAR_M:
         near = api.nearby(where, radius_m)
-        if near:
-            match = _best(name, api.entities(list(near), languages), near, "nearby", is_area)
+        nearby_match = _best(name, category, api.entities(list(near), languages), near, "nearby", is_area)
+        if nearby_match and (match is None or nearby_match.rank() > match.rank()):
+            match = nearby_match
     return match
 
 
