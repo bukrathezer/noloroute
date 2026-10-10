@@ -51,7 +51,7 @@ from app.models import POI, City
 from app.models.poi import POICategory
 from app.services.geo import LatLng, haversine_km
 from app.services.places_client import MAX_NEARBY_RESULTS, BoundingBox, PlacesAPIError, PlacesClient
-from app.services.route_optimizer import SAME_SPOT_KM
+from app.services.route_optimizer import SAME_SPOT_KM, SECOND_LISTING_SHARE, distinctive_words
 from app.services.wikipedia import WikiClient, WikiError, name_score
 from scripts.city_catalog import CATALOG, CatalogCity
 from scripts.describe_pois import describe_new_places
@@ -358,23 +358,37 @@ def build_rows(raw: list[RawResult], city: CityConfig) -> list[dict[str, Any]]:
         if category is None or (category is POICategory.MARKET and is_shop(place)):
             continue
         rows_by_place_id[place["id"]] = to_row(place, city.id, category)
-    return drop_same_spot(list(rows_by_place_id.values())) + curated_rows(city)
+    words = city_words(city.id, city.name, city.name_tr)
+    return drop_same_spot(list(rows_by_place_id.values()), words) + curated_rows(city)
 
 
-def drop_same_spot(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Keep one listing per place: of rows of one category at the same spot (SAME_SPOT_KM), the
-    most reviewed. Google lists the Spice Bazaar as "Egyptian Bazaar" and "Mercado egipcio"."""
+def drop_same_spot(rows: list[dict[str, Any]], city_words: frozenset[str] = frozenset()) -> list[dict[str, Any]]:
+    """Keep one listing per place. A row of one category at the same spot (SAME_SPOT_KM) as a more
+    reviewed one is its second listing if it has a tiny share of its reviews or a word of its name
+    (other than the city's, `city_words`): Google lists the Spice Bazaar as "Egyptian Bazaar" and
+    "Mercado egipcio". Neighbours of comparable fame stay (the Propylaea, the Temple of Athena Nike)."""
     kept: list[dict[str, Any]] = []
     for row in sorted(rows, key=lambda r: -(r["user_rating_count"] or 0)):
         here = LatLng(row["latitude"], row["longitude"])
+        reviews = row["user_rating_count"] or 0
+        words = distinctive_words(row["name"]) - city_words
         if any(
             other["category"] == row["category"]
             and haversine_km(here, LatLng(other["latitude"], other["longitude"])) < SAME_SPOT_KM
+            and (
+                reviews <= SECOND_LISTING_SHARE * (other["user_rating_count"] or 0)
+                or words & distinctive_words(other["name"])
+            )
             for other in kept
         ):
             continue
         kept.append(row)
     return kept
+
+
+def city_words(*names: str | None) -> frozenset[str]:
+    """The words of a city's names, which many place names contain ("Amsterdam Tulip Museum")."""
+    return frozenset(distinctive_words(" ".join(n for n in names if n)))
 
 
 def find_famous_sights(
@@ -563,7 +577,9 @@ def repair_city(client: PlacesClient, wiki: WikiClient, city_id: str, dry_run: b
             for p in pois
         ]
         google = [r for r in rows if not r["place_id"].startswith("curated:")]
-        single = {r["place_id"] for r in drop_same_spot(google)}
+        city = db.get(City, city_id)
+        words = city_words(city_id, city.name if city else None, city.name_tr if city else None)
+        single = {r["place_id"] for r in drop_same_spot(google, words)}
         unwanted = {
             r["place_id"]: r["name"]
             for r in google
@@ -635,7 +651,10 @@ def main() -> None:
                     city_ids = list(db.scalars(select(City.id).order_by(City.id)))
             for city_id in city_ids:
                 print(f"== {city_id}")
-                repair_city(client, wiki, city_id, dry_run=args.dry_run)
+                try:
+                    repair_city(client, wiki, city_id, dry_run=args.dry_run)
+                except WikiError as e:  # Wikidata is down: the other cities can still be repaired
+                    print(f"  skipped, Wikidata didn't answer: {e}")
             print("requests:", dict(client.requests))
         return
 

@@ -134,6 +134,13 @@ def test_selection_skips_a_second_listing_at_the_same_spot() -> None:
     assert ids == {"bazaar", "mosque"}
 
 
+def test_selection_keeps_neighbours_of_comparable_fame() -> None:
+    tulips = make_poi("tulips", 0.5, name="Amsterdam Tulip Museum", category="MUSEUM", reviews=3_000)
+    cheese = make_poi("cheese", 0.5001, name="Amsterdam Cheese Museum", category="MUSEUM", reviews=5_000)
+    tulips.city_id = cheese.city_id = "amsterdam"
+    assert {p.id for p in select_stops([tulips, cheese], HOTEL, 1, None, MODE)} == {"tulips", "cheese"}
+
+
 def test_selection_skips_listings_of_the_same_wikidata_item() -> None:
     mosque = make_poi("mosque", 0.5, name="Şişli Camii", category="RELIGIOUS_SITE", reviews=9_000)
     foundation = make_poi("foundation", 0.6, name="Şişli Cami Şerifi Vakfı", category="RELIGIOUS_SITE", reviews=900)

@@ -71,6 +71,23 @@ def test_a_second_listing_at_the_same_spot_is_left_out() -> None:
     }
 
 
+def test_neighbours_of_comparable_fame_both_stay() -> None:
+    # Next door to each other, of one category, but two places: neither is a minor listing of the
+    # other, and the only word they share is the city's.
+    tulips = place("a", "Amsterdam Tulip Museum", CENTRE, 3_000, "museum")
+    cheese = place("b", "Amsterdam Cheese Museum", north_of(CENTRE, 10), 5_000, "museum")
+    propylaea = place("c", "Propylaea", north_of(CENTRE, 2000), 4_000, "historical_landmark")
+    nike = place("d", "Temple of Athena Nike", north_of(CENTRE, 2020), 6_000, "historical_landmark")
+    amsterdam = CityConfig("amsterdam", "Amsterdam", "EUR", "Europe/Amsterdam", BOUNDS)
+    assert len(build_rows(raw(tulips, cheese, propylaea, nike), amsterdam)) == 4
+
+
+def test_a_listing_sharing_a_word_of_the_name_is_a_second_listing() -> None:
+    mosque = place("a", "Şişli Camii", CENTRE, 9_000, "mosque")
+    foundation = place("b", "Şişli Cami Şerifi Vakfı", north_of(CENTRE, 10), 900, "mosque")
+    assert names(build_rows(raw(mosque, foundation), CITY)) == {"Şişli Camii"}
+
+
 def test_drop_same_spot_keeps_the_most_reviewed_listing() -> None:
     rows = [
         {"name": "small", "category": "MUSEUM", "latitude": 51.5, "longitude": 0.0, "user_rating_count": 900},
