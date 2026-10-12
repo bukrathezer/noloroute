@@ -8,6 +8,7 @@ import {
   type PlanResponse,
   planRoute,
   removeStop,
+  reorderDays,
   saveRoute,
   setAuthToken,
   type TokenResponse,
@@ -80,6 +81,7 @@ export function App() {
   // Set when the shown plan is a saved route, so edits update it instead of saving a copy.
   const [savedRouteId, setSavedRouteId] = useState<string | null>(null);
   const [removingStop, setRemovingStop] = useState<string | null>(null);
+  const [movingDay, setMovingDay] = useState<number | null>(null);
   // Ignores responses to requests that were superseded while in flight.
   const requestId = useRef(0);
   const t = STRINGS[lang];
@@ -245,6 +247,28 @@ export function App() {
     }
   };
 
+  const onMoveDay = async (dayNumber: number, direction: -1 | 1) => {
+    if (!plan) return;
+    const other = dayNumber + direction;
+    const order = plan.days.map((d) => d.day_number);
+    [order[dayNumber - 1], order[other - 1]] = [other, dayNumber];
+    const id = requestId.current;
+    setMovingDay(dayNumber);
+    setError(null);
+    try {
+      const updated = await reorderDays(plan, order);
+      if (id !== requestId.current) return; // the form changed meanwhile
+      setPlan(updated);
+      // A day shown on its own stays in view at its new place.
+      setActiveDay((active) => (active === dayNumber ? other : active === other ? dayNumber : active));
+      setSaveState(savedRouteId ? "dirty" : "idle");
+    } catch {
+      if (id === requestId.current) setError(t.result.moveFailed);
+    } finally {
+      setMovingDay(null);
+    }
+  };
+
   const showAuth = () => {
     setAuthReason(null);
     setView("auth");
@@ -335,6 +359,8 @@ export function App() {
                 onShowSaved={() => setView("saved")}
                 onRemoveStop={onRemoveStop}
                 removingStop={removingStop}
+                onMoveDay={onMoveDay}
+                movingDay={movingDay}
               />
             )}
           </>

@@ -14,10 +14,11 @@ from app.api.deps import CurrentUser, DbSession
 from app.core.rate_limit import RateLimiter, client_ip, too_many_requests
 from app.db.session import get_db
 from app.models import POI, City, RouteStop, SavedRoute, User
-from app.schemas.route import DayPlan, RemoveStopRequest, RoutePlanRequest, RoutePlanResponse
+from app.schemas.route import DayPlan, RemoveStopRequest, ReorderDaysRequest, RoutePlanRequest, RoutePlanResponse
 from app.schemas.saved_route import SavedRouteOut, SavedRouteSummary, SaveRouteRequest
 from app.services.geo import LatLng
-from app.services.route_optimizer import HotelTooFarError, build_day, order_day, plan_trip
+from app.services.opening_hours import hours_on
+from app.services.route_optimizer import HotelTooFarError, build_day, order_day, plan_trip, stop_warning
 from app.services.routes_client import RoutesClient, TravelMode
 from app.services.weather import DayWeather, WeatherClient, WeatherError
 
@@ -25,7 +26,7 @@ router = APIRouter(prefix="/routes", tags=["routes"])
 logger = logging.getLogger(__name__)
 
 # Transit routing is the costliest in Google calls (two route matrices per day), so it is capped
-# per client: plans and stop removals together.
+# per client: plans, stop removals and day moves together.
 TRANSIT_ROUTINGS_PER_IP = RateLimiter(limit=30, window_seconds=60 * 60)
 
 
@@ -142,6 +143,78 @@ async def remove_stop(
     new_day.dropped_stops = day.dropped_stops + new_day.dropped_stops
 
     days = [new_day if d.day_number == day.day_number else d for d in plan.days]
+    return plan.model_copy(update={"days": days, **_plan_totals(days)})
+
+
+@router.post("/plan/reorder-days", response_model=RoutePlanResponse)
+async def reorder_days(
+    req: ReorderDaysRequest,
+    request: Request,
+    db: Annotated[Session, Depends(get_db)],
+    routes_client: Annotated[RoutesClient | None, Depends(get_routes_client)],
+) -> RoutePlanResponse:
+    """Put the plan's days in a new order. The stops of each day stay together.
+
+    Without dates only the day numbers change. With dates, the dates stay where they are (day 1 is
+    still the first date) and a moved day takes on its new date's weather and opening hours; a stop
+    that is closed then, or outdoors in the rain, gets a warning. Transit days that moved are routed
+    again, because timetables differ between weekdays and weekends.
+    """
+    plan = req.plan
+    old_days = sorted(plan.days, key=lambda d: d.day_number)
+    by_number = {d.day_number: d for d in old_days}
+    if sorted(req.day_order) != sorted(by_number):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "day_order must list each day of the plan once")
+
+    # (new day number, the day's stops, the day whose date and weather it takes on)
+    moves = [(position, by_number[number], old_days[position - 1]) for position, number in enumerate(req.day_order, 1)]
+    if plan.start_date is None:
+        days = [day.model_copy(update={"day_number": position}) for position, day, _ in moves]
+        return plan.model_copy(update={"days": days})
+
+    moved = [(position, day, slot) for position, day, slot in moves if day.day_number != position]
+    transit = plan.travel_mode is TravelMode.TRANSIT
+    if transit and moved:
+        limit_transit(request, plan.travel_mode)
+    poi_ids = sorted({stop.poi_id for _, day, _ in moved for stop in day.stops})
+    city, pois = await run_in_threadpool(_load_city_and_pois, db, plan.city_id, poi_ids)
+    poi_by_id = {poi.id: poi for poi in pois}
+    hotel = LatLng(plan.accommodation.lat, plan.accommodation.lng)
+
+    async def move(position: int, day: DayPlan, slot: DayPlan) -> DayPlan:
+        stops = [poi_by_id[stop.poi_id] for stop in day.stops]
+        if transit and stops:
+            # The traveller picked these stops for the day, so none is dropped for running long.
+            routed = await order_day(
+                hotel, stops, plan.travel_mode, routes_client, day=slot.date, tz=city_timezone(city), max_minutes=None
+            )
+            new_day = build_day(position, stops, routed, day_date=slot.date, weather=slot.weather)
+            new_day.dropped_stops = day.dropped_stops
+            return new_day
+        # Walking and driving times don't depend on the date: keep the route, update the day's facts.
+        new_stops = [
+            stop.model_copy(
+                update={
+                    "hours": hours_on(poi.opening_hours, slot.date) if slot.date else None,
+                    "warning": stop_warning(poi, slot.date, slot.weather),
+                }
+            )
+            for stop, poi in zip(day.stops, stops, strict=True)
+        ]
+        # rain_adjusted described the stops that used to be on that date, so it no longer applies.
+        return day.model_copy(
+            update={
+                "day_number": position,
+                "date": slot.date,
+                "weather": slot.weather,
+                "rain_adjusted": False,
+                "stops": new_stops,
+            }
+        )
+
+    rerouted = await asyncio.gather(*(move(position, day, slot) for position, day, slot in moved))
+    new_by_position = {d.day_number: d for d in rerouted}
+    days = [new_by_position.get(position, day) for position, day, _ in moves]
     return plan.model_copy(update={"days": days, **_plan_totals(days)})
 
 

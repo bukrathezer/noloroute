@@ -656,9 +656,10 @@ a {
 
 .day-card header {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px 8px;
 }
 
 .day-card h3 {
@@ -667,10 +668,66 @@ a {
   gap: 8px;
   margin: 0;
   font-size: 16px;
+  white-space: nowrap;
 }
 
 .day-card header .muted {
   font-size: 13px;
+}
+
+/* Stops, time and the move buttons; on a narrow screen they wrap below the title, still on the right. */
+.day-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.day-card.moving {
+  opacity: 0.5;
+}
+
+.move-day {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  align-self: center;
+}
+
+.move-day button {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.move-day button:hover:not(:disabled) {
+  border-color: var(--day);
+  color: var(--text);
+}
+
+.move-day button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.stop-warning {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stop-warning.closed {
+  color: var(--danger);
+}
+
+.stop-warning.rain {
+  color: var(--muted);
 }
 
 .badge {
