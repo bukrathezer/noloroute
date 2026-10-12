@@ -100,3 +100,57 @@ def test_removing_a_stop_keeps_the_day_date_and_weather(client: TestClient) -> N
     assert new_day1["weather"] == day1["weather"]
     assert new_day1["rain_adjusted"] == day1["rain_adjusted"]
     assert edited["start_date"] == result["start_date"]
+
+
+# --- reordering days -------------------------------------------------------------------------------
+
+
+def reorder(client: TestClient, result: dict, order: list[int]) -> dict:
+    resp = client.post("/api/v1/routes/plan/reorder-days", json={"plan": result, "day_order": order})
+    assert resp.status_code == 200, resp.text
+    return resp.json()
+
+
+def stop_ids(day: dict) -> list[str]:
+    return [s["poi_id"] for s in day["stops"]]
+
+
+def test_reordering_days_without_dates_only_renumbers_them(client: TestClient) -> None:
+    use_weather(FakeWeather())
+    result = plan(client, duration_days=3)
+    days = result["days"]
+    moved = reorder(client, result, [3, 1, 2])
+    assert [d["day_number"] for d in moved["days"]] == [1, 2, 3]
+    assert [stop_ids(d) for d in moved["days"]] == [stop_ids(days[2]), stop_ids(days[0]), stop_ids(days[1])]
+    # Same stops, same legs: only the numbers changed.
+    assert {**moved["days"][0], "day_number": 3} == days[2]
+
+
+def test_a_moved_day_takes_on_its_new_date_and_weather(client: TestClient) -> None:
+    # Rain on day 1 sends the parks to day 2; moving day 2 to the front puts them in the rain.
+    use_weather(FakeWeather(rainy_days=(0,)))
+    result = plan(client, start_date=START.isoformat())
+    day1, day2 = result["days"]
+    assert any(s["category"] == "PARK" for s in day2["stops"])
+    assert all(s["warning"] is None for d in result["days"] for s in d["stops"])
+
+    moved = reorder(client, result, [2, 1])
+    new1, new2 = moved["days"]
+    assert stop_ids(new1) == stop_ids(day2) and stop_ids(new2) == stop_ids(day1)
+    # Dates and weather stay with the position: day 1 is still the first, rainy date.
+    assert (new1["date"], new1["weather"]) == (day1["date"], day1["weather"])
+    assert (new2["date"], new2["weather"]) == (day2["date"], day2["weather"])
+    assert {s["poi_id"]: s["warning"] for s in new1["stops"]} == {
+        s["poi_id"]: "rain" if s["category"] == "PARK" else None for s in day2["stops"]
+    }
+    assert all(s["warning"] is None for s in new2["stops"])
+    assert not new1["rain_adjusted"] and not new2["rain_adjusted"]
+    assert moved["total_entry_cost"] == result["total_entry_cost"]
+
+
+@pytest.mark.parametrize("order", [[1], [1, 1], [1, 3], [1, 2, 3]])
+def test_day_order_must_list_each_day_once(client: TestClient, order: list[int]) -> None:
+    use_weather(FakeWeather())
+    result = plan(client)
+    resp = client.post("/api/v1/routes/plan/reorder-days", json={"plan": result, "day_order": order})
+    assert resp.status_code == 422

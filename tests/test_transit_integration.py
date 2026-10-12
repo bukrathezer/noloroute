@@ -1,7 +1,7 @@
 """Transit plans through the API: planning, removing stops, saving, and the per-client limit
 (rolled back after each test)."""
 
-from datetime import UTC
+from datetime import UTC, date, timedelta
 from typing import Any
 
 import pytest
@@ -63,6 +63,23 @@ def test_removing_a_stop_reroutes_the_day_with_transit(client: TestClient, fake:
     assert all(leg is not None for leg in legs(new_day1))
     assert new_day2 == day2
     assert len(fake.matrix_calls) == calls_before + 2  # only the changed day
+
+
+def test_moving_dated_transit_days_reroutes_only_the_moved_ones(client: TestClient, fake: FakeTransitClient) -> None:
+    start = (date.today() + timedelta(days=3)).isoformat()
+    body = {"city_id": CITY_ID, "accommodation": HOTEL, "duration_days": 3, "travel_mode": "TRANSIT"}
+    result = client.post("/api/v1/routes/plan", json={**body, "start_date": start}).json()
+    days = result["days"]
+    calls_before = len(fake.matrix_calls)
+
+    resp = client.post("/api/v1/routes/plan/reorder-days", json={"plan": result, "day_order": [2, 1, 3]})
+    assert resp.status_code == 200, resp.text
+    new = resp.json()["days"]
+    assert [d["date"] for d in new] == [d["date"] for d in days]
+    assert sorted(s["poi_id"] for s in new[0]["stops"]) == sorted(s["poi_id"] for s in days[1]["stops"])
+    assert all(leg is not None for leg in legs(new[0]))
+    assert new[2] == days[2]  # day 3 stayed where it was
+    assert len(fake.matrix_calls) == calls_before + 4  # two matrices for each of the two moved days
 
 
 def test_a_saved_transit_plan_keeps_its_legs(client: TestClient, fake: FakeTransitClient) -> None:

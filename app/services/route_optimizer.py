@@ -13,6 +13,9 @@
    fill_days        Selection reserves a fixed travel time per stop, too much where sights are
                     close together. Each day's time is re-estimated from its real distances, and
                     days with room get the best nearby sights that still fit.
+   famous_days_first  The day with the city's most famous sight comes first, then the next, so a
+                    traveller sees the Eiffel Tower on day 1 rather than day 4. With dates, a day
+                    only moves to a date its stops are open on (and not into the rain).
 4. order_day        Walking and driving: Google Routes API optimizes the visiting order (hotel ->
                     stops -> hotel) and returns real travel times. Transit: each leg is walked or
                     ridden, and our own TSP solver orders the day (see transit_planner.py). If
@@ -31,11 +34,11 @@ from collections.abc import Awaitable, Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, tzinfo
 from decimal import Decimal
-from itertools import pairwise
+from itertools import pairwise, permutations
 from typing import Literal
 
 from app.models import POI
-from app.schemas.route import DayPlan, DayWeatherOut, LegDetails, PlannedStop, TransitRideOut
+from app.schemas.route import DayPlan, DayWeatherOut, LegDetails, PlannedStop, StopWarning, TransitRideOut
 from app.services.geo import DETOUR_FACTOR, LatLng, haversine_km
 from app.services.opening_hours import hours_on, is_open_long_enough
 from app.services.routes_client import Leg, LoopRoute, RoutesAPIError, RoutesClient, TravelMode
@@ -134,6 +137,7 @@ async def plan_trip(
     if dates:
         groups, rain_adjusted = fit_to_dates(groups, dates, rainy, mode)
     groups = fill_days(groups, pois, hotel, mode, budget, dates=dates, rainy=rainy)
+    groups = famous_days_first(groups, pois, dates=dates, rainy=rainy)
 
     # Days are independent, so route them concurrently.
     routed = await asyncio.gather(
@@ -427,6 +431,45 @@ def fill_days(
     return groups
 
 
+def famous_days_first(
+    groups: list[list[POI]],
+    pois: Sequence[POI],
+    dates: Sequence[date] | None = None,
+    rainy: Sequence[bool] | None = None,
+) -> list[list[POI]]:
+    """Put the days in order of fame: day 1 holds the most famous sight, day 2 the next, and so on.
+
+    A day's fame is that of its most famous stop. Without dates any order goes. With dates, a day
+    may move to another date only if all its stops suit that date (open, and no outdoor sight on a
+    rainy date); staying put is always allowed, so the plan as it is remains an option. A trip has
+    at most 7 days, so every order (at most 5,040) is tried and the most famous first wins.
+    """
+    worth = popularity_with_default(pois)
+    fame = [max((worth(s) for s in g), default=0.0) for g in groups]
+    days = range(len(groups))
+    allowed = [
+        [dst == src or all(_suits_day(s, dst, dates, rainy) for s in groups[src]) for dst in days] for src in days
+    ]
+    orders = (order for order in permutations(days) if all(allowed[src][dst] for dst, src in enumerate(order)))
+    # Compared like words in a dictionary: first by day 1's fame, then day 2's... max() keeps the
+    # first of equals, and the unchanged order comes first, so ties leave the days where they are.
+    best = max(orders, key=lambda order: [fame[src] for src in order])
+    return [groups[src] for src in best]
+
+
+def stop_warning(poi: POI, day_date: date | None, weather: DayWeatherOut | None) -> StopWarning | None:
+    """Why a stop may not suit its day: "closed" that date, or an outdoor sight with "rain" expected.
+
+    Planning avoids both where it can; they show up when a stop has nowhere better to go or when
+    the traveller moves a day to another date.
+    """
+    if day_date and not is_open_long_enough(poi.opening_hours, day_date, poi.avg_duration_min):
+        return "closed"
+    if weather and weather.is_rainy and poi.category in OUTDOOR_CATEGORIES:
+        return "rain"
+    return None
+
+
 def _suits_day(poi: POI, day: int, dates: Sequence[date] | None, rainy: Sequence[bool] | None) -> bool:
     """Open that day, and not an outdoor sight on a rainy day."""
     if dates and not is_open_long_enough(poi.opening_hours, dates[day], poi.avg_duration_min):
@@ -561,6 +604,7 @@ def build_day(
             entry_price=poi.entry_price,
             rating=poi.rating,
             hours=hours_on(poi.opening_hours, day_date) if day_date else None,
+            warning=stop_warning(poi, day_date, weather),
             wikidata_id=poi.wikidata_id,
             description_tr=poi.description_tr,
             description_en=poi.description_en,

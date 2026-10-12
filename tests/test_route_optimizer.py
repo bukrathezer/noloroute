@@ -15,6 +15,7 @@ from app.services.route_optimizer import (
     HotelTooFarError,
     build_day,
     estimate_loop,
+    famous_days_first,
     fill_days,
     fit_to_dates,
     location,
@@ -25,6 +26,8 @@ from app.services.route_optimizer import (
     select_stops,
     split_into_days,
     stop_minutes,
+    stop_warning,
+    to_weather_out,
 )
 from app.services.routes_client import Leg, LoopRoute, RoutesAPIError, TravelMode, _parse_duration
 from app.services.weather import DayWeather
@@ -438,3 +441,84 @@ def test_filling_varies_categories() -> None:
     park = make_poi("p1", 0.6, category="PARK", duration=250, reviews=10_000)  # only one of the two fits
     [day] = fill_days([[chosen]], [chosen, museum, park], HOTEL, MODE, None)
     assert [p.id for p in day if p.id != "m0"] == ["p1"]  # slightly less popular, but a new category
+
+
+# --- famous sights first ------------------------------------------------------------------------
+
+
+def ids(groups: list[list[POI]]) -> list[list[str]]:
+    return [[p.id for p in g] for g in groups]
+
+
+def test_the_day_with_the_most_famous_sight_comes_first() -> None:
+    quiet = [make_poi("cafe", reviews=2_000), make_poi("chapel", reviews=3_000)]
+    middling = [make_poi("museum", reviews=50_000)]
+    iconic = [make_poi("tower", reviews=400_000), make_poi("garden", reviews=1_000)]
+    groups = famous_days_first([quiet, middling, iconic], [*quiet, *middling, *iconic])
+    assert ids(groups) == [["tower", "garden"], ["museum"], ["cafe", "chapel"]]
+
+
+def test_fame_on_wikipedia_counts_when_ordering_days() -> None:
+    reviewed = make_poi("reviewed", reviews=20_000)
+    famous = make_poi("famous", reviews=3_000)
+    famous.wikidata_sitelinks = 150  # floor of 225,000 reviews
+    assert ids(famous_days_first([[reviewed], [famous]], [reviewed, famous])) == [["famous"], ["reviewed"]]
+
+
+def test_equally_famous_days_and_empty_days_keep_their_order() -> None:
+    a, b = make_poi("a"), make_poi("b")
+    assert ids(famous_days_first([[a], [b], []], [a, b])) == [["a"], ["b"], []]
+    assert ids(famous_days_first([[], [a]], [a])) == [["a"], []]
+
+
+def test_a_day_does_not_move_to_a_date_its_stops_are_closed_on() -> None:
+    thursday = date(2026, 10, 8)
+    # The famous museum closes on Tuesdays, so its day can't become day 1 (a Tuesday)...
+    museum = make_poi("museum", category="MUSEUM", reviews=500_000, hours=CLOSED_TUESDAYS)
+    church = make_poi("church", reviews=5_000)
+    square = make_poi("square", reviews=20_000)
+    groups = famous_days_first(
+        [[church], [square], [museum]], [church, square, museum], dates=[TUESDAY, WEDNESDAY, thursday]
+    )
+    # ...so the next most famous opens the trip and the museum follows on day 2.
+    assert ids(groups) == [["square"], ["museum"], ["church"]]
+
+
+def test_an_outdoor_day_does_not_move_into_the_rain() -> None:
+    park = make_poi("park", category="PARK", reviews=300_000)
+    museum = make_poi("museum", category="MUSEUM", reviews=10_000)
+    dates = [TUESDAY, WEDNESDAY]
+    assert ids(famous_days_first([[museum], [park]], [museum, park], dates=dates, rainy=[True, False])) == [
+        ["museum"],
+        ["park"],
+    ]
+    assert ids(famous_days_first([[museum], [park]], [museum, park], dates=dates, rainy=[False, False])) == [
+        ["park"],
+        ["museum"],
+    ]
+
+
+def test_plan_trip_puts_the_most_famous_sight_on_day_1() -> None:
+    pois = ring(12, radius_km=3.0, duration=120)
+    pois[7].user_rating_count = 900_000  # the city's icon, somewhere on the ring
+    days = asyncio.run(plan_trip(pois, HOTEL, 3, None, MODE, None))
+    assert "p7" in [s.poi_id for s in days[0].stops]
+
+
+def test_stop_warnings() -> None:
+    museum = make_poi("museum", category="MUSEUM", hours=CLOSED_TUESDAYS)
+    park = make_poi("park", category="PARK")
+    rain = to_weather_out(weather(TUESDAY, rainy=True))
+    dry = to_weather_out(weather(WEDNESDAY, rainy=False))
+    assert stop_warning(museum, TUESDAY, rain) == "closed"
+    assert stop_warning(museum, WEDNESDAY, rain) is None  # indoors
+    assert stop_warning(park, TUESDAY, rain) == "rain"
+    assert stop_warning(park, WEDNESDAY, dry) is None
+    assert stop_warning(museum, None, None) is None  # no dates, nothing to check
+
+
+def test_an_outdoor_stop_left_on_a_rainy_day_is_flagged() -> None:
+    park = make_poi("park", 1, category="PARK")
+    rain = weather(TUESDAY, rainy=True)
+    [day] = asyncio.run(plan_trip([park], HOTEL, 1, None, MODE, None, dates=[TUESDAY], weather=[rain]))
+    assert [s.warning for s in day.stops] == ["rain"]

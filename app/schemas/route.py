@@ -53,6 +53,7 @@ class DayWeatherOut(BaseModel):
 
 
 LegMode = Literal["WALK", "TRANSIT"]
+StopWarning = Literal["closed", "rain"]
 
 
 class TransitRideOut(BaseModel):
@@ -99,6 +100,11 @@ class PlannedStop(BaseModel):
     entry_price: Decimal | None = Field(examples=["17.00"])
     rating: float | None
     hours: str | None = Field(default=None, description='Opening hours that day, e.g. "09:00–18:00".')
+    warning: StopWarning | None = Field(
+        default=None,
+        description='Why the stop may not suit its day: "closed" that date, or an outdoor sight with "rain" '
+        "expected. Set when there was no better day for it, or after days were reordered.",
+    )
     # A sentence or two from Wikipedia (CC BY-SA). Absent from plans saved before descriptions.
     wikidata_id: str | None = Field(
         default=None, description="The place's Wikidata item; links to its Wikipedia article in any language."
@@ -152,3 +158,11 @@ class RoutePlanResponse(BaseModel):
 class RemoveStopRequest(BaseModel):
     plan: RoutePlanResponse = Field(description="The current plan, as returned by POST /routes/plan.")
     poi_id: str = Field(description="The stop to drop; its day is re-ordered and re-routed.")
+
+
+class ReorderDaysRequest(BaseModel):
+    plan: RoutePlanResponse = Field(description="The current plan, as returned by POST /routes/plan.")
+    day_order: list[int] = Field(
+        description="The plan's day numbers in their new order: [2, 1, 3] makes day 2 the first day.",
+        examples=[[2, 1, 3]],
+    )

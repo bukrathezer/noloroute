@@ -90,6 +90,12 @@ const en = {
     },
     dropped: (names: string) => `Left out to keep the day under 8½ hours: ${names}`,
     removeFailed: "Couldn't remove that stop. Please try again.",
+    moveDay: { earlier: (n: number) => `Move day ${n} earlier`, later: (n: number) => `Move day ${n} later` },
+    moveFailed: "Couldn't move that day. Please try again.",
+    stopWarning: {
+      closed: "Closed on this day",
+      rain: "Outdoors, and rain is expected",
+    },
     wikipedia: "Wikipedia",
     // The two links are passed in: the Wikipedia home page and the licence.
     descriptionsNote: (wiki: ReactNode, license: ReactNode): ReactNode[] => [
@@ -315,6 +321,12 @@ const tr: Strings = {
     },
     dropped: (names) => `Gün 8,5 saati aşmasın diye çıkarıldı: ${names}`,
     removeFailed: "Durak çıkarılamadı. Lütfen tekrar dene.",
+    moveDay: { earlier: (n) => `${n}. günü öne al`, later: (n) => `${n}. günü sona doğru al` },
+    moveFailed: "Gün taşınamadı. Lütfen tekrar dene.",
+    stopWarning: {
+      closed: "Bu gün kapalı",
+      rain: "Açık hava, yağmur bekleniyor",
+    },
     wikipedia: "Vikipedi",
     descriptionsNote: (wiki, license) => ["Yer açıklamaları ", wiki, " maddelerinden kısaltılmıştır (", license, ")."],
   },

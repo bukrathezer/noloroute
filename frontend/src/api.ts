@@ -76,6 +76,8 @@ export interface PlannedStop {
   rating: number | null;
   /** Opening hours on that day, e.g. "09:00–18:00", "24/7", "closed". */
   hours: string | null;
+  /** Why the stop may not suit its day: closed that date, or outdoors with rain expected. */
+  warning?: "closed" | "rain" | null;
   /** From Wikipedia, with the Wikidata item that links to the article (missing from older saved plans). */
   wikidata_id?: string | null;
   description_tr?: string | null;
@@ -235,6 +237,13 @@ export const removeStop = (plan: PlanResponse, poiId: string) =>
   request<PlanResponse>("/api/v1/routes/plan/remove-stop", {
     method: "POST",
     body: JSON.stringify({ plan, poi_id: poiId }),
+  });
+
+/** `dayOrder`: the day numbers in their new order, e.g. [2, 1, 3] makes day 2 the first day. */
+export const reorderDays = (plan: PlanResponse, dayOrder: number[]) =>
+  request<PlanResponse>("/api/v1/routes/plan/reorder-days", {
+    method: "POST",
+    body: JSON.stringify({ plan, day_order: dayOrder }),
   });
 
 export const updateSavedRoute = (id: string, plan: PlanResponse) =>

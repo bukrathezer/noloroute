@@ -22,11 +22,15 @@ interface Props {
   onRemoveStop: (poiId: string) => void;
   /** The stop being removed right now, if any. */
   removingStop: string | null;
+  /** Swap a day with the one before (-1) or after (+1) it. */
+  onMoveDay: (dayNumber: number, direction: -1 | 1) => void;
+  /** The day being moved right now, if any. */
+  movingDay: number | null;
 }
 
 export function PlanResult(props: Props) {
   const { plan, lang, activeDay, onActiveDayChange, highlightedStop, onHighlightStop } = props;
-  const { saveState, onSave, onShowSaved, onRemoveStop, removingStop } = props;
+  const { saveState, onSave, onShowSaved, onRemoveStop, removingStop, onMoveDay, movingDay } = props;
   const t = STRINGS[lang];
   const r = t.result;
   const stopCount = plan.days.reduce((n, d) => n + d.stops.length, 0);
@@ -122,7 +126,7 @@ export function PlanResult(props: Props) {
       {days.map((day) => (
         <article
           key={day.day_number}
-          className="day-card"
+          className={movingDay === day.day_number ? "day-card moving" : "day-card"}
           style={{ "--day": dayColor(day.day_number) } as CSSProperties}
         >
           <header>
@@ -131,8 +135,30 @@ export function PlanResult(props: Props) {
               {r.day(day.day_number)}
               {day.date && <span className="day-date">{formatDay(day.date, lang)}</span>}
             </h3>
-            <span className="muted">
-              {r.stopsCount(day.stops.length)} · {t.minutes(day.total_visit_minutes + day.total_travel_minutes)}
+            <span className="day-meta">
+              <span className="muted">
+                {r.stopsCount(day.stops.length)} · {t.minutes(day.total_visit_minutes + day.total_travel_minutes)}
+              </span>
+              {plan.days.length > 1 && (
+                <span className="move-day">
+                  {([-1, 1] as const).map((direction) => {
+                    const label = direction < 0 ? r.moveDay.earlier : r.moveDay.later;
+                    const edge = direction < 0 ? day.day_number === 1 : day.day_number === plan.days.length;
+                    return (
+                      <button
+                        key={direction}
+                        type="button"
+                        aria-label={label(day.day_number)}
+                        title={label(day.day_number)}
+                        disabled={edge || movingDay !== null}
+                        onClick={() => onMoveDay(day.day_number, direction)}
+                      >
+                        {direction < 0 ? "↑" : "↓"}
+                      </button>
+                    );
+                  })}
+                </span>
+              )}
             </span>
           </header>
           {day.weather && <WeatherLine weather={day.weather} lang={lang} />}
@@ -177,6 +203,12 @@ export function PlanResult(props: Props) {
                         {stop.hours && stop.hours !== "closed" && (
                           <span className="muted small">
                             {stop.hours === "24/7" ? r.open247 : r.openHours(stop.hours)}
+                          </span>
+                        )}
+                        {stop.warning && (
+                          <span className={`stop-warning ${stop.warning}`}>
+                            <span aria-hidden="true">{stop.warning === "rain" ? "🌧️ " : "⚠ "}</span>
+                            {r.stopWarning[stop.warning]}
                           </span>
                         )}
                       </span>
