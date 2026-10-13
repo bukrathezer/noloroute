@@ -54,7 +54,9 @@ from app.services.places_client import MAX_NEARBY_RESULTS, BoundingBox, PlacesAP
 from app.services.route_optimizer import SAME_SPOT_KM, SECOND_LISTING_SHARE, distinctive_words
 from app.services.wikipedia import WikiClient, WikiError, name_score
 from scripts.city_catalog import CATALOG, CatalogCity
+from scripts.curated_pois import CURATED_POIS, curated_place_id
 from scripts.describe_pois import describe_new_places
+from scripts.localize_pois import AUTO_CHARACTERS, AUTO_NAME_REQUESTS, AUTO_TOP, Budget, localize_new_places
 from scripts.sight_details import CITY_PRICES, SIGHTS, estimate_entry_price, estimate_visit_minutes
 
 # Raw API results are cached here. Override with PLACES_CACHE_DIR where the repo folder is
@@ -100,32 +102,6 @@ EXPECTED_CITY_REQUESTS = 100
 # The monthly refresh leaves cities alone that were refreshed this recently.
 REFRESH_MIN_AGE_DAYS = 25
 
-
-@dataclass(frozen=True)
-class CuratedPOI:
-    slug: str
-    name: str
-    lat: float
-    lng: float
-    avg_duration_min: int
-    category: POICategory = POICategory.LANDMARK
-
-
-# Must-see streets and districts. Places returns them as unrated "neighborhood" entries or as
-# unrelated businesses (a cafe, a tram stop, a mall), so they are entered by hand.
-CURATED_POIS: dict[str, list[CuratedPOI]] = {
-    "paris": [
-        CuratedPOI("champs-elysees", "Avenue des Champs-Élysées", 48.8698, 2.3076, 60),
-        CuratedPOI("montmartre", "Montmartre", 48.8865, 2.3408, 120),
-        CuratedPOI("le-marais", "Le Marais", 48.8575, 2.3590, 120),
-        CuratedPOI("canal-saint-martin", "Canal Saint-Martin", 48.8710, 2.3650, 60),
-    ],
-    "istanbul": [
-        CuratedPOI("istiklal-avenue", "İstiklal Avenue", 41.0337, 28.9778, 90),
-        CuratedPOI("pierre-loti-hill", "Pierre Loti Hill", 41.0535, 28.9335, 60, POICategory.VIEWPOINT),
-        CuratedPOI("balat", "Balat", 41.0296, 28.9483, 90),
-    ],
-}
 
 KM_PER_DEG_LAT = 111.32
 
@@ -450,7 +426,7 @@ def curated_rows(city: CityConfig) -> list[dict[str, Any]]:
         {
             "id": new_id(),
             "city_id": city.id,
-            "place_id": f"curated:{city.id}:{poi.slug}",  # not a Google ID; keeps upserts idempotent
+            "place_id": curated_place_id(city.id, poi.slug),
             "name": poi.name,
             "category": poi.category.value,
             "google_type": None,
@@ -559,7 +535,9 @@ def refresh_candidates() -> list[tuple[str, datetime | None, int | None]]:
     return [(r.id, r.refreshed_at, r.last_ingest_requests) for r in rows if r.id in known]
 
 
-def repair_city(client: PlacesClient, wiki: WikiClient, city_id: str, dry_run: bool = False) -> None:
+def repair_city(
+    client: PlacesClient, wiki: WikiClient, city_id: str, dry_run: bool = False, localize: Budget | None = None
+) -> None:
     """Bring a city already in the database up to the current rules without a new Nearby search:
     drop second-hand shops (by name, as shop types aren't stored) and second listings at the same
     spot, and add the famous sights the popularity search missed."""
@@ -599,6 +577,7 @@ def repair_city(client: PlacesClient, wiki: WikiClient, city_id: str, dry_run: b
             db.execute(pg_insert(POI).values(new_rows).on_conflict_do_nothing(index_elements=[POI.place_id]))
         db.commit()
     describe_new_places(city_id)
+    localize_new_places(city_id, localize or Budget.free())
 
 
 def _extent(rows: list[dict[str, Any]], pad_km: float) -> BoundingBox:
@@ -639,6 +618,13 @@ def main() -> None:
     args = parser.parse_args()
     sys.stdout.reconfigure(errors="replace")  # place names in any script, on any console
     api_key = get_settings().google_places_api_key
+    # Turkish names and translations for new places: one budget for the whole run. A run from the
+    # cache promises no API calls, so it only fills the free names.
+    localize = (
+        Budget.free()
+        if args.use_cache
+        else Budget(name_requests=AUTO_NAME_REQUESTS, characters=AUTO_CHARACTERS, top=AUTO_TOP)
+    )
 
     if args.repair:
         if not api_key:
@@ -652,7 +638,7 @@ def main() -> None:
             for city_id in city_ids:
                 print(f"== {city_id}")
                 try:
-                    repair_city(client, wiki, city_id, dry_run=args.dry_run)
+                    repair_city(client, wiki, city_id, dry_run=args.dry_run, localize=localize)
                 except WikiError as e:  # Wikidata is down: the other cities can still be repaired
                     print(f"  skipped, Wikidata didn't answer: {e}")
             print("requests:", dict(client.requests))
@@ -708,6 +694,7 @@ def main() -> None:
                 removed = save_city(city, rows, requests)
                 print(f"  saved {len(rows)} POIs, removed {removed} stale")
                 describe_new_places(city.id)
+                localize_new_places(city.id, localize)
     print("requests:", dict(client.requests))
 
 

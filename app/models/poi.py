@@ -29,7 +29,10 @@ class POI(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True, default=new_id)
     city_id: Mapped[str] = mapped_column(ForeignKey("city.id"), index=True)
     place_id: Mapped[str] = mapped_column(String, unique=True)  # Google Place ID, used for dedup
-    name: Mapped[str] = mapped_column(String, nullable=False)
+    name: Mapped[str] = mapped_column(String, nullable=False)  # in English, as Google lists it
+    # The Turkish name (scripts/localize_pois.py): Wikidata's Turkish label, or Google's Turkish
+    # listing. Often the same as `name` for proper names ("Musée d'Orsay"). None: not looked up yet.
+    name_tr: Mapped[str | None] = mapped_column(String, nullable=True)
     category: Mapped[str] = mapped_column(String, nullable=False)
     google_type: Mapped[str | None] = mapped_column(String(64), nullable=True)  # Places primaryType
     latitude: Mapped[float] = mapped_column(Float)
@@ -47,6 +50,9 @@ class POI(Base):
     wikidata_sitelinks: Mapped[int | None] = mapped_column(Integer, nullable=True)
     description_tr: Mapped[str | None] = mapped_column(String(300), nullable=True)
     description_en: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    # "tr" or "en" when that description is a machine translation of the other one (the place
+    # has a Wikipedia article in one language only); None when both come from Wikipedia.
+    description_translated: Mapped[str | None] = mapped_column(String(2), nullable=True)
     # When that lookup last ran, found or not: later runs only look at places added since.
     wiki_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

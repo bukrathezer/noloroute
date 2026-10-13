@@ -4,6 +4,7 @@ import { CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMa
 import type { City, DayPlan, LatLng, PlanResponse } from "../api";
 import { cityName, type Lang, STRINGS } from "../i18n";
 import { decodePolyline } from "../polyline";
+import { stopName } from "../text";
 import { dayColor } from "../theme";
 
 type Point = [number, number];
@@ -30,7 +31,6 @@ const MAX_CITY_LABELS = 8;
 // (https://operations.osmfoundation.org/policies/tiles/). Dark mode re-colours them in CSS.
 // If traffic grows, switch to a keyed provider here.
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-const ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 const hotelIcon = L.divIcon({
   className: "hotel-marker",
@@ -110,7 +110,7 @@ export function RouteMap(props: Props) {
 
   return (
     <MapContainer center={EUROPE_VIEW.center} zoom={EUROPE_VIEW.zoom} className="map" zoomControl={false}>
-      <TileLayer url={TILE_URL} attribution={ATTRIBUTION} maxZoom={19} />
+      <TileLayer url={TILE_URL} attribution={STRINGS[lang].mapAttribution} maxZoom={19} />
       <ViewController city={city} bounds={bounds} />
       {/* Clicking only drops the first pin; after that it is moved by dragging, so a stray click
           on the map can't wipe out a plan. */}
@@ -177,9 +177,9 @@ export function RouteMap(props: Props) {
                   }}
                 >
                   <Tooltip direction="top" offset={[0, -14]}>
-                    <strong>{stop.name}</strong>
+                    <strong>{stopName(stop, lang)}</strong>
                     <br />
-                    {STRINGS[lang].result.day(day.day_number)} · #{stop.order_in_day}
+                    {STRINGS[lang].result.day(day.day_number)} · {STRINGS[lang].result.stopNumber(stop.order_in_day)}
                   </Tooltip>
                 </Marker>
               )),

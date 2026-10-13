@@ -477,6 +477,20 @@ class WikiClient:
                 )
         return result
 
+    def labels(self, qids: Sequence[str], lang: str) -> dict[str, str]:
+        """Items' names (labels) in one language: {Wikidata id: label}, for the items that have one."""
+        result: dict[str, str] = {}
+        for i in range(0, len(qids), 50):  # the API's batch limit
+            data = self._get(
+                WIKIDATA_API,
+                {"action": "wbgetentities", "ids": "|".join(qids[i : i + 50]), "props": "labels", "languages": lang},
+            )
+            for qid, item in data.get("entities", {}).items():
+                label = item.get("labels", {}).get(lang, {}).get("value")
+                if label:
+                    result[qid] = label
+        return result
+
     def intros(self, lang: str, titles: Sequence[str]) -> dict[str, str]:
         """Plain-text introductions of Wikipedia articles, keyed by the titles asked for."""
         result: dict[str, str] = {}

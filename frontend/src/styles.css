@@ -717,6 +717,10 @@ a {
   cursor: default;
 }
 
+.translated-by {
+  color: var(--muted);
+}
+
 .stop-warning {
   font-size: 12px;
   font-weight: 500;

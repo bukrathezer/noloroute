@@ -92,7 +92,9 @@ export function DayEvents({ day, accommodation, lang }: Props) {
                   )}
                   <span className="muted small">
                     {[
-                      [e.segment && (t.segments[e.segment] ?? e.segment), e.genre].filter(Boolean).join(" · "),
+                      [e.segment && (t.segments[e.segment] ?? e.segment), e.genre && (t.genres[e.genre] ?? e.genre)]
+                        .filter(Boolean)
+                        .join(" · "),
                       timesText(e.times),
                       e.venue,
                       e.distance_km != null ? t.distance(e.distance_km.toLocaleString(lang)) : null,

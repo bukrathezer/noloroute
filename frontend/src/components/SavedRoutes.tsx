@@ -38,7 +38,7 @@ export function SavedRoutes({ lang, email, cities, onOpen, onBack, onLogout, onU
   }, [onUnauthorized]);
 
   const remove = async (route: SavedRouteSummary) => {
-    if (!window.confirm(t.saved.confirmDelete(route.name))) return;
+    if (!window.confirm(t.saved.confirmDelete(shownName(route)))) return;
     try {
       await deleteSavedRoute(route.id);
       setRoutes((list) => list?.filter((r) => r.id !== route.id) ?? null);
@@ -71,6 +71,17 @@ export function SavedRoutes({ lang, email, cities, onOpen, onBack, onLogout, onU
     return city ? cityName(city, lang) : id;
   };
 
+  // A route saved under its default name ("Paris · 2 days", "Paris · 2 gün") shows it in the
+  // page's language; a name the user chose stays as it is.
+  function shownName(route: SavedRouteSummary): string {
+    const city = cities.find((c) => c.id === route.city_id);
+    if (!city) return route.name;
+    const defaults = (["en", "tr"] as const).map((l) =>
+      STRINGS[l].save.defaultName(cityName(city, l), route.duration_days),
+    );
+    return defaults.includes(route.name) ? t.save.defaultName(cityName(city, lang), route.duration_days) : route.name;
+  }
+
   return (
     <section className="saved-routes">
       <button type="button" className="link-button back" onClick={onBack}>
@@ -97,7 +108,7 @@ export function SavedRoutes({ lang, email, cities, onOpen, onBack, onLogout, onU
           {routes.map((route) => (
             <li key={route.id}>
               <button type="button" className="saved-open" onClick={() => onOpen(route.id)}>
-                <span className="stop-name">{route.name}</span>
+                <span className="stop-name">{shownName(route)}</span>
                 <span className="muted">
                   {cityLabel(route.city_id)} · {t.saved.meta(route.duration_days, route.stop_count)} ·{" "}
                   {t.mode[route.travel_mode]}
