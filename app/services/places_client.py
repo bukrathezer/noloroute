@@ -1,5 +1,6 @@
 """Thin client for the Google Places API (New): Nearby Search, Text Search and Place Details."""
 
+import math
 import time
 from collections import Counter
 from collections.abc import Iterator
@@ -31,6 +32,9 @@ TEXT_PAGE_SIZE = 20
 TEXT_MAX_PAGES = 3  # Text Search returns at most 60 results (3 pages of 20) per query
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 MAX_ATTEMPTS = 3
+# Place Details allows 600 requests a minute per project; a long run of name lookups stays
+# well under that, or Google answers 429 and the run stops asking.
+NAMES_PER_MINUTE = 300
 
 
 class PlacesAPIError(Exception):
@@ -61,6 +65,7 @@ class PlacesClient:
         )
         # Requests made, by kind, for cost reports ("nearby", "text", "text_ids", "details", "names").
         self.requests: Counter[str] = Counter()
+        self._last_name_request = -math.inf  # time.monotonic() of the last display_name call
 
     def __enter__(self) -> Self:
         return self
@@ -117,6 +122,10 @@ class PlacesClient:
         Google answers with its name in that language where it has one, otherwise with the name
         the place is listed under, in its own language ("Musée d'Orsay", "fr").
         """
+        wait = self._last_name_request + 60 / NAMES_PER_MINUTE - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
+        self._last_name_request = time.monotonic()
         self.requests["names"] += 1
         data = self._request("GET", f"/places/{place_id}", None, "displayName", params={"languageCode": language})
         name = data.get("displayName", {})
