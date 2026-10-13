@@ -6,6 +6,8 @@ export type Lang = "tr" | "en";
 const en = {
   tagline: "Day-by-day routes planned around where you stay",
   switchLanguage: "Türkçe",
+  // HTML for the map's corner (Leaflet renders it as such).
+  mapAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   city: {
     label: "City",
     placeholder: "Search a city…",
@@ -56,6 +58,7 @@ const en = {
     summary: (stops: number, days: number) => `${stops} stops over ${days} ${days === 1 ? "day" : "days"}`,
     allDays: "All days",
     day: (n: number) => `Day ${n}`,
+    stopNumber: (n: number) => `stop ${n}`,
     sightseeing: "Sightseeing",
     travel: "Travel",
     stopsCount: (n: number) => `${n} ${n === 1 ? "stop" : "stops"}`,
@@ -97,11 +100,13 @@ const en = {
       rain: "Outdoors, and rain is expected",
     },
     wikipedia: "Wikipedia",
-    // The two links are passed in: the Wikipedia home page and the licence.
-    descriptionsNote: (wiki: ReactNode, license: ReactNode): ReactNode[] => [
+    translatedByGoogle: "translated from Turkish by Google",
+    // The two links are passed in: the Wikipedia home page and the licence. `translated`: some
+    // of the descriptions shown are machine translations.
+    descriptionsNote: (wiki: ReactNode, license: ReactNode, translated: boolean): ReactNode[] => [
       "Place descriptions are shortened from ",
       wiki,
-      " articles (",
+      translated ? " articles, some translated by Google (" : " articles (",
       license,
       ").",
     ],
@@ -151,6 +156,7 @@ const en = {
     unavailable: "Event search isn't available right now.",
     distance: (km: string) => `${km} km away`,
     segments: {} as Record<string, string>, // Ticketmaster's names are already English
+    genres: {} as Record<string, string>,
     note: "Events and tickets: Ticketmaster. How many events it lists varies a lot from city to city.",
   },
   privacy: {
@@ -239,6 +245,7 @@ type Strings = typeof en;
 const tr: Strings = {
   tagline: "Kaldığın yere göre gün gün planlanan gezi rotaları",
   switchLanguage: "English",
+  mapAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanlar',
   city: {
     label: "Şehir",
     placeholder: "Şehir ara…",
@@ -286,6 +293,7 @@ const tr: Strings = {
     summary: (stops, days) => `${days} günde ${stops} durak`,
     allDays: "Tüm günler",
     day: (n) => `${n}. gün`,
+    stopNumber: (n) => `${n}. durak`,
     sightseeing: "Gezme",
     travel: "Yol",
     stopsCount: (n) => `${n} durak`,
@@ -328,7 +336,14 @@ const tr: Strings = {
       rain: "Açık hava, yağmur bekleniyor",
     },
     wikipedia: "Vikipedi",
-    descriptionsNote: (wiki, license) => ["Yer açıklamaları ", wiki, " maddelerinden kısaltılmıştır (", license, ")."],
+    translatedByGoogle: "İngilizceden Google ile çevrildi",
+    descriptionsNote: (wiki, license, translated) => [
+      "Yer açıklamaları ",
+      wiki,
+      translated ? " maddelerinden kısaltılmıştır, bazılarını Google çevirmiştir (" : " maddelerinden kısaltılmıştır (",
+      license,
+      ").",
+    ],
   },
   errors: {
     network: "Sunucuya ulaşılamıyor. Bağlantını kontrol edip tekrar dene.",
@@ -374,7 +389,34 @@ const tr: Strings = {
     empty: "Ticketmaster'da o gün için yakında etkinlik bulunamadı.",
     unavailable: "Etkinlik araması şu an kullanılamıyor.",
     distance: (km) => `${km} km`,
-    segments: { Music: "Müzik", Sports: "Spor", "Arts & Theatre": "Sanat & Tiyatro", Film: "Film" },
+    segments: {
+      Music: "Müzik",
+      Sports: "Spor",
+      "Arts & Theatre": "Sanat & Tiyatro",
+      Film: "Film",
+      Miscellaneous: "Diğer",
+    },
+    // Ticketmaster's genres; one missing here shows as Ticketmaster names it.
+    genres: {
+      Alternative: "Alternatif", Blues: "Blues", Classical: "Klasik", Country: "Country",
+      "Dance/Electronic": "Dans/Elektronik", Electronic: "Elektronik", Folk: "Folk",
+      "Hip-Hop/Rap": "Hip-Hop/Rap", Jazz: "Caz", Latin: "Latin", Metal: "Metal", Pop: "Pop", "R&B": "R&B",
+      Reggae: "Reggae", Rock: "Rock", World: "Dünya müziği", Religious: "Dini müzik",
+      "Children's Music": "Çocuk müziği", Soccer: "Futbol", Football: "Amerikan futbolu",
+      Basketball: "Basketbol", Volleyball: "Voleybol", Tennis: "Tenis", Hockey: "Buz hokeyi",
+      "Ice Hockey": "Buz hokeyi", Baseball: "Beyzbol", Boxing: "Boks", Wrestling: "Güreş",
+      "Martial Arts": "Dövüş sanatları", "Mixed Martial Arts": "Karma dövüş sanatları",
+      "Motorsports/Racing": "Motor sporları", Rugby: "Ragbi", Cricket: "Kriket", Golf: "Golf",
+      Athletics: "Atletizm", Cycling: "Bisiklet", Handball: "Hentbol", Equestrian: "Binicilik",
+      Swimming: "Yüzme", "Ice Skating": "Buz pateni", Snooker: "Bilardo", eSports: "E-spor",
+      Theatre: "Tiyatro", Comedy: "Komedi", Musical: "Müzikal", Opera: "Opera", Dance: "Dans",
+      "Classical Music": "Klasik müzik", Family: "Aile", "Fine Art": "Güzel sanatlar",
+      "Magic & Illusion": "Sihirbazlık", "Circus & Specialty Acts": "Sirk",
+      "Children's Theatre": "Çocuk tiyatrosu", Spectacular: "Gösteri", Cultural: "Kültür",
+      Multimedia: "Multimedya", "Performance Art": "Performans sanatı", Puppetry: "Kukla", Variety: "Varyete",
+      Fashion: "Moda", Miscellaneous: "Diğer", Other: "Diğer", Drama: "Dram", Animation: "Animasyon",
+      "Action/Adventure": "Aksiyon/Macera", Documentary: "Belgesel",
+    },
     note: "Etkinlikler ve biletler: Ticketmaster. Listelenen etkinlik sayısı şehirden şehre çok değişir.",
   },
   privacy: {

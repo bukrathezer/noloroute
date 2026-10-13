@@ -1,4 +1,4 @@
-"""Thin client for the Google Places API (New): Nearby Search and Text Search."""
+"""Thin client for the Google Places API (New): Nearby Search, Text Search and Place Details."""
 
 import time
 from collections import Counter
@@ -48,10 +48,18 @@ class BoundingBox:
 
 
 class PlacesClient:
-    def __init__(self, api_key: str, language: str = "en", timeout: float = 15.0) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        language: str = "en",
+        timeout: float = 15.0,
+        transport: httpx.BaseTransport | None = None,  # lets tests answer without the network
+    ) -> None:
         self._language = language
-        self._http = httpx.Client(base_url=BASE_URL, timeout=timeout, headers={"X-Goog-Api-Key": api_key})
-        # Requests made, by kind, for cost reports ("nearby", "text", "text_ids", "details").
+        self._http = httpx.Client(
+            base_url=BASE_URL, timeout=timeout, transport=transport, headers={"X-Goog-Api-Key": api_key}
+        )
+        # Requests made, by kind, for cost reports ("nearby", "text", "text_ids", "details", "names").
         self.requests: Counter[str] = Counter()
 
     def __enter__(self) -> Self:
@@ -102,6 +110,18 @@ class PlacesClient:
         data = self._request("GET", f"/places/{place_id}", None, "location")
         return LatLng(data["location"]["latitude"], data["location"]["longitude"])
 
+    def display_name(self, place_id: str, language: str) -> tuple[str, str | None] | None:
+        """A place's name as Google lists it in `language` (Place Details, Pro SKU), with the
+        language the name is in.
+
+        Google answers with its name in that language where it has one, otherwise with the name
+        the place is listed under, in its own language ("Musée d'Orsay", "fr").
+        """
+        self.requests["names"] += 1
+        data = self._request("GET", f"/places/{place_id}", None, "displayName", params={"languageCode": language})
+        name = data.get("displayName", {})
+        return (name["text"], name.get("languageCode")) if name.get("text") else None
+
     def search_text(
         self, query: str, bounds: BoundingBox, included_type: str | None = None
     ) -> Iterator[dict[str, Any]]:
@@ -133,9 +153,16 @@ class PlacesClient:
     def _post(self, path: str, body: dict[str, Any], field_mask: str) -> dict[str, Any]:
         return self._request("POST", path, body, field_mask)
 
-    def _request(self, method: str, path: str, body: dict[str, Any] | None, field_mask: str) -> dict[str, Any]:
+    def _request(
+        self,
+        method: str,
+        path: str,
+        body: dict[str, Any] | None,
+        field_mask: str,
+        params: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         for attempt in range(MAX_ATTEMPTS):
-            resp = self._http.request(method, path, json=body, headers={"X-Goog-FieldMask": field_mask})
+            resp = self._http.request(method, path, json=body, params=params, headers={"X-Goog-FieldMask": field_mask})
             if resp.status_code in RETRYABLE_STATUS and attempt < MAX_ATTEMPTS - 1:
                 time.sleep(2**attempt)  # 1s, 2s backoff for rate limits / transient errors
                 continue

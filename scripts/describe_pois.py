@@ -36,6 +36,9 @@ class Place:
     where: LatLng
     category: str
     is_area: bool  # a hand-added district or street (place_id "curated:...")
+    qid: str | None  # the Wikidata item it was matched to before, if any
+    texts: dict[str, str | None]  # the descriptions stored now, by language
+    translated: str | None  # which of them is a machine translation (scripts/localize_pois.py)
 
 
 def describe_city(
@@ -51,15 +54,33 @@ def describe_city(
     if city is None:
         raise ValueError(f"unknown city {city_id!r}")
     local_language = COUNTRY_LANGUAGE.get(city.country_code or "", "en")
-    query = select(POI.id, POI.place_id, POI.name, POI.latitude, POI.longitude, POI.category).where(
-        POI.city_id == city_id
-    )
+    query = select(
+        POI.id,
+        POI.place_id,
+        POI.name,
+        POI.latitude,
+        POI.longitude,
+        POI.category,
+        POI.wikidata_id,
+        POI.description_tr,
+        POI.description_en,
+        POI.description_translated,
+    ).where(POI.city_id == city_id)
     if not again:
         query = query.where(POI.wiki_checked_at.is_(None))
     # Popular places first: if a run is cut short, the places people see most are done.
     query = query.order_by(POI.user_rating_count.desc().nulls_last(), POI.name)
     places = [
-        Place(r.id, r.name, LatLng(r.latitude, r.longitude), r.category, r.place_id.startswith("curated:"))
+        Place(
+            r.id,
+            r.name,
+            LatLng(r.latitude, r.longitude),
+            r.category,
+            r.place_id.startswith("curated:"),
+            r.wikidata_id,
+            {"tr": r.description_tr, "en": r.description_en},
+            r.description_translated,
+        )
         for r in db.execute(query)
     ]
     db.commit()  # don't keep a transaction open while waiting on Wikipedia
@@ -93,20 +114,40 @@ def describe_city(
                 found = f"{match.qid} {match.articles.get('en') or match.articles.get('tr')}" if match else "-"
                 log(f"  {place.name} -> {found}: {text.get('tr') or text.get('en') or ''}")
             else:
+                qid = match.qid if match else None
+                stored, translated = keep_translation(place, text)
+                # A Turkish name taken from another item's label is looked up again.
+                renamed = {"name_tr": None} if qid != place.qid else {}
                 db.execute(
                     update(POI)
                     .where(POI.id == place.id)
                     .values(
-                        wikidata_id=match.qid if match else None,
+                        wikidata_id=qid,
                         wikidata_sitelinks=match.sitelink_count if match else None,
-                        description_tr=text.get("tr"),
-                        description_en=text.get("en"),
+                        description_tr=stored["tr"],
+                        description_en=stored["en"],
+                        description_translated=translated,
                         wiki_checked_at=checked_at,
+                        **renamed,
                     )
                 )
         if not dry_run:
             db.commit()
     return len(places), described
+
+
+def keep_translation(place: Place, fresh: dict[str, str]) -> tuple[dict[str, str | None], str | None]:
+    """The descriptions to store, and which is a machine translation: fresh Wikipedia texts, but a
+    stored translation stays while Wikipedia still has no article in its language and the text
+    it was translated from is unchanged (so it isn't paid for again)."""
+    texts: dict[str, str | None] = {"tr": fresh.get("tr"), "en": fresh.get("en")}
+    lang = place.translated
+    if lang in texts and texts[lang] is None:
+        source = "en" if lang == "tr" else "tr"
+        if texts[source] and texts[source] == place.texts[source]:
+            texts[lang] = place.texts[lang]
+            return texts, lang
+    return texts, None
 
 
 def fill_sitelinks(db: Session, api: WikiClient, city_id: str | None = None) -> int:

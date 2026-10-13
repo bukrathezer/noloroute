@@ -62,7 +62,10 @@ export interface LegDetails {
 export interface PlannedStop {
   order_in_day: number;
   poi_id: string;
+  /** In English, as Google lists it; use stopName() to show it. */
   name: string;
+  /** In Turkish (missing from plans made before Turkish names, or while not looked up yet). */
+  name_tr?: string | null;
   category: string;
   latitude: number;
   longitude: number;
@@ -82,6 +85,8 @@ export interface PlannedStop {
   wikidata_id?: string | null;
   description_tr?: string | null;
   description_en?: string | null;
+  /** Which description is a machine translation of the other one's Wikipedia text, if any. */
+  description_translated?: "tr" | "en" | null;
 }
 
 export interface DayPlan {
@@ -99,8 +104,10 @@ export interface DayPlan {
   rain_adjusted: boolean;
   /** Transit plans: false when Google has no public transport data here (every leg is walked). */
   transit_available?: boolean | null;
-  /** Stops left out because the day ran well over 8 hours. */
+  /** Stops left out because the day ran well over 8 hours (English names). */
   dropped_stops?: string[];
+  /** The same stops' Turkish names, in the same order. */
+  dropped_stops_tr?: string[];
 }
 
 export type WeatherCondition =

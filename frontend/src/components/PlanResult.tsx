@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import type { DayWeather, LegDetails, PlannedStop, PlanResponse, TravelMode } from "../api";
 import { formatDay, formatMonth } from "../dates";
 import { type Lang, STRINGS } from "../i18n";
+import { droppedNames, formatRating, stopName } from "../text";
 import { dayColor } from "../theme";
 import { DayEvents } from "./DayEvents";
 import { Suggestions } from "./Suggestions";
@@ -163,9 +164,7 @@ export function PlanResult(props: Props) {
           </header>
           {day.weather && <WeatherLine weather={day.weather} lang={lang} />}
           {day.rain_adjusted && <p className="hint rain-note">{r.rainNote}</p>}
-          {day.dropped_stops && day.dropped_stops.length > 0 && (
-            <p className="hint">{r.dropped(day.dropped_stops.join(", "))}</p>
-          )}
+          {droppedNames(day, lang).length > 0 && <p className="hint">{r.dropped(droppedNames(day, lang).join(", "))}</p>}
           {day.routing_source === "estimate" && day.stops.length > 0 && <p className="badge">{r.estimated}</p>}
           {day.stops.length === 0 ? (
             <p className="hint">{r.emptyDay}</p>
@@ -194,10 +193,10 @@ export function PlanResult(props: Props) {
                     <button type="button" className="stop" onClick={() => onHighlightStop(stop.poi_id)}>
                       <span className="stop-number">{stop.order_in_day}</span>
                       <span className="stop-body">
-                        <span className="stop-name">{stop.name}</span>
+                        <span className="stop-name">{stopName(stop, lang)}</span>
                         <span className="muted">
                           {t.categories[stop.category] ?? stop.category} · {t.minutes(stop.visit_minutes)} {r.visit}
-                          {stop.rating != null && ` · ★ ${stop.rating.toFixed(1)}`}
+                          {stop.rating != null && ` · ★ ${formatRating(stop.rating, lang)}`}
                           {stop.entry_price != null && ` · ${money(stop.entry_price)}`}
                         </span>
                         {stop.hours && stop.hours !== "closed" && (
@@ -216,8 +215,8 @@ export function PlanResult(props: Props) {
                     <button
                       type="button"
                       className="remove-stop"
-                      aria-label={r.removeStop(stop.name)}
-                      title={r.removeStop(stop.name)}
+                      aria-label={r.removeStop(stopName(stop, lang))}
+                      title={r.removeStop(stopName(stop, lang))}
                       disabled={removingStop !== null}
                       onClick={() => onRemoveStop(stop.poi_id)}
                     >
@@ -250,7 +249,8 @@ export function PlanResult(props: Props) {
             <div className="day-extras" key={`${day.date ?? ""}|${day.stops.map((s) => s.poi_id).join(",")}`}>
               {(["food", "nightlife"] as const).map((kind) => (
                 <Suggestions
-                  key={kind}
+                  // Google answers in the language asked for, so a switch fetches them again.
+                  key={`${kind}|${lang}`}
                   kind={kind}
                   day={day}
                   accommodation={plan.accommodation}
@@ -280,6 +280,7 @@ export function PlanResult(props: Props) {
             >
               CC BY-SA 4.0
             </a>,
+            plan.days.some((d) => d.stops.some((s) => descriptionOf(s, lang)?.translated)),
           )}
         </p>
       )}
@@ -287,25 +288,37 @@ export function PlanResult(props: Props) {
   );
 }
 
-/** The stop's description in the page's language; a Turkish page falls back to the English one. */
-function descriptionOf(stop: PlannedStop, lang: Lang): { text: string; lang: Lang } | null {
+interface Description {
+  text: string;
+  /** The language of the Wikipedia article it comes from. */
+  article: Lang;
+  /** Machine-translated from that article (the place has none in the page's language). */
+  translated: boolean;
+}
+
+/** The stop's description in the page's language, or null: never one in the other language. */
+function descriptionOf(stop: PlannedStop, lang: Lang): Description | null {
   if (!stop.wikidata_id) return null;
-  if (lang === "tr" && stop.description_tr) return { text: stop.description_tr, lang: "tr" };
-  if (stop.description_en) return { text: stop.description_en, lang: "en" };
-  return null;
+  const text = lang === "tr" ? stop.description_tr : stop.description_en;
+  if (!text) return null;
+  const translated = stop.description_translated === lang;
+  return { text, article: translated ? (lang === "tr" ? "en" : "tr") : lang, translated };
 }
 
 function StopDescription({ stop, lang }: { stop: PlannedStop; lang: Lang }) {
   const description = descriptionOf(stop, lang);
   if (!description) return null;
+  const r = STRINGS[lang].result;
   // Wikidata forwards to the item's article in that language.
-  const article = `https://www.wikidata.org/wiki/Special:GoToLinkedPage/${description.lang}wiki/${stop.wikidata_id}`;
+  const article = `https://www.wikidata.org/wiki/Special:GoToLinkedPage/${description.article}wiki/${stop.wikidata_id}`;
   return (
     <p className="stop-description">
-      <span lang={description.lang}>{description.text}</span>{" "}
-      <a href={article} target="_blank" rel="noreferrer">
-        {STRINGS[lang].result.wikipedia}
+      <span>{description.text}</span>{" "}
+      <a href={article} target="_blank" rel="noreferrer" hrefLang={description.article}>
+        {r.wikipedia}
       </a>
+      {/* Google's terms for Cloud Translation ask for this credit next to translated text. */}
+      {description.translated && <span className="translated-by"> · {r.translatedByGoogle}</span>}
     </p>
   );
 }

@@ -587,12 +587,13 @@ def build_day(
     loop = routed.loop
     ordered = [stops[i] for i in loop.order]
     visited = set(loop.order)
-    dropped = [stop.name for i, stop in enumerate(stops) if i not in visited]
+    dropped = [stop for i, stop in enumerate(stops) if i not in visited]
     planned = [
         PlannedStop(
             order_in_day=position,
             poi_id=poi.id,
             name=poi.name,
+            name_tr=poi.name_tr,
             category=poi.category,
             latitude=poi.latitude,
             longitude=poi.longitude,
@@ -608,6 +609,7 @@ def build_day(
             wikidata_id=poi.wikidata_id,
             description_tr=poi.description_tr,
             description_en=poi.description_en,
+            description_translated=poi.description_translated,
         )
         # legs has one extra entry (the way back to the hotel), handled separately below.
         for position, (poi, leg) in enumerate(zip(ordered, loop.legs, strict=False), start=1)
@@ -627,7 +629,8 @@ def build_day(
         date=day_date,
         weather=weather,
         rain_adjusted=rain_adjusted,
-        dropped_stops=dropped,
+        dropped_stops=[stop.name for stop in dropped],
+        dropped_stops_tr=[stop.name_tr or stop.name for stop in dropped],
     )
 
 

@@ -86,7 +86,11 @@ class LegDetails(BaseModel):
 class PlannedStop(BaseModel):
     order_in_day: int
     poi_id: str
-    name: str
+    name: str = Field(description="In English, as Google lists it.")
+    name_tr: str | None = Field(
+        default=None,
+        description="In Turkish; often the same as `name` for proper names. Absent while not looked up yet.",
+    )
     category: str
     latitude: float
     longitude: float
@@ -111,6 +115,10 @@ class PlannedStop(BaseModel):
     )
     description_tr: str | None = None
     description_en: str | None = None
+    description_translated: Literal["tr", "en"] | None = Field(
+        default=None,
+        description="Which description is a machine translation of the other one's Wikipedia text, if any.",
+    )
 
 
 class DayPlan(BaseModel):
@@ -133,6 +141,9 @@ class DayPlan(BaseModel):
     transit_available: bool | None = None
     dropped_stops: list[str] = Field(
         default_factory=list, description="Stops left out because the day ran well over 8 hours."
+    )
+    dropped_stops_tr: list[str] = Field(
+        default_factory=list, description="The same stops' Turkish names, in the same order."
     )
 
 

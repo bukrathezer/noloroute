@@ -141,6 +141,7 @@ async def remove_stop(
         day.day_number, pois, routed, day_date=day.date, weather=day.weather, rain_adjusted=day.rain_adjusted
     )
     new_day.dropped_stops = day.dropped_stops + new_day.dropped_stops
+    new_day.dropped_stops_tr = _turkish_dropped(day) + new_day.dropped_stops_tr
 
     days = [new_day if d.day_number == day.day_number else d for d in plan.days]
     return plan.model_copy(update={"days": days, **_plan_totals(days)})
@@ -190,6 +191,7 @@ async def reorder_days(
             )
             new_day = build_day(position, stops, routed, day_date=slot.date, weather=slot.weather)
             new_day.dropped_stops = day.dropped_stops
+            new_day.dropped_stops_tr = _turkish_dropped(day)
             return new_day
         # Walking and driving times don't depend on the date: keep the route, update the day's facts.
         new_stops = [
@@ -216,6 +218,11 @@ async def reorder_days(
     new_by_position = {d.day_number: d for d in rerouted}
     days = [new_by_position.get(position, day) for position, day, _ in moves]
     return plan.model_copy(update={"days": days, **_plan_totals(days)})
+
+
+def _turkish_dropped(day: DayPlan) -> list[str]:
+    """The day's dropped stops in Turkish; plans made before Turkish names have English ones only."""
+    return day.dropped_stops_tr if len(day.dropped_stops_tr) == len(day.dropped_stops) else day.dropped_stops
 
 
 def _load_city_and_pois(db: Session, city_id: str, poi_ids: list[str]) -> tuple[City, list[POI]]:
@@ -257,7 +264,7 @@ def save_route(req: SaveRouteRequest, user: CurrentUser, db: DbSession) -> Saved
     db.add(route)
     db.commit()
     db.refresh(route)
-    return _saved_route_out(route)
+    return _saved_route_out(db, route)
 
 
 @router.put("/{route_id}", response_model=SavedRouteOut)
@@ -270,7 +277,7 @@ def update_saved_route(route_id: str, req: SaveRouteRequest, user: CurrentUser, 
         route.name = name
     db.commit()
     db.refresh(route)
-    return _saved_route_out(route)
+    return _saved_route_out(db, route)
 
 
 @router.get("", response_model=list[SavedRouteSummary])
@@ -289,7 +296,7 @@ def list_saved_routes(user: CurrentUser, db: DbSession) -> list[SavedRouteSummar
 
 @router.get("/{route_id}", response_model=SavedRouteOut)
 def get_saved_route(route_id: str, user: CurrentUser, db: DbSession) -> SavedRouteOut:
-    return _saved_route_out(_owned_route(db, user, route_id))
+    return _saved_route_out(db, _owned_route(db, user, route_id))
 
 
 @router.delete("/{route_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -350,7 +357,50 @@ def _summary(route: SavedRoute, stop_count: int) -> SavedRouteSummary:
     )
 
 
-def _saved_route_out(route: SavedRoute) -> SavedRouteOut:
-    plan = RoutePlanResponse.model_validate(route.plan)
+def _saved_route_out(db: Session, route: SavedRoute) -> SavedRouteOut:
+    plan = _with_current_texts(db, RoutePlanResponse.model_validate(route.plan))
     stop_count = sum(len(day.stops) for day in plan.days)
     return SavedRouteOut(**_summary(route, stop_count).model_dump(), plan=plan)
+
+
+def _with_current_texts(db: Session, plan: RoutePlanResponse) -> RoutePlanResponse:
+    """The plan with its places' current names and descriptions in both languages.
+
+    A saved plan is a snapshot: one saved before Turkish names or translated descriptions existed
+    has English only. Routes, times and order stay as saved; only these texts are brought up to date.
+    """
+    poi_ids = {stop.poi_id for day in plan.days for stop in day.stops}
+    dropped = {name for day in plan.days for name in day.dropped_stops}
+    if not poi_ids and not dropped:
+        return plan
+    pois = db.scalars(select(POI).where(POI.city_id == plan.city_id, POI.id.in_(poi_ids) | POI.name.in_(dropped))).all()
+    by_id = {poi.id: poi for poi in pois}
+    turkish_names: dict[str, set[str]] = {}
+    for poi in pois:
+        turkish_names.setdefault(poi.name, set()).add(poi.name_tr or poi.name)
+    days = []
+    for day in plan.days:
+        stops = []
+        for stop in day.stops:
+            poi = by_id.get(stop.poi_id)
+            if poi is not None:
+                stop = stop.model_copy(
+                    update={
+                        "name_tr": poi.name_tr,
+                        "wikidata_id": poi.wikidata_id,
+                        "description_tr": poi.description_tr,
+                        "description_en": poi.description_en,
+                        "description_translated": poi.description_translated,
+                    }
+                )
+            stops.append(stop)
+        # Dropped stops are kept by name only. A plan saved with their Turkish names keeps them;
+        # an older one looks them up, unless two places of the city share that English name.
+        dropped_tr = day.dropped_stops_tr
+        if len(dropped_tr) != len(day.dropped_stops):
+            dropped_tr = [
+                next(iter(found)) if len(found := turkish_names.get(name, set())) == 1 else name
+                for name in day.dropped_stops
+            ]
+        days.append(day.model_copy(update={"stops": stops, "dropped_stops_tr": dropped_tr}))
+    return plan.model_copy(update={"days": days})

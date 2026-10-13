@@ -8,6 +8,7 @@ import {
   type SuggestionGroup,
 } from "../api";
 import { type Lang, STRINGS } from "../i18n";
+import { formatRating, stopName } from "../text";
 
 export type SuggestionKind = "food" | "nightlife";
 
@@ -52,7 +53,7 @@ export function Suggestions({ kind, day, accommodation, currencyCode, lang }: Pr
     }
     setState({ status: "loading" });
     try {
-      const stops = day.stops.map((stop) => ({ name: stop.name, lat: stop.latitude, lng: stop.longitude }));
+      const stops = day.stops.map((stop) => ({ name: stopName(stop, lang), lat: stop.latitude, lng: stop.longitude }));
       const groups =
         kind === "food"
           ? await foodSuggestions(stops, day.date, lang)
@@ -105,7 +106,7 @@ export function Suggestions({ kind, day, accommodation, currencyCode, lang }: Pr
                     <span className="muted small">
                       {[
                         place.category,
-                        `★ ${place.rating.toFixed(1)} (${place.rating_count.toLocaleString(lang)})`,
+                        `★ ${formatRating(place.rating, lang)} (${place.rating_count.toLocaleString(lang)})`,
                         place.price_level ? symbol.repeat(place.price_level) : null,
                         openText(place.hours, lang),
                         s.distance(place.distance_m),
