@@ -30,6 +30,7 @@ Thumbs.db
 # Frontend (once added)
 node_modules/
 dist/
+*.tsbuildinfo
 build/
 
 # Local dev-server launcher (machine-specific paths)
