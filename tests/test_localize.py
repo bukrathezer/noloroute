@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
-from app.services.places_client import PlacesAPIError, PlacesClient
+from app.services.places_client import NAMES_PER_MINUTE, PlacesAPIError, PlacesClient
 from app.services.translate import TranslateClient, TranslateError
 from app.services.wikipedia import WikiClient
 from scripts.localize_pois import fit, second_listings, tidy_label
@@ -99,6 +99,20 @@ def test_display_name_asks_place_details_in_the_language() -> None:
     with PlacesClient("key", transport=httpx.MockTransport(api)) as client:
         assert client.display_name("abc", "tr") == ("Mısır Çarşısı", "tr")
         assert client.requests["names"] == 1
+
+
+def test_display_name_keeps_under_the_per_minute_quota(monkeypatch: pytest.MonkeyPatch) -> None:
+    waits: list[float] = []
+    monkeypatch.setattr("app.services.places_client.time.sleep", waits.append)
+
+    def api(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"displayName": {"text": "Ad", "languageCode": "tr"}})
+
+    with PlacesClient("key", transport=httpx.MockTransport(api)) as client:
+        for _ in range(3):
+            client.display_name("abc", "tr")
+    assert len(waits) == 2  # none before the first request
+    assert all(0 < w <= 60 / NAMES_PER_MINUTE for w in waits)
 
 
 def test_display_name_of_a_place_gone_from_google() -> None:
