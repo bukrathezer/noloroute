@@ -5,6 +5,22 @@ export type Lang = "tr" | "en";
 
 const en = {
   tagline: "Day-by-day routes planned around where you stay",
+  views: { plan: "Plan a trip", guide: "Travel guide" },
+  guide: {
+    intro: "Not sure where to go? Pick a month to see where it's best, or look up a city month by month.",
+    month: "Month",
+    bestIn: (month: string) => `Best places in ${month}`,
+    allCities: "All cities",
+    continents: { europe: "Europe", asia: "Asia", africa: "Africa", north_america: "North America" },
+    showOnMap: (country: string) => `Show ${country} on the map`,
+    starLegend: "One of the month's five best places",
+    amongBest: (month: string) => `Among the best places in ${month}:`,
+    plan: (city: string, month: string) => `Plan a trip to ${city} in ${month}`,
+    planShort: "Plan a trip",
+    whenToGo: (city: string) => `When to visit ${city}?`,
+    loading: "Loading the guide…",
+    loadFailed: "Couldn't load the guide. Please try again later.",
+  },
   switchLanguage: "Türkçe",
   // HTML for the map's corner (Leaflet renders it as such).
   mapAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -244,6 +260,22 @@ type Strings = typeof en;
 
 const tr: Strings = {
   tagline: "Kaldığın yere göre gün gün planlanan gezi rotaları",
+  views: { plan: "Rota planla", guide: "Gezi rehberi" },
+  guide: {
+    intro: "Nereye gideceğine karar veremedin mi? Bir ay seç, o ay nereler güzel gör; ya da bir şehri ay ay incele.",
+    month: "Ay",
+    bestIn: (month) => `${month} ayında en güzel yerler`,
+    allCities: "Tüm şehirler",
+    continents: { europe: "Avrupa", asia: "Asya", africa: "Afrika", north_america: "Kuzey Amerika" },
+    showOnMap: (country) => `Haritada göster: ${country}`,
+    starLegend: "O ayın en güzel 5 yerinden biri",
+    amongBest: (month) => `${month} ayının en güzel yerlerinden:`,
+    plan: (city, month) => `Rotamı planla: ${city}, ${month}`,
+    planShort: "Rota planla",
+    whenToGo: (city) => `${city} ne zaman gezilir?`,
+    loading: "Rehber yükleniyor…",
+    loadFailed: "Rehber yüklenemedi. Lütfen daha sonra tekrar dene.",
+  },
   switchLanguage: "English",
   mapAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanlar',
   city: {

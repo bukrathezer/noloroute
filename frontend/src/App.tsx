@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ApiError,
   type City,
   fetchCities,
+  fetchGuide,
   fetchMe,
+  type Guide,
   getSavedRoute,
   type PlanResponse,
   planRoute,
@@ -19,15 +21,22 @@ import { AuthPanel } from "./components/AuthPanel";
 import { type FormState, PlanForm } from "./components/PlanForm";
 import { PlanResult, type SaveState } from "./components/PlanResult";
 import { Privacy } from "./components/Privacy";
-import { RouteMap } from "./components/RouteMap";
+import { type GuideMap, type Point, RouteMap } from "./components/RouteMap";
 import { SavedRoutes } from "./components/SavedRoutes";
-import { addDays, todayIso } from "./dates";
+import { type GuideFocus, TravelGuide } from "./components/TravelGuide";
+import { addDays, firstTripDayIn, fromIso, todayIso } from "./dates";
 import { cityName, initialLang, type Lang, STRINGS } from "./i18n";
 
 const SOURCE_URL = "https://github.com/bukrathezer/noloroute";
 const AUTH_STORAGE_KEY = "auth";
 
-type View = "plan" | "auth" | "saved" | "privacy";
+type View = "plan" | "guide" | "auth" | "saved" | "privacy";
+// The two tabs; the other views are screens that go back to the tab they were opened from.
+type MainView = "plan" | "guide";
+
+// How close the map comes for the guide: a whole country, or one city.
+const GUIDE_COUNTRY_ZOOM = 6;
+const GUIDE_CITY_ZOOM = 11;
 
 interface Auth {
   token: string;
@@ -76,12 +85,21 @@ export function App() {
     return stored;
   });
   const [view, setView] = useState<View>("plan");
+  const [mainView, setMainView] = useState<MainView>("plan");
   const [authReason, setAuthReason] = useState<"save" | null>(null);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   // Set when the shown plan is a saved route, so edits update it instead of saving a copy.
   const [savedRouteId, setSavedRouteId] = useState<string | null>(null);
   const [removingStop, setRemovingStop] = useState<string | null>(null);
   const [movingDay, setMovingDay] = useState<number | null>(null);
+  // The travel guide, by language (fetched once each), and what it shows.
+  const [guides, setGuides] = useState<Partial<Record<Lang, Guide>>>({});
+  const [guideFailed, setGuideFailed] = useState<Partial<Record<Lang, boolean>>>({});
+  const [guideRetry, setGuideRetry] = useState(0);
+  const guideLoading = useRef(new Set<Lang>());
+  const [guideMonth, setGuideMonth] = useState(() => new Date().getMonth() + 1);
+  const [guideCity, setGuideCity] = useState<string | null>(null);
+  const [guideFocus, setGuideFocus] = useState<GuideFocus>(null);
   // Ignores responses to requests that were superseded while in flight.
   const requestId = useRef(0);
   const t = STRINGS[lang];
@@ -91,6 +109,21 @@ export function App() {
       .then(setCities)
       .catch(() => setCitiesFailed(true));
   }, []);
+
+  // Fetched up front (it's small and cached), so the planner knows which cities have a guide;
+  // once per language, and again on a retry after a failure.
+  useEffect(() => {
+    if (guides[lang] || guideLoading.current.has(lang)) return;
+    guideLoading.current.add(lang);
+    setGuideFailed((f) => ({ ...f, [lang]: false }));
+    fetchGuide(lang)
+      .then((g) => setGuides((all) => ({ ...all, [lang]: g })))
+      .catch(() => setGuideFailed((f) => ({ ...f, [lang]: true })))
+      .finally(() => guideLoading.current.delete(lang));
+    // `guides` is read, not watched: a new guide must not start another request.
+  }, [lang, guideRetry]);
+
+  const guide = guides[lang] ?? null;
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -106,6 +139,7 @@ export function App() {
     storeAuth(null);
     setAuth(null);
     setView("plan");
+    setMainView("plan");
     setSaveState("idle");
     setSavedRouteId(null);
   }, []);
@@ -195,7 +229,8 @@ export function App() {
     setAuthToken(next.token);
     storeAuth(next);
     setAuth(next);
-    setView("plan");
+    // Saving happens in the planner; otherwise back to the tab the login was opened from.
+    showMain(authReason === "save" ? "plan" : mainView);
     // Finish what the user was doing when they were asked to log in.
     if (authReason === "save" && plan) save(plan);
     setAuthReason(null);
@@ -221,7 +256,7 @@ export function App() {
       setLoading(false);
       setSaveState("saved");
       setSavedRouteId(saved.id);
-      setView("plan");
+      showMain("plan");
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) logout();
       else setError(errorMessage(e, lang));
@@ -269,6 +304,66 @@ export function App() {
     }
   };
 
+  function showMain(next: MainView) {
+    setMainView(next);
+    setView(next);
+  }
+
+  /** `month`: show the guide for that month (the planner's trip month), else keep the last one. */
+  const openGuide = (cityId: string | null = null, month?: number) => {
+    setGuideCity(cityId);
+    setGuideFocus(cityId ? { kind: "city", id: cityId } : null);
+    if (month) setGuideMonth(month);
+    if (guideFailed[lang]) setGuideRetry((n) => n + 1);
+    showMain("guide");
+  };
+
+  const openGuideCity = (cityId: string | null) => {
+    setGuideCity(cityId);
+    setGuideFocus(cityId ? { kind: "city", id: cityId } : null);
+  };
+
+  // From the guide to the planner: that city, with the trip in that month. What already fits stays
+  // (the hotel in the same city, dates already in that month), and so does the plan if nothing changes.
+  const planFromGuide = (city: City, month: number) => {
+    const patch: Partial<FormState> = {};
+    if (form.city?.id !== city.id) Object.assign(patch, { city, hotel: null, hotelLabel: null });
+    const datesFit =
+      form.startDate !== "" && form.startDate >= todayIso() && fromIso(form.startDate).getMonth() + 1 === month;
+    if (!datesFit) patch.startDate = firstTripDayIn(month);
+    if (Object.keys(patch).length > 0) updateForm(patch);
+    showMain("plan");
+  };
+
+  const guideMap = useMemo<GuideMap | null>(() => {
+    if (view !== "guide") return null;
+    const point = (id: string): Point | null => {
+      const c = cities.find((city) => city.id === id);
+      return c && c.center_lat != null && c.center_lng != null ? [c.center_lat, c.center_lng] : null;
+    };
+    // The picks are the same in every language: while a newly chosen language loads, the map
+    // keeps showing them from the other one instead of jumping away.
+    const shown = guide ?? guides.tr ?? guides.en;
+    const picks = shown?.best[guideMonth - 1]?.picks.map((p) => p.city_id) ?? [];
+    let focus: GuideMap["focus"] = null;
+    if (guideFocus?.kind === "city") {
+      const p = point(guideFocus.id);
+      focus = p ? { points: [p], maxZoom: GUIDE_CITY_ZOOM } : null;
+    } else if (guideFocus?.kind === "country") {
+      const ids = cities.filter((c) => c.country_code === guideFocus.code).map((c) => c.id);
+      focus = { points: ids.map(point).filter((p): p is Point => p !== null), maxZoom: GUIDE_COUNTRY_ZOOM };
+    } else {
+      // The month's best places, wherever they are.
+      focus = { points: picks.map(point).filter((p): p is Point => p !== null), maxZoom: GUIDE_COUNTRY_ZOOM };
+    }
+    return {
+      highlighted: new Set(picks),
+      selected: guideCity,
+      focus,
+      onPickCity: (city) => openGuideCity(city.id),
+    };
+  }, [view, cities, guide, guides, guideMonth, guideCity, guideFocus]);
+
   const showAuth = () => {
     setAuthReason(null);
     setView("auth");
@@ -303,7 +398,7 @@ export function App() {
             lang={lang}
             reason={authReason}
             onAuthenticated={onAuthenticated}
-            onBack={() => setView("plan")}
+            onBack={() => setView(mainView)}
           />
         )}
 
@@ -313,16 +408,53 @@ export function App() {
             email={auth.user.email}
             cities={cities}
             onOpen={openSavedRoute}
-            onBack={() => setView("plan")}
+            onBack={() => showMain("plan")}
             onLogout={logout}
             onUnauthorized={logout}
           />
         )}
 
-        {view === "privacy" && <Privacy lang={lang} onBack={() => setView("plan")} />}
+        {view === "privacy" && <Privacy lang={lang} onBack={() => setView(mainView)} />}
 
-        {view === "plan" && (
-          <>
+        {(view === "plan" || view === "guide") && (
+          <div className="segmented view-tabs" role="tablist">
+            {(["plan", "guide"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={view === v}
+                className={view === v ? "selected" : undefined}
+                onClick={() => (v === "guide" ? openGuide(guideCity) : showMain("plan"))}
+              >
+                {t.views[v]}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {view === "guide" && (
+          <TravelGuide
+            guide={guide}
+            failed={Boolean(guideFailed[lang]) && !guide}
+            cities={cities}
+            citiesFailed={citiesFailed}
+            lang={lang}
+            month={guideMonth}
+            onMonthChange={(m) => {
+              setGuideMonth(m);
+              if (!guideCity) setGuideFocus(null);
+            }}
+            cityId={guideCity}
+            onOpenCity={openGuideCity}
+            onFocus={setGuideFocus}
+            onPlan={planFromGuide}
+          />
+        )}
+
+        {/* Kept mounted while another view is open, so the plan's loaded suggestions, events
+            and half-typed searches are still there on the way back. */}
+        <div className="plan-view" hidden={view !== "plan"}>
             <p className="tagline">{t.tagline}</p>
 
             {citiesFailed && (
@@ -338,6 +470,15 @@ export function App() {
               onSubmit={submit}
               loading={loading}
               lang={lang}
+              onShowGuide={
+                form.city && guide?.cities.some((c) => c.id === form.city?.id)
+                  ? () =>
+                      openGuide(
+                        form.city?.id ?? null,
+                        form.startDate ? fromIso(form.startDate).getMonth() + 1 : undefined,
+                      )
+                  : undefined
+              }
             />
 
             {error && (
@@ -363,8 +504,7 @@ export function App() {
                 movingDay={movingDay}
               />
             )}
-          </>
-        )}
+        </div>
 
         <footer className="footer">
           <a href="/docs">{t.footer.api}</a>
@@ -379,7 +519,7 @@ export function App() {
         </footer>
       </aside>
 
-      <main className={loading ? "map-area loading" : "map-area"}>
+      <main className={loading && view === "plan" ? "map-area loading" : "map-area"}>
         <RouteMap
           cities={cities}
           city={form.city}
@@ -391,6 +531,7 @@ export function App() {
           onPickHotel={(hotel) => updateForm({ hotel, hotelLabel: null })}
           onHighlightStop={setHighlightedStop}
           lang={lang}
+          guide={guideMap}
         />
       </main>
     </div>

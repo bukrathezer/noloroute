@@ -1283,3 +1283,247 @@ a.suggestion-name:hover {
   font: inherit;
   font-size: 13px;
 }
+
+/* ---------- travel guide ---------- */
+
+.plan-view {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.plan-view[hidden] {
+  display: none;
+}
+
+.guide-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 860px) {
+  /* Below the sticky map: scrolling to the guide's top must not hide it behind the map. */
+  .guide {
+    scroll-margin-top: 47dvh;
+  }
+}
+
+.view-tabs {
+  margin-top: -6px;
+}
+
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.guide .tagline {
+  margin: 0;
+}
+
+.guide-heading {
+  margin: 6px 0 0;
+  font-size: 16px;
+}
+
+.month-picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.month-picker button {
+  padding: 7px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.month-picker button:hover {
+  background: var(--surface-2);
+}
+
+.month-picker button.selected {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.month-star {
+  color: #d97706;
+}
+
+.month-picker button.selected .month-star {
+  color: inherit;
+}
+
+.guide-picks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-picks li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.guide-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.guide-pick-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.guide-pick-name .muted {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.guide-pick-text {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.guide-pick:hover .guide-pick-name {
+  color: var(--brand);
+}
+
+.guide-plan-link {
+  align-self: flex-start;
+  margin-left: 0;
+  font-size: 13px;
+}
+
+.guide-continent h3 {
+  margin: 4px 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.guide-continent ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-country {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.guide-country-name {
+  margin-left: 0;
+  min-width: 96px;
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+}
+
+.guide-country-name:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+.guide-country-cities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.guide-city-chip {
+  padding: 4px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.guide-city-chip:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.guide-back {
+  align-self: flex-start;
+  margin-left: 0;
+}
+
+.guide-city-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.guide-city-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.guide-month {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.guide-month h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.guide-month p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.guide-month .guide-best-note {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.guide-best-note strong {
+  color: var(--text);
+}
+
+.guide-link {
+  align-self: flex-start;
+  margin-left: 0;
+  font-size: 13px;
+}

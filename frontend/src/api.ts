@@ -147,6 +147,27 @@ export interface PlanResponse {
   days: DayPlan[];
 }
 
+export type Continent = "europe" | "asia" | "africa" | "north_america";
+
+/** One city in the travel guide, in the language asked for. */
+export interface GuideCity {
+  id: string;
+  country_code: string;
+  continent: Continent;
+  /** What the city is like each month, January first (12 texts). */
+  months: string[];
+  /** About the whole year, e.g. "hot and humid all year round". */
+  note?: string | null;
+}
+
+export interface Guide {
+  lang: "tr" | "en";
+  continents: Continent[];
+  cities: GuideCity[];
+  /** Each month's five best cities, January first. */
+  best: { month: number; picks: { city_id: string; text: string }[] }[];
+}
+
 export class ApiError extends Error {
   readonly status: number;
 
@@ -213,6 +234,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const fetchCities = () => request<City[]>("/api/v1/cities");
+
+export const fetchGuide = (lang: "tr" | "en") => request<Guide>(`/api/v1/guide?lang=${lang}`);
 
 export const planRoute = (req: PlanRequest) =>
   request<PlanResponse>("/api/v1/routes/plan", { method: "POST", body: JSON.stringify(req) });

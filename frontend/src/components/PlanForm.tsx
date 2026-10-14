@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 import type { City, LatLng, TravelMode } from "../api";
-import { type Lang, STRINGS } from "../i18n";
+import { cityName, type Lang, STRINGS } from "../i18n";
 import { CitySearch } from "./CitySearch";
 import { DateRangeField } from "./DateRangeField";
 import { PlaceSearch } from "./PlaceSearch";
@@ -24,9 +24,11 @@ interface Props {
   onSubmit: () => void;
   loading: boolean;
   lang: Lang;
+  /** Opens the travel guide on the chosen city; unset when it has no guide. */
+  onShowGuide?: () => void;
 }
 
-export function PlanForm({ cities, form, onChange, onSubmit, loading, lang }: Props) {
+export function PlanForm({ cities, form, onChange, onSubmit, loading, lang, onShowGuide }: Props) {
   const t = STRINGS[lang];
   const canSubmit = Boolean(form.city && form.hotel) && !loading;
   const cityCenter =
@@ -52,6 +54,11 @@ export function PlanForm({ cities, form, onChange, onSubmit, loading, lang }: Pr
           onChange={(city) => onChange({ city, hotel: null, hotelLabel: null })}
           lang={lang}
         />
+        {form.city && onShowGuide && (
+          <button type="button" className="link-button guide-link" onClick={onShowGuide}>
+            {t.guide.whenToGo(cityName(form.city, lang))} →
+          </button>
+        )}
       </div>
 
       <div className="field">
