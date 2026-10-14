@@ -1,0 +1,2030 @@
+{
+ "cities": {
+  "amsterdam": {
+   "country": "NL",
+   "months": [
+    {
+     "tr": "Şehrin en sakin ve soğuk dönemi. Kanallar donarsa buz pateni yapılabilir. Müzeleri kuyruksuz gezmek için ideal ama kalın giyinmek şart.",
+     "en": "The city's quietest and coldest time of year. If the canals freeze, you can go ice skating. Ideal for seeing the museums without queues, but wrapping up warm is a must."
+    },
+    {
+     "tr": "Kış soğukları devam eder. Sevgililer Günü için romantik bir atmosfer sunar, otel fiyatları nispeten uygundur.",
+     "en": "The winter cold carries on. It offers a romantic atmosphere for Valentine's Day, and hotel prices are relatively affordable."
+    },
+    {
+     "tr": "Baharın ilk sinyalleri başlar. Ay sonuna doğru Keukenhof lale bahçeleri kapılarını açar.",
+     "en": "The first signs of spring appear. Towards the end of the month, the Keukenhof tulip gardens open their gates."
+    },
+    {
+     "tr": "Yılın en popüler zamanı! Laleler tam açar ve 27 Nisan'da sokakların turuncuya boyandığı çılgın \"Kral Günü\" (King's Day) festivali kutlanır.",
+     "en": "The most popular time of the year! The tulips are in full bloom, and on 27 April the wild King's Day (Koningsdag) festival is celebrated, turning the streets orange."
+    },
+    {
+     "tr": "Hava ısınır, parklar piknik yapanlarla dolar. Bisikletle şehri keşfetmek için yılın en güzel aylarından biridir.",
+     "en": "The weather warms up and the parks fill with picnickers. One of the best months of the year to explore the city by bike."
+    },
+    {
+     "tr": "Günler çok uzar, akşam 10'a kadar hava aydınlıktır. Teras kültürü ve kanal turları için harika bir dönem.",
+     "en": "The days get really long, and it stays light until 10 p.m. A wonderful time for terrace culture and canal cruises."
+    },
+    {
+     "tr": "Yazın tam ortası. Turist kalabalığı zirvededir, hava sıcaktır. Önceden rezervasyon yapmak hayati önem taşır.",
+     "en": "The height of summer. Tourist crowds peak and the weather is hot. Booking ahead is absolutely vital."
+    },
+    {
+     "tr": "Açık hava festivallerinin ve park konserlerinin yoğun olduğu ay. Hava hâlâ sıcak ve şehir çok hareketlidir.",
+     "en": "A month packed with open-air festivals and park concerts. The weather is still warm and the city is buzzing."
+    },
+    {
+     "tr": "Sonbaharın tatlı serinliği başlar. Turist yoğunluğu azalır, kültürel etkinlikler ve sergiler hız kazanır.",
+     "en": "The pleasant coolness of autumn sets in. Tourist numbers drop, while cultural events and exhibitions pick up pace."
+    },
+    {
+     "tr": "Ağaçların sarardığı, kanalların en fotojenik olduğu dönemdir. Elektronik müzik sevenler için efsanevi Amsterdam Dance Event (ADE) bu aydadır.",
+     "en": "The time when the trees turn golden and the canals are at their most photogenic. For electronic music lovers, the legendary Amsterdam Dance Event (ADE) takes place this month."
+    },
+    {
+     "tr": "Havanın grileştiği, yağmurların ve rüzgarın arttığı ay. Kapalı alan aktiviteleri ve \"kahve dükkanı\" (coffee shop) kültürü için tercih edilebilir.",
+     "en": "The month when the skies turn grey and the rain and wind pick up. A good pick for indoor activities and the 'coffee shop' culture."
+    },
+    {
+     "tr": "Amsterdam Işık Festivali (Light Festival) başlar. Kanallar sanat eserleriyle aydınlatılır, Noel pazarları şehre sıcak bir hava katar.",
+     "en": "The Amsterdam Light Festival begins. The canals are lit up with artworks, and Christmas markets bring a warm feel to the city."
+    }
+   ]
+  },
+  "athens": {
+   "country": "GR",
+   "months": [
+    {
+     "tr": "Yunan başkentinde sakin bir kış. Akropolis'i sıcakta bunalmadan ve kalabalık olmadan keşfetmek için harika bir fırsat.",
+     "en": "A quiet winter in the Greek capital. A great chance to explore the Acropolis without wilting in the heat or battling the crowds."
+    },
+    {
+     "tr": "Hava serin ve zaman zaman yağışlıdır. Kapalı tavernalarda yerel müzik dinlemek ve Yunan mutfağını denemek için güzeldir.",
+     "en": "The weather is cool and occasionally rainy. A nice time to listen to local music in indoor tavernas and sample Greek cuisine."
+    },
+    {
+     "tr": "Bahar yüzünü gösterir. Tarihi kalıntılar arasında yürüyüş yapmak için sıcaklıklar çok konforludur.",
+     "en": "Spring shows its face. Temperatures are very comfortable for walks among the historic ruins."
+    },
+    {
+     "tr": "Paskalya coşkusu yaşanır. Portakal çiçekleri açar, hava güneşli ve ılıktır. Mükemmel bir gezi ayıdır.",
+     "en": "Easter fervour fills the air. The orange trees blossom, and the weather is sunny and mild. A perfect month for a trip."
+    },
+    {
+     "tr": "Yazın habercisi. Deniz suyu ısınmaya başlar, Atina Rivierası'nda denize girilebilir. Şehir dışı günlük turlar için idealdir.",
+     "en": "The herald of summer. The sea starts to warm up, and you can swim on the Athens Riviera. Ideal for day trips out of the city."
+    },
+    {
+     "tr": "Sıcaklar bastırmaya başlar. Yazlık açık hava sinemaları açılır, turist yoğunluğu artar.",
+     "en": "The heat starts to build. The summer open-air cinemas open and tourist numbers rise."
+    },
+    {
+     "tr": "Aşırı sıcaklar (35°C+) görülebilir. Gündüz gezmek yorucudur, hayat akşam saatlerinde canlanır. Çatı barları popülerdir.",
+     "en": "Extreme heat (35°C+) can occur. Sightseeing by day is exhausting; life comes alive in the evening. Rooftop bars are popular."
+    },
+    {
+     "tr": "En sıcak ay. Yerel halk adalara tatile gittiği için şehir biraz boşalır, ancak güneş altında antik kent gezmek zorlayıcıdır.",
+     "en": "The hottest month. The city empties out a little as locals head to the islands on holiday, but touring the ancient city under the sun is a challenge."
+    },
+    {
+     "tr": "Sıcaklıklar tekrar katlanılabilir seviyelere iner. Akşamları ılık bir rüzgar eser, deniz hâlâ sıcaktır.",
+     "en": "Temperatures drop back to bearable levels. A warm breeze blows in the evenings and the sea is still warm."
+    },
+    {
+     "tr": "Kalabalıktan uzak, ılıman bir sonbahar. Yürüyüş turları ve müze gezileri için yılın gizli mücevheridir.",
+     "en": "A mild autumn, away from the crowds. The year's hidden gem for walking tours and museum visits."
+    },
+    {
+     "tr": "Yağışlar başlar, hava serinler. Uygun bütçeli konaklama bulmak kolaylaşır.",
+     "en": "The rains begin and the weather cools down. Finding budget-friendly accommodation gets easier."
+    },
+    {
+     "tr": "Yılbaşı süslemeleriyle Syntagma Meydanı canlanır. Çok sert soğuklar olmaz, kış güneşinde kahve içme kültürü devam eder.",
+     "en": "Syntagma Square comes alive with New Year decorations. It doesn't get bitterly cold, and the culture of sipping coffee in the winter sun carries on."
+    }
+   ]
+  },
+  "baku": {
+   "country": "AZ",
+   "months": [
+    {
+     "tr": "Hazar Denizi'nden esen sert rüzgarlar nedeniyle oldukça soğuktur. İç mekanları ve modern mimariyi gezmek için uygundur.",
+     "en": "Quite cold, thanks to the harsh winds blowing in from the Caspian Sea. A good time for indoor sights and the modern architecture."
+    },
+    {
+     "tr": "Rüzgarlı (Bakü'nün lakabı \"Rüzgarlar Şehri\"dir) ve soğuk kış devam eder. Kafelerde sıcak çay kültürü ön plandadır.",
+     "en": "The cold, windy winter continues (Baku's nickname is the 'City of Winds'). Hot tea culture in the cafés takes centre stage."
+    },
+    {
+     "tr": "\"Novruz\" bayramı hazırlıklarıyla şehir renklenir. Baharın gelişi kutlanır, geleneksel tatlılar ve şenlikler her yerdedir.",
+     "en": "The city brightens up with preparations for the Novruz holiday. The arrival of spring is celebrated, with traditional sweets and festivities everywhere."
+    },
+    {
+     "tr": "Hava ılımanlaşır, rüzgarlar sakinleşir. İçerişehir'in (Old City) dar sokaklarını gezmek için ideal aydır.",
+     "en": "The weather turns mild and the winds calm down. The ideal month to wander the narrow streets of Icherisheher (the Old City)."
+    },
+    {
+     "tr": "Hava sıcaklıkları 20-25°C civarındadır. Şehirdeki parklar, Bulvar bölgesi ve teraslar en keyifli zamanını yaşar.",
+     "en": "Temperatures hover around 20-25°C. The city's parks, the Boulevard area and the terraces are at their most enjoyable."
+    },
+    {
+     "tr": "Yaz başlar. Akşamları Bulvar, İçerişehir ve teraslar çok hareketli ve popülerdir.",
+     "en": "Summer begins. In the evenings the Boulevard, the Old City and the terraces are very lively and popular."
+    },
+    {
+     "tr": "Sıcaklık 30°C'nin üzerine çıkar. Gündüz şehri gezmek yerine Abşeron Yarımadası'ndaki plajlara gitmek tercih edilir.",
+     "en": "Temperatures climb above 30°C. Rather than touring the city by day, people prefer to head to the beaches on the Absheron Peninsula."
+    },
+    {
+     "tr": "Yılın en sıcak ve nemli ayı. Hazar Denizi kıyısında akşam yürüyüşleri yapmak en mantıklı aktivitedir.",
+     "en": "The hottest and most humid month of the year. Evening walks along the Caspian shore are the most sensible thing to do."
+    },
+    {
+     "tr": "Kavurucu sıcaklar biter, deniz hâlâ ılıktır. Bulvar'da bisiklete binmek ve şehri keşfetmek için harika bir geçiş ayıdır. Formula 1 Azerbaycan Grand Prix'si de genellikle bu aydadır.",
+     "en": "The scorching heat is over and the sea is still mild. A great transitional month for cycling along the Boulevard and exploring the city. The Formula 1 Azerbaijan Grand Prix is usually held this month too."
+    },
+    {
+     "tr": "Kusursuz bir sonbahar havası. Alev Kuleleri manzaralı tepelerde vakit geçirmek ve müzeleri gezmek için çok idealdir.",
+     "en": "Flawless autumn weather. Really ideal for spending time on the hills overlooking the Flame Towers and for visiting museums."
+    },
+    {
+     "tr": "Rüzgarlar tekrar güçlenir ve hava aniden soğuyabilir. Gezi planlarında esneklik gerektirebilir.",
+     "en": "The winds pick up again and the weather can turn cold suddenly. Travel plans may need some flexibility."
+    },
+    {
+     "tr": "Yılbaşı pazarları kurulur, şehir merkezinde dev çam ağaçları ve ışıklandırmalarla şık bir kış atmosferi oluşur.",
+     "en": "New Year markets are set up, and giant fir trees and lights give the city centre a chic winter atmosphere."
+    }
+   ]
+  },
+  "bangkok": {
+   "country": "TH",
+   "months": [
+    {
+     "tr": "Bangkok için \"Kış\" yani en iyi sezon! Yağış yok, nem nispeten düşük, hava 30°C civarında. Tapınak gezmek için harika.",
+     "en": "'Winter' in Bangkok, which means the best season! No rain, relatively low humidity, temperatures around 30°C. Great for visiting temples."
+    },
+    {
+     "tr": "Harika hava devam eder. Çin Yeni Yılı etkinlikleriyle Chinatown bölgesi inanılmaz renkli ve hareketli olur.",
+     "en": "The great weather continues. Chinese New Year festivities make Chinatown incredibly colourful and lively."
+    },
+    {
+     "tr": "Sıcaklık ve nem hissedilir şekilde artmaya başlar. Gün ortasında klimalı AVM'lere kaçmak isteyebilirsiniz.",
+     "en": "Heat and humidity start to rise noticeably. Around midday you may want to escape to air-conditioned malls."
+    },
+    {
+     "tr": "Yılın en sıcak ayı! Ancak ortasındaki \"Songkran\" (Su Festivali) ile sokaklarda devasa su savaşları yapılır. Eşsiz bir deneyimdir.",
+     "en": "The hottest month of the year! But mid-month, Songkran (the Water Festival) brings giant water fights to the streets. A unique experience."
+    },
+    {
+     "tr": "Muson yağmurları yavaştan başlar. Sıcak ve boğucudur ancak turist sayısı azaldığı için fiyatlar düşer.",
+     "en": "The monsoon rains gradually begin. It's hot and stifling, but prices drop as tourist numbers fall."
+    },
+    {
+     "tr": "Tropikal sağanaklar aniden bastırıp aniden biter. Şemsiye taşımak şarttır, gece pazarları yağmur molalarında gezilir.",
+     "en": "Tropical downpours hit suddenly and end just as suddenly. Carrying an umbrella is a must; night markets are explored between showers."
+    },
+    {
+     "tr": "Yağmur sezonu devam eder. Kapalı alan aktivitelerine (masaj, tapınak içleri, alışveriş) ağırlık vermek mantıklıdır.",
+     "en": "The rainy season continues. It makes sense to focus on indoor activities (massages, temple interiors, shopping)."
+    },
+    {
+     "tr": "En çok yağış alan aylardan biridir. Bazen sokaklarda su birikintileri oluşabilir, esnek bir planlama gerektirir.",
+     "en": "One of the wettest months. Water can sometimes pool in the streets, so plans need to be flexible."
+    },
+    {
+     "tr": "Yağışın zirve yaptığı, sel riskinin olduğu aydır. Avantajı ise otel fiyatlarının dibe vurmasıdır.",
+     "en": "The month when rainfall peaks and there's a risk of flooding. The upside is that hotel prices hit rock bottom."
+    },
+    {
+     "tr": "Ayın sonuna doğru yağmurlar kesilmeye başlar. Turizm sezonu yeniden uyanışa geçer.",
+     "en": "Towards the end of the month the rains begin to stop. The tourist season comes back to life."
+    },
+    {
+     "tr": "İklim tekrar normale döner. Nehirlerde binlerce mumlu sepetin (krathong) yüzdürüldüğü büyülü \"Loy Krathong\" festivali bu aydadır. Şiddetle tavsiye edilir.",
+     "en": "The weather returns to normal. The magical Loy Krathong festival, when thousands of candlelit baskets (krathongs) are floated on the rivers, takes place this month. Highly recommended."
+    },
+    {
+     "tr": "Nem düşük, akşamlar ılık, gökyüzü açıktır. Çatı barlarında (Rooftop) şehri izlemek için yılın en güzel zamanıdır.",
+     "en": "Low humidity, warm evenings and clear skies. The best time of the year to take in the city from a rooftop bar."
+    }
+   ]
+  },
+  "barcelona": {
+   "country": "ES",
+   "months": [
+    {
+     "tr": "Güneşli ama serin. Gaudi eserlerini (Sagrada Familia, Park Güell) kalabalık olmadan rahatça fotoğraflamak için çok iyidir.",
+     "en": "Sunny but cool. Very good for photographing Gaudí's works (Sagrada Família, Park Güell) at your leisure, without the crowds."
+    },
+    {
+     "tr": "Hava hafiften kırılmaya başlar. Turist kalabalığı henüz azdır, Gaudi eserlerini ve müzeleri sakin sakin gezmek için uygundur.",
+     "en": "The chill starts to ease slightly. Tourist crowds are still thin, so it's a good time to see Gaudí's works and the museums in peace."
+    },
+    {
+     "tr": "Bahar güneşinde tapas barlarının dışarıya taşmaya başladığı ay. Denize girmek için henüz erkendir ama yürüyüş için mükemmeldir. Ayın başında Dünya Mobil Kongresi gibi büyük fuarlar yapıldığı için otel fiyatları artabilir.",
+     "en": "The month when tapas bars start spilling outdoors in the spring sunshine. Still too early for a swim in the sea, but perfect for walking. Hotel prices can rise early in the month, when major trade fairs such as the Mobile World Congress are held."
+    },
+    {
+     "tr": "23 Nisan'da Aziz Jordi (Sant Jordi) Günü kutlanır; sokaklar kitap ve gül satanlarla dolar. Çok romantik bir atmosferi vardır.",
+     "en": "On 23 April, Sant Jordi Day (St George's Day) is celebrated; the streets fill with people selling books and roses. It has a very romantic atmosphere."
+    },
+    {
+     "tr": "Yazlık kıyafetlerin çıktığı, plaj voleybolunun başladığı, ilk denize girenlerin görüldüğü harika bir aydır.",
+     "en": "A wonderful month when summer clothes come out, beach volleyball starts and the first swimmers take to the sea."
+    },
+    {
+     "tr": "Yazın resmi başlangıcı! Ünlü Sonar festivali yapılır, gece hayatı plaj kulüplerine kayar. İdeal bir yaz tatili.",
+     "en": "The official start of summer! The famous Sónar festival takes place and nightlife shifts to the beach clubs. An ideal summer holiday."
+    },
+    {
+     "tr": "Çok sıcak ve turist akını nedeniyle kalabalık. La Rambla'da yürümek bile zorlaşabilir, plajlar tıklım tıklımdır.",
+     "en": "Very hot and crowded with the influx of tourists. Even walking down La Rambla can get difficult, and the beaches are jam-packed."
+    },
+    {
+     "tr": "Aşırı sıcak ve nemli. Yerli halk şehri terk eder, geriye sadece turistler kalır. Öğleden sonra siesta yapmak zorunluluk gibidir.",
+     "en": "Extremely hot and humid. Locals leave the city and only the tourists remain. An afternoon siesta is practically compulsory."
+    },
+    {
+     "tr": "Yılın en iyi aylarından biri! Şehrin en büyük festivali \"La Mercè\" kutlanır (dev kuklalar, havai fişekler). Deniz suyu harika sıcaktır.",
+     "en": "One of the best months of the year! The city's biggest festival, La Mercè, is celebrated (giant puppets, fireworks). The sea is wonderfully warm."
+    },
+    {
+     "tr": "Kalabalığın dağıldığı, havanın tişörtle gezilecek kıvamda olduğu, rahat ve keyifli bir sonbahar dönemi.",
+     "en": "A relaxed, pleasant autumn spell when the crowds disperse and it's still warm enough to stroll around in a T-shirt."
+    },
+    {
+     "tr": "Rüzgarlı ve serin günlerin başladığı ay. Müze turizmi ve gastronomi (paella, şarap) odaklı seyahatler için daha uygundur.",
+     "en": "The month when windy, cool days begin. Better suited to trips focused on museums and gastronomy (paella, wine)."
+    },
+    {
+     "tr": "Gotik Mahalle'de kurulan Noel pazarları ve ışıklandırmalar şehri ısıtır. Akdeniz kışı olduğu için dondurucu bir soğuk yoktur.",
+     "en": "The Christmas markets and lights in the Gothic Quarter warm up the city. It's a Mediterranean winter, so there's no freezing cold."
+    }
+   ]
+  },
+  "belgrade": {
+   "country": "RS",
+   "months": [
+    {
+     "tr": "Oldukça soğuk ve karlı olabilir. Sırplar Ortodoks Noeli'ni 7 Ocak'ta kutlar, bu dönemde şehirde tatlı bir hareketlilik vardır.",
+     "en": "It can be quite cold and snowy. Serbs celebrate Orthodox Christmas on 7 January, and the city has a pleasant bustle during this time."
+    },
+    {
+     "tr": "Gri ve soğuk bir ay. Tuna ve Sava nehirlerinden esen rüzgar üşütür, kapalı mekanlarda lokal \"Rakija\" içmek popülerdir.",
+     "en": "A grey, cold month. The wind off the Danube and Sava rivers bites, and drinking the local rakija indoors is popular."
+    },
+    {
+     "tr": "Karlar erir, baharın ilk güneşiyle insanlar Skadarlija bölgesindeki kafelere akın etmeye başlar.",
+     "en": "The snow melts, and with the first spring sunshine people start flocking to the cafés in the Skadarlija district."
+    },
+    {
+     "tr": "Ağaçlar yeşillenir. Kalemegdan Kalesi'nde yürüyüş yapmak ve nehir kenarında bisiklete binmek için çok keyifli bir aydır.",
+     "en": "The trees turn green. A very enjoyable month for walks at Kalemegdan Fortress and cycling along the river."
+    },
+    {
+     "tr": "Havanın en güzel olduğu dönemlerden biri. Açık hava mekanları tamamen faaliyete geçer, akşamüstü yürüyüşleri idealdir.",
+     "en": "One of the best times of year for weather. Open-air venues are fully up and running, and early-evening strolls are ideal."
+    },
+    {
+     "tr": "Ünlü nehir kulüpleri (Splavovi) yaz sezonunu açar. Belgrad'ın Avrupa'nın gece hayatı başkenti unvanını kanıtladığı zamanlar başlar.",
+     "en": "The famous river clubs (splavovi) open their summer season. This is when Belgrade starts living up to its title as Europe's nightlife capital."
+    },
+    {
+     "tr": "Hava oldukça sıcaktır. Gündüzleri Ada Ciganlija gölünde denize girer gibi serinlemek, geceleri partilemek rutindir.",
+     "en": "It gets quite hot. Cooling off by day at the lake on Ada Ciganlija as if at the seaside, and partying by night, is the routine."
+    },
+    {
+     "tr": "Sıcak dalgaları devam eder. Ağustosböcekleri eşliğinde Tuna kenarında balık yemek ve açık hava konserlerine gitmek popülerdir.",
+     "en": "The heatwaves continue. Eating fish by the Danube to the sound of cicadas and going to open-air concerts are popular pastimes."
+    },
+    {
+     "tr": "Sıcaklar bunaltıcılığını kaybeder, ılık ve çok konforlu bir hava başlar. Kültürel geziler için mükemmel zamandır.",
+     "en": "The heat loses its oppressiveness and warm, very comfortable weather sets in. A perfect time for cultural trips."
+    },
+    {
+     "tr": "Şehrin parklarının sarı ve turuncuya büründüğü fotojenik sonbahar. Gündüz ince bir ceketle rahatça gezilebilir.",
+     "en": "A photogenic autumn when the city's parks turn yellow and orange. During the day you can comfortably get around in a light jacket."
+    },
+    {
+     "tr": "Hızlı bir şekilde kışa geçiş yapılır, hava grileşir ve yağmurlar artar. Yugoslav tarihi müzelerini gezmek için uygun.",
+     "en": "Winter arrives quickly; the sky turns grey and the rain increases. A good time to visit museums on Yugoslav history."
+    },
+    {
+     "tr": "Knez Mihailova Caddesi ışıl ışıl olur, Kış Masalı festivali (Zimska Bajka) ile açık havada sıcak şarap ve paten keyfi başlar.",
+     "en": "Knez Mihailova Street glitters with lights, and the Winter Tale festival (Zimska Bajka) kicks off the season of mulled wine and ice skating in the open air."
+    }
+   ]
+  },
+  "berlin": {
+   "country": "DE",
+   "months": [
+    {
+     "tr": "Oldukça soğuk, gri ve rüzgarlı. Müzeler Adası'na kapanmak veya ünlü kapalı mekan elektronik müzik kulüplerini (Berghain vb.) keşfetmek için ideal.",
+     "en": "Quite cold, grey and windy. Ideal for holing up on Museum Island or discovering the famous indoor electronic music clubs (Berghain and the like)."
+    },
+    {
+     "tr": "Kış soğuğu devam eder ancak ünlü Berlinale (Berlin Uluslararası Film Festivali) şehre büyük bir hareketlilik katar.",
+     "en": "The winter cold carries on, but the famous Berlinale (Berlin International Film Festival) brings a real buzz to the city."
+    },
+    {
+     "tr": "Güneş yüzünü göstermeye başlasa da hava hâlâ inceden üşütür. Kalabalıklaşmadan şehri yürüyerek gezmek için iyidir.",
+     "en": "The sun starts to show its face, but the air still has a slight chill. A good time to explore the city on foot before the crowds arrive."
+    },
+    {
+     "tr": "İlkbahar uyanışı başlar. Kreuzberg sokakları hareketlenir, parklarda ilk piknik yapanlar görülmeye başlar.",
+     "en": "Spring awakens. The streets of Kreuzberg come alive and the first picnickers start appearing in the parks."
+    },
+    {
+     "tr": "Gezmek için en harika aylardan biridir! Ağaçlar yeşerir, açık hava terasları açılır. \"Kültürler Karnavalı\" (Karneval der Kulturen) muhteşem bir enerji katar.",
+     "en": "One of the very best months to visit! The trees turn green and outdoor terraces open up. The Carnival of Cultures (Karneval der Kulturen) adds a fantastic energy."
+    },
+    {
+     "tr": "Açık hava sinemaları, Spree nehri kenarındaki kumsallı barlar ve sokak festivalleriyle Berlin'in en canlı dönemidir.",
+     "en": "With open-air cinemas, beach bars along the River Spree and street festivals, this is Berlin at its liveliest."
+    },
+    {
+     "tr": "Sıcak günlerde şehrin göllerine (Wannsee, Schlachtensee) akın edilir. Bisikletle şehri uçtan uca gezmek çok keyiflidir.",
+     "en": "On hot days, people flock to the city's lakes (Wannsee, Schlachtensee). Cycling across the city from end to end is a real joy."
+    },
+    {
+     "tr": "Yazın zirvesi. Parklar, sokak çalgıcıları ve açık hava partileriyle doludur. Berlin'in tadı tamamen sokakta çıkar.",
+     "en": "The height of summer. It's all parks, buskers and open-air parties. Berlin is best enjoyed out on the streets."
+    },
+    {
+     "tr": "Berlin Sanat Haftası ve Berlin Maratonu ile şehir yine çok hareketlidir. Havanın bunaltmayan ılık yapısı yürüyüş için kusursuzdur.",
+     "en": "Berlin Art Week and the Berlin Marathon keep the city buzzing once again. The mild, never-stifling weather is perfect for walking."
+    },
+    {
+     "tr": "Sonbahar renkleri parkları kaplar. Işık Festivali (Festival of Lights) ile şehrin simge yapıları rengarenk aydınlatılır.",
+     "en": "Autumn colours blanket the parks. During the Festival of Lights, the city's landmarks are lit up in every colour."
+    },
+    {
+     "tr": "Soğuk ve gri havalar geri döner. East Side Gallery (Berlin Duvarı) yürüyüşü rüzgarlı olabilir, iç mekan planları artırılmalıdır.",
+     "en": "Cold, grey weather returns. A walk along the East Side Gallery (the Berlin Wall) can be windy, so plan more indoor activities."
+    },
+    {
+     "tr": "Gendarmenmarkt gibi meydanlarda kurulan muazzam Noel pazarları şehri ısıtır. Yeni yıl partileri efsanevidir.",
+     "en": "Spectacular Christmas markets set up in squares like Gendarmenmarkt warm up the city. New Year's Eve parties are legendary."
+    }
+   ]
+  },
+  "brussels": {
+   "country": "BE",
+   "months": [
+    {
+     "tr": "Genellikle kasvetli, yağışlı ve soğuktur. Çikolata butikleri, waffle dükkanları ve müzeler sığınmak için harika noktalardır.",
+     "en": "Usually gloomy, wet and cold. Chocolate boutiques, waffle shops and museums are great places to take refuge."
+    },
+    {
+     "tr": "Kış atmosferi devam eder. Kapalı alan pub kültürü, şömine ateşi eşliğinde Belçika biraları denemek için tam zamanıdır.",
+     "en": "The wintry atmosphere continues. It's the perfect time for indoor pub culture and trying Belgian beers by the fireside."
+    },
+    {
+     "tr": "Havanın en dengesiz olduğu dönemlerden biri; bir an güneşliyken bir an yağmur yağabilir. Yağmurluk şarttır.",
+     "en": "One of the most changeable times for weather: sunshine one moment, rain the next. A raincoat is a must."
+    },
+    {
+     "tr": "İlkbahar şehri renklendirir. Sadece baharda ziyarete açılan Kraliyet Seraları (Royal Greenhouses of Laeken) bu ay gezilebilir.",
+     "en": "Spring brings colour to the city. The Royal Greenhouses of Laeken, open to visitors only in spring, can be visited this month."
+    },
+    {
+     "tr": "Hava belirgin şekilde ısınır. Grand Place (Grote Markt) meydanında açık havada oturup kahve veya bira içmek çok keyiflidir.",
+     "en": "The weather warms up noticeably. Sitting outdoors on the Grand Place (Grote Markt) with a coffee or a beer is a real pleasure."
+    },
+    {
+     "tr": "Günler uzar. Şehrin sokaklarına gizlenmiş ünlü çizgi roman duvar resimlerini yürüyerek keşfetmek için harika bir aydır.",
+     "en": "The days get longer. A great month for discovering, on foot, the famous comic-strip murals hidden around the city's streets."
+    },
+    {
+     "tr": "Avrupa bürokrasisi tatile girdiği için şehir yerel halktan arınır, turistlere kalır. Bazen beklenmedik sıcak dalgaları vurabilir.",
+     "en": "With Europe's bureaucrats off on holiday, the city empties of locals and is left to the tourists. Unexpected heatwaves can sometimes strike."
+    },
+    {
+     "tr": "Çift sayılı yıllarda (iki yılda bir) Ağustos ayında Grand Place muazzam bir \"Çiçek Halısı\" ile kaplanır. Çok turistik ve sıcaktır.",
+     "en": "In even-numbered years (every other year), the Grand Place is covered with a magnificent Flower Carpet in August. Very touristy and hot."
+    },
+    {
+     "tr": "Belçika Bira Hafta Sonu (Belgian Beer Weekend) yapılır. Serinlemeye başlayan hava, sokak gezileri için çok rahattır.",
+     "en": "The Belgian Beer Weekend takes place. The cooling weather makes wandering the streets very comfortable."
+    },
+    {
+     "tr": "Sonbahar rüzgarları başlar, parklar kızarır. Atomium ve Magritte Müzesi gibi kapalı mekanlara ağırlık verilebilir.",
+     "en": "Autumn winds pick up and the parks turn red. You can focus on indoor spots like the Atomium and the Magritte Museum."
+    },
+    {
+     "tr": "Yılın en yağışlı ve kapalı aylarından biridir. Planları esnek tutup gastronomiye (midye, patates, çikolata) yönelmek mantıklıdır.",
+     "en": "One of the wettest and most overcast months of the year. It makes sense to keep plans flexible and turn to the food (mussels, fries, chocolate)."
+    },
+    {
+     "tr": "\"Winter Wonders\" kış festivali başlar. Dev dönme dolap, paten pisti ve ışık şovlarıyla şehir çok neşeli bir hal alır.",
+     "en": "The Winter Wonders festival begins. With a giant Ferris wheel, an ice rink and light shows, the city takes on a wonderfully cheerful mood."
+    }
+   ]
+  },
+  "budapest": {
+   "country": "HU",
+   "months": [
+    {
+     "tr": "Dondurucu soğuklar ve kar yağışı görülebilir. Széchenyi gibi tarihi termal hamamların açık havuzlarında sıcak suda ısınmak eşsizdir.",
+     "en": "Freezing cold and snowfall are possible. Warming up in the hot water of the outdoor pools at historic thermal baths like Széchenyi is like nothing else."
+    },
+    {
+     "tr": "Tuna nehri üzerinde buzlanmalar ve keskin rüzgarlar olabilir. Kapalı harabe barlarda (ruin bars) vakit geçirmek popülerdir.",
+     "en": "Ice can form on the Danube and the winds can be biting. Spending time in the indoor ruin bars is popular."
+    },
+    {
+     "tr": "Karlar erir. Balıkçı Tabyası ve Gellért Tepesi'ne çıkıp manzarayı izlemek için havanın ısınmaya başladığı ilk fırsattır.",
+     "en": "The snow melts. As the weather starts to warm up, it's the first chance to climb Fisherman's Bastion and Gellért Hill and take in the view."
+    },
+    {
+     "tr": "Budapeşte Bahar Festivali sanat etkinlikleriyle şehri canlandırır. Tuna nehrinde akşam tekne turu yapmak üşütmez.",
+     "en": "The Budapest Spring Festival livens up the city with arts events. An evening boat trip on the Danube won't leave you shivering."
+    },
+    {
+     "tr": "Bisiklet kiralayıp Margaret Adası'nda (Margitsziget) turlamak, parklarda piknik yapmak için yılın en güzel, en ılıman zamanı.",
+     "en": "The loveliest, mildest time of year to rent a bike and ride around Margaret Island (Margitsziget) or picnic in the parks."
+    },
+    {
+     "tr": "Yaz başlar. Akşamları serin esintilerle şehir çok rahattır. Açık hava mekanları ve teraslar dolup taşar.",
+     "en": "Summer begins. With cool breezes in the evenings, the city is very comfortable. Open-air venues and terraces are packed."
+    },
+    {
+     "tr": "Sıcaklıklar yüksek, güneş yakıcıdır. Gündüz müzeler gezilip akşamları harabe barlar sokağında (Gozsdu Udvar) eğlenceye akın edilir.",
+     "en": "Temperatures are high and the sun is scorching. Spend the day in museums, then join the evening rush to the ruin-bar street (Gozsdu Udvar) for a night out."
+    },
+    {
+     "tr": "Şehrin en çılgın dönemi! Dünyaca ünlü Sziget Festivali başlar. Yüz binlerce genç şehre akar, otel bulmak zordur ama enerji zirvededir.",
+     "en": "The city's wildest time! The world-famous Sziget Festival kicks off. Hundreds of thousands of young people pour into the city; hotels are hard to find, but the energy is sky-high."
+    },
+    {
+     "tr": "Sziget kalabalığı dağılır, havalar muazzam bir dengeye oturur. Budapeşte Şarap Festivali yapılır, gezmek için harikadır.",
+     "en": "The Sziget crowds disperse and the weather settles into a wonderful balance. The Budapest Wine Festival takes place; a great time to visit."
+    },
+    {
+     "tr": "Buda Kalesi çevresindeki ağaçlar sararır. Romantik bir sonbahar kaçamağı ve bol fotoğraf için çok uygundur.",
+     "en": "The trees around Buda Castle turn golden. Perfect for a romantic autumn getaway and plenty of photos."
+    },
+    {
+     "tr": "Hava erken kararır, kış soğukları tekrar kendini gösterir. Meclis Binası ve Opera Binası turları için iyi bir dönemdir.",
+     "en": "It gets dark early and the winter cold makes itself felt again. A good time for tours of the Parliament Building and the Opera House."
+    },
+    {
+     "tr": "Vörösmarty Meydanı'nda ve Bazilika önünde kurulan Avrupa'nın en iyi Noel pazarlarıyla şehir adeta bir masal diyarına dönüşür.",
+     "en": "With Europe's best Christmas markets set up on Vörösmarty Square and in front of the Basilica, the city turns into a true fairy-tale land."
+    }
+   ]
+  },
+  "copenhagen": {
+   "country": "DK",
+   "months": [
+    {
+     "tr": "Gündüzler sadece 7-8 saat sürer ve hava çok soğuktur. Danimarkalıların \"Hygge\" felsefesiyle battaniye, kahve, mum ışığı konseptini yaşamak için harika.",
+     "en": "Daylight lasts only 7–8 hours and it's very cold. Perfect for living the Danish 'hygge' philosophy of blankets, coffee and candlelight."
+    },
+    {
+     "tr": "Tivoli Bahçeleri \"Kış Festivali\" için açılır. Kat kat giyinmek ve rüzgar geçirmeyen montlar giymek kesinlikle şarttır.",
+     "en": "Tivoli Gardens opens for its Winter Festival. Dressing in layers and wearing windproof jackets is an absolute must."
+    },
+    {
+     "tr": "Kapalı pazar yeri Torvehallerne'de smørrebrød (açık sandviç) yemek, tasarım mağazalarını gezmek soğuktan korunmak için iyidir.",
+     "en": "Eating smørrebrød (open sandwiches) at the indoor Torvehallerne market and browsing design shops are good ways to escape the cold."
+    },
+    {
+     "tr": "Güneş çıkmaya başlar, yerel halk hemen bisikletlerine atlar ama hava turistler için hâlâ oldukça serin hissettirir.",
+     "en": "The sun starts to come out and the locals jump straight on their bikes, but for tourists it still feels quite chilly."
+    },
+    {
+     "tr": "Günler uzamaya, şehir çiçeklenmeye başlar. Bisiklet kiralayıp kanallar boyunca üşümeden turlamak için çok idealdir.",
+     "en": "The days grow longer and the city starts to bloom. Ideal for renting a bike and riding along the canals without getting cold."
+    },
+    {
+     "tr": "Gece yarısına kadar aydınlık olan muhteşem uzun günler! İnsanlar Nyhavn kanalında veya liman kenarında oturup sosyalleşir.",
+     "en": "Glorious long days that stay light until midnight! People sit and socialise along the Nyhavn canal or by the harbour."
+    },
+    {
+     "tr": "Yazın kalbi. Limandaki açık hava yüzme alanlarında (Islands Brygge) denize girenlerle Kopenhag bir sahil kasabasına dönüşür.",
+     "en": "The heart of summer. With swimmers at the open-air harbour baths (Islands Brygge), Copenhagen turns into a seaside town."
+    },
+    {
+     "tr": "Kopenhag Yemek Festivali ve Moda Haftası ile en canlı aydır. Hava sıcaktır ama boğucu değildir. Yüksek sezon fiyatları geçerlidir.",
+     "en": "The liveliest month, with the Copenhagen Food Festival and Fashion Week. It's warm but not stifling. High-season prices apply."
+    },
+    {
+     "tr": "Hızlıca sonbahara geçiş yapılır. Turist kalabalığı azalır, bisikletle şehri gezmek hâlâ çok keyifli ve konforludur.",
+     "en": "Autumn arrives quickly. The tourist crowds thin out, and cycling around the city is still very pleasant and comfortable."
+    },
+    {
+     "tr": "Ekim ortasında \"Kültür Gecesi\" (Kulturnatten) etkinlikleri olur. Yağış ihtimali artar, renkli Nyhavn evleri gri havada bile güzeldir.",
+     "en": "Culture Night (Kulturnatten) takes place in mid-October. The chance of rain goes up, but Nyhavn's colourful houses look beautiful even in grey weather."
+    },
+    {
+     "tr": "Karanlık kış günleri başlar. Güneş çok nadir görünür, genellikle müzeler (Ny Carlsberg Glyptotek, Designmuseum) tercih edilir.",
+     "en": "The dark winter days begin. The sun rarely shows itself, so museums (Ny Carlsberg Glyptotek, Designmuseum) are usually the go-to."
+    },
+    {
+     "tr": "Tivoli Bahçeleri binlerce ışıkla dünyanın en güzel Noel parklarından biri olur. Sıcak şarap (Gløgg) içerek şehri gezmek şarttır.",
+     "en": "With thousands of lights, Tivoli Gardens becomes one of the most beautiful Christmas parks in the world. Exploring the city with a mulled wine (gløgg) in hand is a must."
+    }
+   ]
+  },
+  "dubai": {
+   "country": "AE",
+   "months": [
+    {
+     "tr": "Yılın tartışmasız en iyi ayı! 25-27°C civarındaki kış güneşiyle deniz, kum, havuz ve çöl safarisi için kusursuzdur. Alışveriş Festivali (DSF) devam eder.",
+     "en": "Hands down the best month of the year! With winter sunshine around 25–27°C, it's perfect for sea, sand, pool and desert safaris. The Dubai Shopping Festival (DSF) is still on."
+    },
+    {
+     "tr": "Harika hava devam eder. Tişört ve şortla rahatça gezilir, dış mekan restoranları ve plaj kulüpleri tamamen doludur.",
+     "en": "The great weather continues. You can stroll around comfortably in a T-shirt and shorts, and outdoor restaurants and beach clubs are completely full."
+    },
+    {
+     "tr": "Gündüz sıcaklıkları 30°C'ye ulaşır ama nem düşüktür. Dışarıda vakit geçirmek, yat turları yapmak için hâlâ harika bir aydır.",
+     "en": "Daytime temperatures reach 30°C, but humidity is low. Still a great month for spending time outdoors and taking yacht tours."
+    },
+    {
+     "tr": "Hissedilir bir ısınma başlar. Açık hava etkinlikleri ve plajların tadını çıkarmak için \"rahat\" geçen son aydır.",
+     "en": "A noticeable warm-up begins. It's the last 'comfortable' month for enjoying outdoor activities and the beaches."
+    },
+    {
+     "tr": "Sıcaklıklar 38°C'leri bulur. Açık alanda yürüyüş sadece gün batımından sonra mümkün hale gelir. Turist sezonu yavaşlar.",
+     "en": "Temperatures reach around 38°C. Walking outdoors only becomes possible after sunset. The tourist season slows down."
+    },
+    {
+     "tr": "Kavurucu sıcaklar (40°C+) başlar. Hayat tamamen Dubai Mall, Mall of the Emirates gibi dev AVM'lere ve klimalı alanlara kayar.",
+     "en": "The scorching heat (40°C+) sets in. Life moves entirely into giant malls like Dubai Mall and Mall of the Emirates, and into other air-conditioned spaces."
+    },
+    {
+     "tr": "Aşırı sıcak ve nem birleşir. Sadece otel-AVM arası klimalı taksilerle seyahat edilir. Avantajı ise otel fiyatlarının çok ucuzlamasıdır.",
+     "en": "Extreme heat combines with humidity. People only travel between hotel and mall in air-conditioned taxis. The upside is that hotel prices drop sharply."
+    },
+    {
+     "tr": "En sıcak aydır. Dışarıda birkaç dakikadan fazla kalmak tehlikeli olabilir. Dubai Yaz Sürprizleri gibi etkinlikler kapalı alanlardadır.",
+     "en": "The hottest month. Staying outside for more than a few minutes can be dangerous. Events like Dubai Summer Surprises are held indoors."
+    },
+    {
+     "tr": "Sıcaklar devam etse de ay sonuna doğru akşamları bir nebze olsun dışarıda kısa yürüyüşler yapılabilir hale gelir.",
+     "en": "The heat lingers, but towards the end of the month short evening walks outside become at least somewhat possible."
+    },
+    {
+     "tr": "Kış sezonunun açılış ayıdır. Global Village ve Miracle Garden gibi açık hava rekreasyon alanları kapılarını tekrar açar.",
+     "en": "The opening month of the winter season. Open-air attractions like Global Village and the Miracle Garden reopen their doors."
+    },
+    {
+     "tr": "Mükemmel hava geri döner. JBR, La Mer, Marina bölgelerinde deniz kenarı yürüyüşleri, açık hava akşam yemekleri için harikadır.",
+     "en": "Perfect weather returns. Great for seaside walks and open-air dinners in JBR, La Mer and the Marina."
+    },
+    {
+     "tr": "Yılın en popüler ve en kalabalık aylarından biri. Ayın başında Alışveriş Festivali (DSF) başlar; Burj Khalifa'daki dev havai fişek gösterileri ve harika hava ile lüks bir yeni yıl tatili sunar.",
+     "en": "One of the most popular and crowded months of the year. The Dubai Shopping Festival (DSF) starts early in the month, and with the huge fireworks show at Burj Khalifa and great weather, it makes for a luxurious New Year holiday."
+    }
+   ]
+  },
+  "florence": {
+   "country": "IT",
+   "months": [
+    {
+     "tr": "Havanın soğuk, sokakların sakin olduğu ay. Uffizi ve Accademia'da (Davut heykelini görmek için) o bitmeyen kuyruklar olmaz. Sanatseverler için rüya gibidir.",
+     "en": "A month of cold air and quiet streets. None of those never-ending queues at the Uffizi and the Accademia (to see Michelangelo's David). A dream for art lovers."
+    },
+    {
+     "tr": "14 Şubat Sevgililer Günü dolayısıyla Rönesans başkentinde romantik bir hafta sonu turizmi başlar. Hava hâlâ palto gerektirir.",
+     "en": "With Valentine's Day on 14 February, romantic weekend getaways to the Renaissance capital begin. The weather still calls for a coat."
+    },
+    {
+     "tr": "Bahar ilk ışıklarını gösterir. Şehri ikiye bölen Arno Nehri kıyısında yürüyüş yapmak ve Boboli Bahçeleri'nde gezmek keyifli olur.",
+     "en": "Spring shows its first light. Strolling along the Arno, the river that splits the city in two, and wandering through the Boboli Gardens become a real pleasure."
+    },
+    {
+     "tr": "Paskalya coşkusu yaşanır, ünlü \"Scoppio del Carro\" (Araba Patlatma) şenliği izlenebilir. Turizm sezonu hız kazanır, hava ılıktır.",
+     "en": "Easter fever takes over, and you can watch the famous \"Scoppio del Carro\" (Explosion of the Cart) celebration. The tourist season picks up speed and the weather is mild."
+    },
+    {
+     "tr": "Gezmek için en kusursuz ay! Gündüz sıcaktır, akşam ılıktır. Toskana'nın tepelerindeki köylere günübirlik turlar yapmak için efsanedir.",
+     "en": "The most flawless month to visit! Days are warm, evenings are mild. Simply legendary for day trips to the hilltop villages of Tuscany."
+    },
+    {
+     "tr": "Yaz sıcakları bastırır, turist kalabalığı yorucu olmaya başlar. Akşamları meydanlarda dev külahlarda dondurma (gelato) yeme sezonudur.",
+     "en": "The summer heat sets in and the tourist crowds start to get tiring. It's the season for eating gelato from huge cones in the squares in the evening."
+    },
+    {
+     "tr": "Taş binalar ve dar sokaklar nedeniyle Floransa çok sıcak ve bunaltıcı olur. Müzelerde kalabalık terletebilir, önceden bilet şarttır.",
+     "en": "With its stone buildings and narrow streets, Florence gets very hot and stifling. The museum crowds can make you sweat; booking tickets in advance is a must."
+    },
+    {
+     "tr": "Kavurucu sıcak. Yerel halk \"Ferragosto\" tatili için şehri terk eder, bazı lokal restoranlar kapanır. Gezmek fiziksel olarak yorucudur.",
+     "en": "Scorching heat. Locals leave the city for the \"Ferragosto\" holiday and some local restaurants close. Sightseeing is physically exhausting."
+    },
+    {
+     "tr": "Sıcaklar düşer, hava mükemmel bir kıvama gelir. Aynı zamanda Toskana bölgesinde bağ bozumu (üzüm hasadı) başlar, şarap turları popülerdir.",
+     "en": "The heat eases and the weather hits its perfect stride. The grape harvest also begins across Tuscany, and wine tours are popular."
+    },
+    {
+     "tr": "Muazzam bir altın sonbahar. Trüf mantarı mevsimidir, gastronomi ve yürüyüş meraklıları için mükemmel bir aydır. Kalabalık tolere edilebilirdir.",
+     "en": "A stunning golden autumn. It's truffle season, making it a perfect month for food lovers and hikers. The crowds are bearable."
+    },
+    {
+     "tr": "Yağmurlu günlerin arttığı, kasvetli bir ay. Kapalı mekanlara odaklanıp İtalyan kış mutfağının tadını çıkarmak mantıklıdır.",
+     "en": "A gloomy month with more and more rainy days. It makes sense to focus on indoor sights and enjoy Italian winter cooking."
+    },
+    {
+     "tr": "Santa Croce Meydanı'nda Noel pazarı kurulur. Çok aşırı soğuk olmaz, şık ışıklandırmalar altında tarihi şehri gezmek çok estetiktir.",
+     "en": "A Christmas market is set up in Piazza Santa Croce. It doesn't get bitterly cold, and exploring the historic city under elegant lights is a real visual treat."
+    }
+   ]
+  },
+  "istanbul": {
+   "country": "TR",
+   "months": [
+    {
+     "tr": "Rüzgarlı, yağışlı ve zaman zaman karlı olabilir. Boğaz'ın gri ve hırçın manzarasına karşı kapalı mekanlarda, tarihi yarımadadaki müzelerde ve Kapalıçarşı'da vakit geçirmek için idealdir.",
+     "en": "It can be windy, wet and at times snowy. Ideal for spending time indoors with a view of the grey, choppy Bosphorus, in the museums of the historic peninsula and in the Grand Bazaar."
+    },
+    {
+     "tr": "Kış soğukları devam eder. Vapurda çay-simit keyfi yapıp, Karaköy ve Kadıköy'deki kafelerde ısınmak, müzeleri sırasız gezmek için güzel bir dönemdir.",
+     "en": "The winter cold continues. A lovely time to enjoy tea and simit on a ferry, warm up in the cafés of Karaköy and Kadıköy, and visit museums without queues."
+    },
+    {
+     "tr": "Havanın en dengesiz olduğu geçiş ayıdır. Bir gün lodos eserken ertesi gün kar atıştırabilir. Yanınızda mutlaka katmanlı kıyafetler olmalı.",
+     "en": "The transition month, when the weather is at its most unpredictable. One day the southwesterly lodos blows, the next it may snow. Be sure to pack layers."
+    },
+    {
+     "tr": "Şehrin en güzel zamanlarından biri! Emirgan Korusu ve Gülhane Parkı başta olmak üzere şehir lalelerle donanır. Bahar coşkusuyla yürüyüş yapmak harikadır.",
+     "en": "One of the city's most beautiful times! The city is decked out in tulips, above all Emirgan Park and Gülhane Park. Walking around in the spring buzz is wonderful."
+    },
+    {
+     "tr": "Gezmek için kesinlikle en iyi aylardan biri. Ne üşütür ne terletir; Boğaz turları, Adalar (Prens Adaları) gezileri ve teras restoranları için kusursuzdur.",
+     "en": "Definitely one of the best months to visit. Neither too cold nor too hot; perfect for Bosphorus cruises, trips to the Islands (the Princes' Islands) and terrace restaurants."
+    },
+    {
+     "tr": "Yaz başlar, okullar kapanır. Açık hava konserleri ve festivaller hız kazanır. Nem henüz çok bunaltıcı seviyelere ulaşmamıştır.",
+     "en": "Summer begins and schools close. Open-air concerts and festivals gather pace. The humidity hasn't yet reached truly stifling levels."
+    },
+    {
+     "tr": "Oldukça sıcak ve nemlidir. Gündüz tarihi yarımada gezisi yorucu olabilir; akşamüstü Boğaz kenarı yürüyüşleri ve Adalar'da denize girmek tercih edilir.",
+     "en": "Quite hot and humid. Touring the historic peninsula by day can be tiring; early-evening walks along the Bosphorus and swimming at the Islands are the popular choice."
+    },
+    {
+     "tr": "En sıcak ve nemli ay. Yerel halk tatil beldelerine gittiği için trafik biraz rahatlar ancak turistik bölgeler çok kalabalıktır.",
+     "en": "The hottest and most humid month. Traffic eases a little as locals head off to holiday resorts, but the tourist areas are very crowded."
+    },
+    {
+     "tr": "Şehre harika bir hava hakim olur. Gündüzleri tişörtle gezilir, akşamları ince bir ceket yeterlidir. Kültür sanat etkinlikleri (Bienal vb.) başlar.",
+     "en": "Wonderful weather settles over the city. T-shirts by day, and a light jacket is enough in the evening. Arts and culture events (the Biennial, etc.) kick off."
+    },
+    {
+     "tr": "Kusursuz bir sonbahar. Boğaziçi'nin erguvanlardan sonraki en fotojenik halidir. Tarihi semtleri (Balat, Kuzguncuk) yürüyerek keşfetmek için harika.",
+     "en": "A flawless autumn. Second only to the Judas-tree (erguvan) blossom season, this is when the Bosphorus is at its most photogenic. Wonderful for exploring historic neighbourhoods (Balat, Kuzguncuk) on foot."
+    },
+    {
+     "tr": "Yağmurların ve serin havanın başladığı dönem. Boğaz restoranlarında palamut ve lüfer gibi balıkların en lezzetli olduğu gastronomi ayıdır.",
+     "en": "The rains and cooler weather begin. A month for food lovers, when fish such as bonito (palamut) and bluefish (lüfer) are at their tastiest in the Bosphorus restaurants."
+    },
+    {
+     "tr": "Nişantaşı, Kadıköy ve İstiklal Caddesi yılbaşı ışıklarıyla süslenir. Soğuk havada sokak kestanesi yiyerek kış atmosferinin tadı çıkarılır.",
+     "en": "Nişantaşı, Kadıköy and İstiklal Avenue are decorated with New Year lights. In the cold, you soak up the winter atmosphere eating roasted chestnuts from street vendors."
+    }
+   ]
+  },
+  "kyoto": {
+   "country": "JP",
+   "months": [
+    {
+     "tr": "Havanın çok soğuk ve keskin olduğu bir dönem. Şinto tapınaklarında yeni yıl duaları (Hatsumode) yapılır, karlar altındaki Altın Tapınak (Kinkaku-ji) büyüleyicidir.",
+     "en": "A time of very cold, biting weather. New Year prayers (Hatsumode) are offered at Shinto shrines, and the Golden Pavilion (Kinkaku-ji) under snow is enchanting."
+    },
+    {
+     "tr": "Soğuk hava devam eder ancak ayın sonuna doğru erik (plum) ağaçları çiçek açmaya başlar. Sakin bir tapınak gezisi için uygundur.",
+     "en": "The cold continues, but towards the end of the month the plum trees start to blossom. Good for a peaceful temple tour."
+    },
+    {
+     "tr": "Ayın son haftasında o beklenen an gelir: Sakura (Kiraz Çiçekleri) uyanır! Şehir pembeye boyanır, çok kalabalık ve inanılmaz pahalıdır ama rüya gibidir.",
+     "en": "In the last week of the month the long-awaited moment arrives: the sakura (cherry blossoms) awaken! The city turns pink; it's very crowded and unbelievably expensive, but like a dream."
+    },
+    {
+     "tr": "Sakura mevsiminin zirvesidir. Felsefeci Yolu (Philosopher's Path) ve tapınak bahçelerinde yürümek büyüleyicidir. Önceden rezervasyon kesinlikle şarttır.",
+     "en": "The peak of sakura season. Walking the Philosopher's Path and through temple gardens is magical. Booking ahead is absolutely essential."
+    },
+    {
+     "tr": "Çiçekler dökülür, yerini muazzam bir yeşile bırakır (Aomomiji). Japonların \"Altın Hafta\" (Golden Week) tatili bittikten sonra hava gezmek için mükemmeldir.",
+     "en": "The blossoms fall and give way to a stunning green (aomomiji). Once the Japanese Golden Week holiday is over, the weather is perfect for sightseeing."
+    },
+    {
+     "tr": "\"Tsuyu\", yani yağmur sezonu başlar. Şemsiyesiz çıkılmaz. Ancak yağmur altında parlayan yosun bahçeleri (Ginkaku-ji) ve ortanca çiçekleri çok estetiktir.",
+     "en": "\"Tsuyu\", the rainy season, begins. Don't go out without an umbrella. But the moss gardens glistening in the rain (Ginkaku-ji) and the hydrangeas are a truly beautiful sight."
+    },
+    {
+     "tr": "Çok sıcak, inanılmaz nemli ve bunaltıcıdır. Buna rağmen Japonya'nın en büyük festivallerinden, devasa arabaların çekildiği \"Gion Matsuri\" bu aydadır.",
+     "en": "Very hot, incredibly humid and stifling. Even so, this is the month of \"Gion Matsuri\", one of Japan's biggest festivals, where giant floats are pulled through the streets."
+    },
+    {
+     "tr": "Kavurucu sıcak ve nem devam eder. Geleneksel \"Obon\" bayramı ve dağlarda dev ateşlerin yakıldığı \"Gozan no Okuribi\" festivali şehri canlandırır.",
+     "en": "The scorching heat and humidity continue. The traditional \"Obon\" holiday and the \"Gozan no Okuribi\" festival, when giant bonfires are lit on the mountains, bring the city to life."
+    },
+    {
+     "tr": "Tayfun sezonudur, hava beklenmedik fırtınalara gebedir. Ancak sıcaklıklar yavaş yavaş düşmeye ve yürüyüş rahatlamaya başlar.",
+     "en": "It's typhoon season, and unexpected storms can blow in. But temperatures slowly start to drop and walking around becomes more comfortable."
+    },
+    {
+     "tr": "Sonbahar rüzgarları şehri ferahlatır. Jidai Matsuri (Çağlar Festivali) yapılır, kimonolu geçit törenleri izlenir. Gezmek için çok konforludur.",
+     "en": "Autumn breezes freshen up the city. Jidai Matsuri (Festival of the Ages) takes place, with parades in kimono. Very comfortable for sightseeing."
+    },
+    {
+     "tr": "İkinci zirve sezonu! \"Momiji\" (kızıl akçaağaç yaprakları) tapınak bahçelerini alev rengine boyar. En az Sakura dönemi kadar kalabalık ve popülerdir.",
+     "en": "The second peak season! \"Momiji\" (red maple leaves) paint the temple gardens the colour of flames. At least as crowded and popular as sakura season."
+    },
+    {
+     "tr": "Yapraklar dökülür, kış soğuğu başlar. Turist kalabalığı aniden çekilir; geleneksel ryokanlarda (Japon hanı) sıcak kaplıca (onsen) keyfi yapmak için idealdir.",
+     "en": "The leaves fall and the winter cold sets in. The tourist crowds suddenly thin out; ideal for soaking in hot springs (onsen) at traditional ryokan (Japanese inns)."
+    }
+   ]
+  },
+  "lisbon": {
+   "country": "PT",
+   "months": [
+    {
+     "tr": "Avrupa'nın geri kalanına göre oldukça ılımandır. Güneşli günlerde ince bir montla gezilebilir. Fado dinleyip şarap içmek için harika bir kış kaçamağıdır.",
+     "en": "Quite mild compared with the rest of Europe. On sunny days a light jacket is enough. A great winter escape for listening to fado and drinking wine."
+    },
+    {
+     "tr": "Ara sıra yağışlı olsa da üşütmez. Tarihi Belem Kulesi'ni gezmek, sıraya girmeden Pasteis de Belem (meşhur turta) yemek için çok iyidir.",
+     "en": "It rains now and then, but it isn't cold. Very good for visiting the historic Belém Tower and eating pastéis de Belém (the famous custard tarts) without queuing."
+    },
+    {
+     "tr": "Bahar yüzünü gösterir, güneşli günler artar. Şehrin ünlü yedi tepesine inip çıkan sarı tramvaylara binmek çok keyiflidir.",
+     "en": "Spring shows its face and sunny days become more frequent. Riding the yellow trams up and down the city's famous seven hills is great fun."
+    },
+    {
+     "tr": "Harika bir aydır ancak anlık \"Nisan yağmurları\" geçişleri olabilir. Alfama sokaklarında kaybolmak için en tatlı hava sıcaklığına sahiptir.",
+     "en": "A wonderful month, though brief \"April showers\" can pass through. The sweetest temperatures for getting lost in the streets of Alfama."
+    },
+    {
+     "tr": "Şehrin her yerini mor Jacaranda ağaçları kaplar. Mükemmel bir güneş, 22-25°C ılık hava ile Lizbon'un en estetik ve rahat gezilen dönemidir.",
+     "en": "Purple jacaranda trees cover the whole city. With perfect sunshine and mild 22-25°C weather, it's Lisbon's most beautiful and comfortable time to explore."
+    },
+    {
+     "tr": "Şehrin en çılgın ayı! Santo Antonio festivali ile sokaklar mangalda pişen sardalya kokar, her mahallede gece boyu süren açık hava partileri yapılır.",
+     "en": "The city's wildest month! During the Santo António festival the streets smell of grilled sardines, and every neighbourhood throws open-air parties that last all night."
+    },
+    {
+     "tr": "Sıcak ve güneşli! Gündüz şehir merkezinde gezmek yorucu olabilir, trenle yarım saat mesafedeki Cascais plajlarına kaçmak popülerdir.",
+     "en": "Hot and sunny! Walking around the city centre by day can be tiring; escaping to the beaches of Cascais, half an hour away by train, is popular."
+    },
+    {
+     "tr": "Yılın en sıcak ayı. Dik yokuşları tırmanmak zorlayıcı olabilir. Öğleden sonraları klimalı müzelere veya okyanus kıyısına sığınmak mantıklıdır.",
+     "en": "The hottest month of the year. Climbing the steep hills can be hard work. In the afternoons it makes sense to retreat to air-conditioned museums or the ocean shore."
+    },
+    {
+     "tr": "Aşırı sıcaklar biter, muazzam bir Akdeniz havası başlar. Okyanus suyu yılın en sıcak (girilebilir) seviyesindedir. Şehir yine turist doludur.",
+     "en": "The extreme heat is over and wonderful Mediterranean weather sets in. The ocean is at its warmest (swimmable) of the year. The city is still full of tourists."
+    },
+    {
+     "tr": "Sonbahar güneşi çok yumuşaktır. Gündüz tişörtle gezilir, akşamları ceket gerekir. Sintra şatolarını kalabalıktan uzak gezmek için harikadır.",
+     "en": "The autumn sun is very gentle. T-shirts by day, a jacket in the evening. Wonderful for visiting Sintra's castles away from the crowds."
+    },
+    {
+     "tr": "Havalar belirgin şekilde serinler ve yağmur ihtimali artar. Bütçe dostu seyahatler, gastronomi turları ve kapalı mekanlar için uygundur.",
+     "en": "The weather turns noticeably cooler and the chance of rain rises. Good for budget-friendly trips, food tours and indoor sights."
+    },
+    {
+     "tr": "Noel ışıklarıyla sokaklar canlanır. Meydanlarda kestane kebap kokuları yükselir. Avrupa'da kışın donmadan gezilebilecek en iyi şehirlerdendir.",
+     "en": "Christmas lights bring the streets to life. The smell of roasting chestnuts rises from the squares. One of the best cities in Europe to explore in winter without freezing."
+    }
+   ]
+  },
+  "london": {
+   "country": "GB",
+   "months": [
+    {
+     "tr": "Karanlık, soğuk ve genelde yağışlıdır. Günler çok kısadır. West End müzikallerine gitmek, ücretsiz devasa müzeleri (British Museum, Tate) gezmek için ideal.",
+     "en": "Dark, cold and usually wet. The days are very short. Ideal for West End musicals and the huge free museums (British Museum, Tate)."
+    },
+    {
+     "tr": "Kış atmosferi devam eder. Soho ve Covent Garden gibi bölgelerde kapalı mekanlar, publar ve afternoon tea (beş çayı) etkinlikleri çok popülerdir.",
+     "en": "The winter atmosphere continues. Indoor venues, pubs and afternoon tea are very popular in areas like Soho and Covent Garden."
+    },
+    {
+     "tr": "Nergis çiçekleri parkları sarıya boyamaya başlar. Hava hâlâ inceden üşütür, güneşli anlar ile yağmurlu anlar sık sık yer değiştirir.",
+     "en": "Daffodils begin to turn the parks yellow. There's still a slight chill in the air, and sunny spells and showers keep taking turns."
+    },
+    {
+     "tr": "Bahar kendini hissettirir ancak meşhur \"April showers\" (Nisan sağanakları) çok yaygındır. Şemsiye her zaman çantanızda olmalıdır.",
+     "en": "Spring makes itself felt, but the famous \"April showers\" are very common. Always keep an umbrella in your bag."
+    },
+    {
+     "tr": "Açık ara Londra'nın en güzel aylarından biridir! Chelsea Çiçek Şovu başlar, parklar yemyeşildir, teras publar insanlarla dolup taşar.",
+     "en": "Hands down one of London's most beautiful months! The Chelsea Flower Show begins, the parks are lush and green, and pub terraces are packed."
+    },
+    {
+     "tr": "Yaz resmi olarak başlar. Wimbledon Tenis Turnuvası heyecanı, Royal Ascot yarışları ve uzun gün ışığıyla (akşam 10'a kadar) şehir çok canlıdır.",
+     "en": "Summer officially begins. With the buzz of the Wimbledon tennis championships, the Royal Ascot races and long daylight hours (until 10 pm), the city is full of life."
+    },
+    {
+     "tr": "En sıcak ay. Hyde Park'ta piknik yapmak, Thames Nehri'nde tekne turu yapmak ve çatı barlarında (rooftop) takılmak için harikadır. Kalabalıktır.",
+     "en": "The hottest month. Wonderful for picnics in Hyde Park, boat trips on the Thames and hanging out at rooftop bars. It's crowded."
+    },
+    {
+     "tr": "Yaz tatili nedeniyle dünyanın her yerinden turist çeker. Notting Hill Karnavalı yapılır. Hava genelde sıcak olsa da İngiltere'de yağmur her zaman olasıdır.",
+     "en": "The summer holidays draw tourists from all over the world. The Notting Hill Carnival takes place. The weather is usually warm, but in England rain is always a possibility."
+    },
+    {
+     "tr": "Londra Moda Haftası şehre şıklık katar. Hava yumuşar, bunaltıcı kalabalık azalır; yürüyerek şehri keşfetmek için harika bir dengededir.",
+     "en": "London Fashion Week adds a touch of style to the city. The weather softens and the overwhelming crowds thin out; a great balance for exploring the city on foot."
+    },
+    {
+     "tr": "Çok keyifli bir sonbahar başlar. Parklardaki kızıl yapraklar çok fotojeniktir. Cadılar Bayramı teması tüm pub ve dükkanları sarar.",
+     "en": "A delightful autumn begins. The red leaves in the parks are very photogenic. Halloween themes take over every pub and shop."
+    },
+    {
+     "tr": "5 Kasım \"Guy Fawkes Night\" kutlamalarıyla şehrin her yerinde havai fişekler patlar. Ay sonuna doğru ünlü Hyde Park Winter Wonderland açılır.",
+     "en": "On 5 November, \"Guy Fawkes Night\" celebrations set off fireworks all over the city. Towards the end of the month, the famous Hyde Park Winter Wonderland opens."
+    },
+    {
+     "tr": "Büyülü bir kış masalı! Oxford ve Regent Street ışıl ışıl olur, vitrinler harika süslenir. Çok soğuk olsa da yeni yıl ruhu sokakları ısıtır.",
+     "en": "A magical winter fairy tale! Oxford Street and Regent Street sparkle with lights and the shop windows are beautifully decorated. It may be very cold, but the festive spirit warms the streets."
+    }
+   ]
+  },
+  "madrid": {
+   "country": "ES",
+   "months": [
+    {
+     "tr": "Kuru ve çok keskin bir soğuk vardır (Madrid yüksek rakımlı bir şehirdir). Güneş parlak olsa da üşütür. Müzeleri (Prado vb.) gezmek ve sıcak Churros yemek için iyidir.",
+     "en": "A dry, very biting cold (Madrid is a high-altitude city). Even when the sun is bright, it's chilly. Good for visiting museums (the Prado, etc.) and eating hot churros."
+    },
+    {
+     "tr": "Soğuk hava devam eder. Kapalı mekanlarda ünlü İtalyan ve İspanyol ustaların sergilerini gezmek, tapas barlarında sosyalleşmek popülerdir.",
+     "en": "The cold weather continues. Touring indoor exhibitions of famous Italian and Spanish masters and socializing in tapas bars are popular."
+    },
+    {
+     "tr": "Bahar uyanır, teras barları (terrazas) yavaş yavaş dolmaya başlar. Güneş altında yürüyüş yapmak son derece keyiflidir.",
+     "en": "Spring awakens, and the terrace bars (terrazas) slowly start to fill up. Walking in the sunshine is a real pleasure."
+    },
+    {
+     "tr": "Havanın ne yapacağı belli olmaz, değişken bir dönemdir. Paskalya (Semana Santa) yürüyüşleri ve kutlamaları şehre ruh katar.",
+     "en": "You never know what the weather will do; it's a changeable time. Easter (Semana Santa) processions and celebrations give the city real soul."
+    },
+    {
+     "tr": "Tartışmasız Madrid'in en güzel ayıdır! Şehrin koruyucu azizi San Isidro'nun festivali yapılır; sokaklar geleneksel kıyafetli insanlar, müzik ve dansla dolar.",
+     "en": "Hands down Madrid's most beautiful month! The festival of San Isidro, the city's patron saint, takes place; the streets fill with people in traditional dress, music and dancing."
+    },
+    {
+     "tr": "Sıcaklar aniden bastırır. Açık hava havuzları açılır, akşam yemekleri gece 10-11'den sonra yenmeye başlar.",
+     "en": "The heat arrives suddenly. Outdoor swimming pools open, and people start eating dinner after 10–11 p.m."
+    },
+    {
+     "tr": "Kavurucu sıcak (40°C civarı). Gündüz 14:00 - 18:00 arası sokaklar boşalır, siesta zorunluluk olur. Hayat güneş battıktan sonra başlar.",
+     "en": "Scorching heat (around 40°C). Between 14:00 and 18:00 the streets empty out and a siesta becomes a must. Life begins after sunset."
+    },
+    {
+     "tr": "Aşırı sıcak! Yerel halk şehri terk edip sahillere kaçar. Birçok lokal restoran, dükkan kapalı olabilir. Çok zorunlu değilse uzak durulmalı.",
+     "en": "Extreme heat! Locals leave the city and escape to the coast. Many local restaurants and shops may be closed. Best avoided unless you really have to go."
+    },
+    {
+     "tr": "Cehennem sıcakları biter. Retiro Park'ta gölet etrafında yürümek, müzeleri gezmek ve meydanlarda oturmak için hava normale ve güzelliğe döner.",
+     "en": "The hellish heat is over. The weather turns normal and lovely again, perfect for strolling around the pond in Retiro Park, visiting museums and sitting out in the squares."
+    },
+    {
+     "tr": "Mükemmel bir sonbahar. Güneşli ama bunaltmayan 20-22°C'lik günler. Şehri yürüyerek, durmaksızın keşfetmek için en ideal zamandır.",
+     "en": "A perfect autumn. Sunny but never oppressive days of 20–22°C. The ideal time to explore the city on foot, nonstop."
+    },
+    {
+     "tr": "Hızlı bir şekilde soğumaya başlar. Kışlık kalın kıyafetler çıkar. Meşhur İspanyol nohut yahnisi \"Cocido Madrileño\" yemek için tam mevsimidir.",
+     "en": "It starts cooling down quickly. Thick winter clothes come out. It's the perfect season for the famous Spanish chickpea stew, \"Cocido Madrileño\"."
+    },
+    {
+     "tr": "Plaza Mayor meydanında dev bir Noel pazarı kurulur. Şehir ışıl ışıldır. Yılbaşı gecesi Puerta del Sol meydanında 12 üzüm yeme geleneği meşhurdur.",
+     "en": "A huge Christmas market is set up in the Plaza Mayor. The city sparkles with lights. The tradition of eating 12 grapes in Puerta del Sol on New Year's Eve is famous."
+    }
+   ]
+  },
+  "marrakech": {
+   "country": "MA",
+   "months": [
+    {
+     "tr": "Gündüzleri tişörtle gezilecek kadar sıcak ve güneşli (20°C), geceleri ise palto giydirecek kadar soğuktur. Çarşıları terlemeden gezmek için mükemmeldir.",
+     "en": "Warm and sunny enough for a T-shirt during the day (20°C), yet cold enough for a coat at night. Perfect for exploring the souks without breaking a sweat."
+    },
+    {
+     "tr": "Gündüzleri hafifçe ısınmaya başlar. Badem ağaçları çiçek açar. Çöl kamplarına katılmak veya Atlas Dağları'na gitmek için çok iyi bir aydır.",
+     "en": "Days start to warm up slightly. The almond trees blossom. A very good month to join a desert camp or head to the Atlas Mountains."
+    },
+    {
+     "tr": "Baharın gelişiyle şehrin bahçeleri (Jardin Majorelle, Menara) en güzel renklerini alır. Hava gezmek için tam anlamıyla kusursuzdur.",
+     "en": "With the arrival of spring, the city's gardens (Jardin Majorelle, Menara) take on their most beautiful colors. The weather is truly flawless for sightseeing."
+    },
+    {
+     "tr": "En yüksek turizm sezonudur! Hava ılıman, akşamlar tatlıdır. Ancak Medina (Eski Şehir) sokakları, Jemaa el-Fnaa meydanı çok kalabalık olur.",
+     "en": "Peak tourist season! The weather is mild and the evenings are lovely. But the streets of the Medina (Old City) and Jemaa el-Fnaa square get very crowded."
+    },
+    {
+     "tr": "Yazın sıcak nefesi hissedilmeye başlar. Gündüz 30°C'yi aşan sıcaklıklar havuzlu \"Riad\"larda (geleneksel Fas evi) dinlenmeyi cazip kılar.",
+     "en": "You start to feel summer's hot breath. Daytime temperatures above 30°C make relaxing in a \"riad\" (traditional Moroccan house) with a pool very tempting."
+    },
+    {
+     "tr": "Sıcaklıklar 35-38°C bandına çıkar. Öğle saatlerinde sokakta yürümek yorucudur. Sabah erken kalkıp öğlen siesta yapmak en mantıklı stratejidir.",
+     "en": "Temperatures climb to 35–38°C. Walking the streets around midday is exhausting. Getting up early and taking a siesta at noon is the smartest strategy."
+    },
+    {
+     "tr": "Kavurucu Çöl Sıcakları (40°C+). Turistik geziler için çok zorlayıcıdır. Ancak ultra lüks havuzlu resortlarda dinlenme tatili için gidenler bulunur.",
+     "en": "Scorching Desert Heat (40°C+). Very tough for sightseeing. Still, some people go for a relaxing break at ultra-luxury resorts with pools."
+    },
+    {
+     "tr": "Yılın en sıcak ayı. Şehir merkezindeki o dar, kapalı sokaklarda (Souk) nefes almak bile zorlaşır. Kesinlikle tercih edilmemesi gereken dönem.",
+     "en": "The hottest month of the year. In those narrow, covered alleys of the city center (the souk), even breathing becomes hard. Definitely a time to avoid."
+    },
+    {
+     "tr": "Ayın ortasından itibaren sıcaklar yavaş yavaş kırılır ancak hâlâ oldukça sıcaktır. Günübirlik Essaouira (okyanus kıyısı) kaçamakları için idealdir.",
+     "en": "From mid-month the heat slowly eases, though it's still quite hot. Ideal for day trips to Essaouira (on the ocean coast)."
+    },
+    {
+     "tr": "Marakeş'in ikinci \"Altın Çağı\". İlkbahar gibi hava tekrar mükemmel bir dengeye ulaşır. Güneş yakmaz, sokaklar şenlenir, akşamları esintilidir.",
+     "en": "Marrakech's second \"Golden Age\". As in spring, the weather once again strikes a perfect balance. The sun doesn't burn, the streets come alive, and the evenings are breezy."
+    },
+    {
+     "tr": "Gündüzleri 22-25°C ile harika bir Akdeniz/Çöl kışı sunar. Avrupalıların soğuktan kaçıp riadların teraslarında nane çayı içtiği çok popüler bir aydır.",
+     "en": "With 22–25°C days, it offers a wonderful Mediterranean/desert winter. A very popular month when Europeans escape the cold and sip mint tea on riad terraces."
+    },
+    {
+     "tr": "Gündüzleri pırıl pırıl bir güneş, geceleri keskin soğuk. Yılbaşını Sahra Çölü'ndeki lüks çadır kamplarında geçirmek dünya çapında bir trenddir.",
+     "en": "Brilliant sunshine by day, sharp cold at night. Spending New Year's Eve in a luxury tented camp in the Sahara Desert is a worldwide trend."
+    }
+   ]
+  },
+  "milan": {
+   "country": "IT",
+   "months": [
+    {
+     "tr": "Hava gri, sisli ve oldukça soğuktur. Ancak \"Saldi\" (kış indirimleri) başlar, alışveriş tutkunları için yılın en iyi ayıdır.",
+     "en": "The weather is gray, foggy and quite cold. But the \"Saldi\" (winter sales) begin, making it the best month of the year for shopping lovers."
+    },
+    {
+     "tr": "Moda Haftası (Milan Fashion Week) nedeniyle şehir dünyaca ünlü yıldızlar ve modellerle dolar, oteller çok pahalıdır.",
+     "en": "Milan Fashion Week fills the city with world-famous stars and models, and hotels are very expensive."
+    },
+    {
+     "tr": "Havanın kırılmaya başladığı, güneşin yüzünü gösterdiği aydır. Duomo katedralinin çatısına çıkmak için güzel bir zamandır.",
+     "en": "The month when the weather starts to soften and the sun shows its face. A good time to climb up to the roof of the Duomo cathedral."
+    },
+    {
+     "tr": "Uluslararası Mobilya ve Tasarım Haftası (Salone del Mobile) şehrin en kalabalık ve en pahalı dönemini yaratır. Her yer sergilerle doludur.",
+     "en": "The International Furniture and Design Week (Salone del Mobile) makes this the city's busiest and most expensive time. Exhibitions are everywhere."
+    },
+    {
+     "tr": "İlkbaharın en güzel yaşandığı dönem. Navigli (kanallar) bölgesindeki kafeler sokağa taşar, aperitivo (İtalyan işi happy hour) saatleri şenlenir.",
+     "en": "Spring at its finest. Cafés in the Navigli (canals) district spill out onto the streets, and aperitivo (Italian-style happy hour) comes alive."
+    },
+    {
+     "tr": "Yaz sıcakları bastırır, açık hava konserleri başlar. Gündüz gezilerinden ziyade akşam etkinlikleri öne çıkar.",
+     "en": "The summer heat sets in and open-air concerts begin. Evening events take center stage rather than daytime sightseeing."
+    },
+    {
+     "tr": "Oldukça sıcak ve nemlidir, kanallar bölgesinde sivrisinekler artabilir. Birçok Milanolu hafta sonları Como Gölü'ne kaçar.",
+     "en": "Quite hot and humid, and mosquitoes can multiply around the canals. Many Milanese escape to Lake Como on weekends."
+    },
+    {
+     "tr": "İtalya'nın meşhur \"Ferragosto\" tatili. Şehir kelimenin tam anlamıyla boşalır, birçok lokal restoran ve butik kepenk kapatır. Kavurucu sıcaktır.",
+     "en": "Italy's famous \"Ferragosto\" holiday. The city literally empties out, and many local restaurants and boutiques pull down their shutters. Scorching hot."
+    },
+    {
+     "tr": "Şehir tekrar uyanır, sonbahar Moda Haftası başlar. Sıcaklar yavaş yavaş düşer, akşamları dışarıda oturmak çok keyiflidir.",
+     "en": "The city wakes up again and the autumn Fashion Week begins. The heat gradually eases, and sitting outside in the evenings is a real pleasure."
+    },
+    {
+     "tr": "Serin ama inanılmaz şık bir sonbahar. Leonardo da Vinci'nin Son Akşam Yemeği freskini veya Brera sanat galerisini gezmek için idealdir.",
+     "en": "A cool but incredibly stylish autumn. Ideal for seeing Leonardo da Vinci's Last Supper fresco or the Brera art gallery."
+    },
+    {
+     "tr": "Yağmurlu, gri ve kasvetli İtalya kışı. Şık kafelerde espresso ve panettone (İtalyan keki) eşliğinde kapalı alan planları yapılmalıdır.",
+     "en": "Rainy, gray and gloomy Italian winter. Make indoor plans in chic cafés over espresso and panettone (Italian cake)."
+    },
+    {
+     "tr": "Sant'Ambrogio kutlamaları ve ünlü \"Oh Bej! Oh Bej!\" pazarı kurulur. Galleria Vittorio Emanuele II ışıl ışıl olur, şık bir kış rotasıdır.",
+     "en": "The Sant'Ambrogio celebrations take place and the famous \"Oh Bej! Oh Bej!\" market is set up. The Galleria Vittorio Emanuele II glitters with lights; a stylish winter destination."
+    }
+   ]
+  },
+  "munich": {
+   "country": "DE",
+   "months": [
+    {
+     "tr": "Çok soğuk ve genellikle karlı. Münih'ten Alpler'e (Zugspitze vb.) günübirlik kayak turları yapmak için harika bir ana üstür.",
+     "en": "Very cold and usually snowy. A great base for day ski trips from Munich to the Alps (Zugspitze, etc.)."
+    },
+    {
+     "tr": "Bavyera usulü karnaval \"Fasching\" kutlanır. Sokaklarda kostümlü insanlar, tatlı çörekler (Krapfen) ve soğuk kış havası vardır.",
+     "en": "\"Fasching\", the Bavarian-style carnival, is celebrated. Expect costumed people in the streets, sweet doughnuts (Krapfen) and cold winter weather."
+    },
+    {
+     "tr": "Havanın dengesiz olduğu dönem. Oktoberfest'in küçük kardeşi sayılan \"Starkbierfest\" (Sert Bira Festivali) kapalı salonlarda coşkuyla kutlanır.",
+     "en": "A time of unsettled weather. \"Starkbierfest\" (Strong Beer Festival), seen as Oktoberfest's little sibling, is celebrated with gusto in indoor halls."
+    },
+    {
+     "tr": "İlkbahar güneşi parkları yeşillendirir. Theresienwiese alanında \"Frühlingsfest\" (Bahar Festivali) başlar; çadırlar, bira ve lunapark kurulur.",
+     "en": "The spring sun turns the parks green. \"Frühlingsfest\" (Spring Festival) kicks off on the Theresienwiese, with tents, beer and a funfair."
+    },
+    {
+     "tr": "Bira bahçesi (Biergarten) sezonu resmi olarak açılır! Englischer Garten'da (İngiliz Bahçesi) yürüyüş yapmak ve kestane ağaçları altında vakit geçirmek mükemmeldir.",
+     "en": "Beer garden (Biergarten) season officially opens! Walking in the Englischer Garten (English Garden) and spending time under the chestnut trees is perfect."
+    },
+    {
+     "tr": "Günler çok uzundur, hava ılıman ve tatlıdır. İngiliz Bahçesi'nde (Englischer Garten) Isar kıyısında güneşlenmek ve bira bahçelerinde uzun akşamlar geçirmek klasik bir yaz aktivitesidir.",
+     "en": "The days are very long, and the weather is mild and pleasant. Sunbathing on the banks of the Isar in the English Garden (Englischer Garten) and long evenings in the beer gardens are classic summer activities."
+    },
+    {
+     "tr": "Yazın tam ortası. Tollwood Yaz Festivali düzenlenir, Starnberg gibi Bavyera göllerinde yüzmek ve piknik yapmak çok popülerdir.",
+     "en": "Midsummer. The Tollwood Summer Festival takes place, and swimming and picnicking at Bavarian lakes such as Lake Starnberg are very popular."
+    },
+    {
+     "tr": "Sıcaklar devam eder ancak Bavyera yazında yağmur sürprizleri her zaman olabilir. Şehir biraz daha sakindir.",
+     "en": "The heat continues, but a Bavarian summer can always surprise you with rain. The city is a little quieter."
+    },
+    {
+     "tr": "EFSANE BAŞLAR! Dünyanın en büyük festivali OKTOBERFEST eylül ayının ortasında kapılarını açar. Milyonlarca insan, dev çadırlar, Bavyera kıyafetleri... Oteller aylar öncesinden tükenir.",
+     "en": "THE LEGEND BEGINS! The world's biggest festival, OKTOBERFEST, opens its doors in mid-September. Millions of people, giant tents, Bavarian costumes... Hotels sell out months in advance."
+    },
+    {
+     "tr": "Oktoberfest ayın ilk haftasında biter. Sonrasında muazzam bir sessizlik ve sonbahar renkleri şehre hâkim olur. Sakin gezginler için harikadır.",
+     "en": "Oktoberfest ends in the first week of the month. After that, a tremendous calm and autumn colors take over the city. Wonderful for travelers who like it quiet."
+    },
+    {
+     "tr": "Turizmin en ölü ve şehrin en gri ayı. Havanın hızla soğuduğu bu dönemde kapalı alanlardaki devasa teknik müzeler (Deutsches Museum) gezilebilir.",
+     "en": "The deadest month for tourism and the city's grayest. As the weather turns cold fast, you can explore the vast indoor technology museums (Deutsches Museum)."
+    },
+    {
+     "tr": "Marienplatz'da Bavyera'nın en güzel Christkindlmarkt'ı (Noel Pazarı) kurulur. Tarçınlı kurabiye ve sıcak şarap (Glühwein) kokuları şehri sarar.",
+     "en": "Bavaria's most beautiful Christkindlmarkt (Christmas market) is set up on Marienplatz. The scents of cinnamon cookies and mulled wine (Glühwein) fill the city."
+    }
+   ]
+  },
+  "new-york": {
+   "country": "US",
+   "months": [
+    {
+     "tr": "Dondurucu fırtınalar ve kar görülebilir. Broadway Week ile tiyatro biletleri, Restaurant Week ile lüks mekanlar yarı fiyatınadır. Bütçe dostu kış turizmi.",
+     "en": "Freezing storms and snow are possible. Broadway Week makes theater tickets half price, and Restaurant Week does the same for upscale restaurants. Budget-friendly winter travel."
+    },
+    {
+     "tr": "Sert kış devam eder ama Moda Haftası şehre büyük bir stil katar. MoMA, MET gibi devasa müzelerde bütün gün geçirmek için idealdir.",
+     "en": "The harsh winter continues, but Fashion Week brings a big dose of style to the city. Ideal for spending a whole day in huge museums like MoMA and the Met."
+    },
+    {
+     "tr": "Rüzgarlı ve değişken hava. 17 Mart St. Patrick Günü yürüyüşüyle 5. Cadde yeşile boyanır, İrlanda pubları dolup taşar.",
+     "en": "Windy, changeable weather. On March 17 the St. Patrick's Day Parade turns Fifth Avenue green, and Irish pubs overflow."
+    },
+    {
+     "tr": "Central Park uyanır! Kiraz çiçekleri açar, hava güneşli ve tatlı bir serinliktedir. Yürüyerek şehri keşfetmek için harika bir dönem.",
+     "en": "Central Park wakes up! Cherry blossoms bloom, and the weather is sunny with a pleasant coolness. A great time to explore the city on foot."
+    },
+    {
+     "tr": "Kusursuz New York ilkbaharı! Çatı barları (rooftop) açılır, Brooklyn Köprüsü'nde yürümek veya High Line parkında gezmek için en iyi zamandır.",
+     "en": "Flawless New York spring! Rooftop bars open, and it's the best time to walk across the Brooklyn Bridge or stroll the High Line."
+    },
+    {
+     "tr": "Yaz sıcakları bastırır, nem artar. Parklarda ücretsiz açık hava sinemaları ve SummerStage konserleri başlar.",
+     "en": "The summer heat sets in and the humidity rises. Free outdoor movie screenings in the parks and SummerStage concerts begin."
+    },
+    {
+     "tr": "Beton ormanında sıcak ve nem çok bunaltıcı olabilir. 4 Temmuz Bağımsızlık Günü havai fişek gösterileri olağanüstüdür ama gündüz gezmek klimalı yerler gerektirir.",
+     "en": "In the concrete jungle, the heat and humidity can be stifling. The Fourth of July Independence Day fireworks are spectacular, but daytime sightseeing calls for air-conditioned places."
+    },
+    {
+     "tr": "Cehennem gibi sıcak ve çok nemli. Yerli halk Hamptons'a kaçar. Metro istasyonları sauna gibi olabilir, turistler için fiziksel olarak en zor aydır.",
+     "en": "Hellishly hot and very humid. Locals escape to the Hamptons. Subway stations can feel like saunas; physically the toughest month for tourists."
+    },
+    {
+     "tr": "Yılın en iyi aylarından biri! Nemin kırılmasıyla hava muhteşem olur. US Open tenis turnuvası, Moda Haftası ve harika bir sokak enerjisi vardır.",
+     "en": "One of the best months of the year! As the humidity breaks, the weather turns glorious. There's the US Open tennis tournament, Fashion Week and a fantastic street energy."
+    },
+    {
+     "tr": "Tam bir sinema filmi gibi Central Park! Ağaçlar sarı ve kırmızıya döner. Cadılar Bayramı (Halloween) geçidiyle Greenwich Village inanılmaz eğlenceli olur.",
+     "en": "Central Park looks straight out of a movie! The trees turn yellow and red. The Halloween parade makes Greenwich Village incredibly fun."
+    },
+    {
+     "tr": "Keskin kış soğuğu başlar. Macy's Şükran Günü Geçidi (dev balonlar) yapılır. Ay sonuna doğru mağazaların efsanevi yılbaşı vitrinleri açılır.",
+     "en": "The sharp winter cold sets in. Macy's Thanksgiving Day Parade (giant balloons) takes place. Toward the end of the month, the stores' legendary holiday windows are unveiled."
+    },
+    {
+     "tr": "Dünyanın en popüler kış rotası. Rockefeller ağacı, buz pateni pistleri, ışıl ışıl sokaklar. Çok pahalı ve kalabalıktır ama o sihirli ruhu yaşatır.",
+     "en": "The world's most popular winter destination. The Rockefeller Center tree, ice-skating rinks, sparkling streets. Very expensive and crowded, but it brings that magical spirit to life."
+    }
+   ]
+  },
+  "paris": {
+   "country": "FR",
+   "months": [
+    {
+     "tr": "Gri gökyüzü, çiseleyen yağmur ve soğuk. Romantiktir ancak açık havada çok vakit geçirilmez. Kış indirimleri (Soldes) başlar, Louvre nispeten sakindir.",
+     "en": "Grey skies, drizzle and cold. It's romantic, but you won't spend much time outdoors. The winter sales (Soldes) begin and the Louvre is relatively quiet."
+    },
+    {
+     "tr": "14 Şubat için dünya başkentidir ancak hava hâlâ kasvetlidir. Kafelerde cam kenarında oturup sıcak çikolata içmek ve kruvasan yemek en güzel aktivitedir.",
+     "en": "It's the world capital of Valentine's Day (14 February), but the weather is still gloomy. Sitting by a café window with a hot chocolate and a croissant is the best thing to do."
+    },
+    {
+     "tr": "Ağaçlar tomurcuklanır ancak hâlâ inceden üşütür. Seine Nehri boyunca kısa yürüyüşler yapmak için güneşli saatler kollanır.",
+     "en": "The trees start to bud, but there's still a slight chill in the air. Sunny spells are worth catching for short walks along the Seine."
+    },
+    {
+     "tr": "Meşhur \"April in Paris\" (Paris'te Nisan) mevsimi! Lüksemburg ve Tuileries bahçeleri çiçek açar, kafelerin dış mekanları canlanır. Harikadır.",
+     "en": "The famous \"April in Paris\" season! The Luxembourg and Tuileries gardens burst into bloom and café terraces come alive. Simply wonderful."
+    },
+    {
+     "tr": "Gezmek için en kusursuz, en şiirsel dönem. Roland Garros tenis turnuvası başlar. Teras kültürünün ve pikniklerin tadı çıkarılır, yüksek sezondur.",
+     "en": "The most flawless, most poetic time to visit. The Roland Garros tennis tournament begins. Terrace culture and picnics are at their best; it's high season."
+    },
+    {
+     "tr": "Günler çok uzundur (akşam 10'a kadar aydınlık). Ayın başında Nuit Blanche (Beyaz Gece) ile sanat etkinlikleri sabaha kadar ücretsiz sürer; 21 Haziran Müzik Bayramı (Fête de la Musique) ile de sokaklar, köşe başları sahnelerle dolar.",
+     "en": "The days are very long (light until 10 pm). Early in the month, Nuit Blanche (White Night) keeps free art events going until morning, and on 21 June the Fête de la Musique (Music Day) fills the streets and street corners with stages."
+    },
+    {
+     "tr": "Sıcaklık artar, 14 Temmuz Bastille Günü (ulusal bayram) Eyfel Kulesi arkasından muazzam havai fişeklerle kutlanır. Seine kıyısına suni plajlar (Paris Plages) kurulur.",
+     "en": "Temperatures rise, and 14 July, Bastille Day (the national holiday), is celebrated with spectacular fireworks behind the Eiffel Tower. Artificial beaches (Paris Plages) are set up along the Seine."
+    },
+    {
+     "tr": "Çok sıcak! Parislilerin geleneksel tatil ayıdır, bu nedenle birçok bağımsız fırın, peynirci ve lokal restoran bir ay kapalı kalabilir. Turistlerle baş başa kalınır.",
+     "en": "Very hot! It's the Parisians' traditional holiday month, so many independent bakeries, cheese shops and local restaurants may close for the whole month. You're left alone with the tourists."
+    },
+    {
+     "tr": "Parisliler şehre döner (La Rentrée). İnanılmaz şık bir hava hakimdir, sıcaklık mükemmel dengededir, moda haftası heyecanı vardır.",
+     "en": "Parisians return to the city (La Rentrée). An incredibly chic atmosphere takes over, temperatures are just right, and Fashion Week brings its buzz."
+    },
+    {
+     "tr": "Altın renkli yapraklarıyla parklar tablo gibidir. Yaz kalabalığı çekilir, müzeleri ve sergileri gezmek keyiflidir. Şahane bir aydır.",
+     "en": "With their golden leaves, the parks look like paintings. The summer crowds have gone, and museums and exhibitions are a pleasure to visit. A superb month."
+    },
+    {
+     "tr": "Romantik sonbaharın yerini karanlık, yağmurlu ve rüzgarlı günlere bıraktığı ay. \"Beaujolais Nouveau\" (yeni şarap) tadım günleri ile iç mekanlar hareketlenir.",
+     "en": "The month when romantic autumn gives way to dark, rainy and windy days. \"Beaujolais Nouveau\" (new wine) tasting days liven up indoor venues."
+    },
+    {
+     "tr": "Işıklar Şehri (City of Lights) unvanının hakkını verir. Champs-Élysées ağaçları ışıklandırılır, Galeries Lafayette'in devasa kubbe ağacı görülmeye değerdir.",
+     "en": "Paris lives up to its title of City of Light. The trees along the Champs-Élysées are lit up, and the giant tree beneath the Galeries Lafayette dome is well worth seeing."
+    }
+   ]
+  },
+  "prague": {
+   "country": "CZ",
+   "months": [
+    {
+     "tr": "Masalsı ama dondurucu! Karlı Karl Köprüsü manzarası eşsizdir ancak sıcaklık sık sık sıfırın altındadır. İçinizi ısıtmak için bol bol trdelnik tatlısı yersiniz.",
+     "en": "Fairy-tale but freezing! The view of a snow-covered Charles Bridge is unmatched, but temperatures are often below zero. You'll eat plenty of trdelník pastries to warm yourself up."
+    },
+    {
+     "tr": "Sert soğuklar devam eder. Geleneksel Çek yemekleri (gulaş, ördek) yiyip lokal birahanelerde vakit geçirmek için çok uygundur.",
+     "en": "The harsh cold continues. A great time to eat traditional Czech dishes (goulash, duck) and while away the hours in local beer halls."
+    },
+    {
+     "tr": "Paskalya pazarları meydanlara kurulmaya başlar, ahşap kulübeler ve boyalı yumurtalar şehri renklendirir ancak hava hâlâ serin ve dengesizdir.",
+     "en": "Easter markets start going up on the squares, with wooden stalls and painted eggs adding colour to the city, but the weather is still cool and changeable."
+    },
+    {
+     "tr": "İlkbahar kendini hissettirir. Petrin Tepesi yeşillenir ve çiçek açar, nehir kenarında yürüyüşler keyifli hale gelir.",
+     "en": "Spring makes itself felt. Petřín Hill turns green and bursts into bloom, and riverside walks become a pleasure."
+    },
+    {
+     "tr": "Prag Bahar Uluslararası Müzik Festivali ile şehir klasik müziğe doyar. Yürüyerek keşfetmek için harika bir hava, ne çok sıcak ne çok soğuk.",
+     "en": "The city gets its fill of classical music with the Prague Spring International Music Festival. Great weather for exploring on foot: neither too hot nor too cold."
+    },
+    {
+     "tr": "Yaz sezonu açılır. Letna Park gibi yüksek manzaralı parklardaki büyük bira bahçeleri tıklım tıklım dolar, güneşli uzun günler başlar.",
+     "en": "The summer season opens. The big beer gardens in parks with sweeping views, like Letná Park, are packed, and long sunny days begin."
+    },
+    {
+     "tr": "Tarihi şehir merkezindeki dar sokaklar aşırı kalabalık ve sıcaktır. Astronomik Saat ve Prag Kalesi çevresinde adım atmak zorlaşabilir.",
+     "en": "The narrow streets of the historic centre are extremely crowded and hot. Getting around the Astronomical Clock and Prague Castle can be a struggle."
+    },
+    {
+     "tr": "Sıcak hava devam eder. Vltava Nehri'nde pedallı yunus/kuğu botlarla dolaşmak turistlerin favori serinleme aktivitesidir.",
+     "en": "The hot weather continues. Paddling along the Vltava in dolphin- or swan-shaped pedal boats is the tourists' favourite way to cool off."
+    },
+    {
+     "tr": "Sıcaklar kırılır, kalabalık hafifçe azalır. Aynı zamanda şarap festivali (Vinobraní) zamanıdır, taze şarap (burčák) içmek gelenektir.",
+     "en": "The heat breaks and the crowds thin out a little. It's also wine festival (Vinobraní) time, when drinking young wine (burčák) is a tradition."
+    },
+    {
+     "tr": "Prag'ın gotik ruhuna en çok yakışan ay! Altın sarısı sonbahar yaprakları, hafif serin ve puslu hava şehre inanılmaz estetik, gizemli bir hava katar.",
+     "en": "The month that best suits Prague's Gothic soul! Golden autumn leaves and slightly cool, misty weather give the city an incredibly aesthetic, mysterious air."
+    },
+    {
+     "tr": "Güneş yüzünü çok nadir gösterir, gri ve soğuk günler başlar. Ancak düşük sezon olduğu için otel ve bilet fiyatları ciddi şekilde düşer.",
+     "en": "The sun rarely shows its face and grey, cold days set in. But since it's low season, hotel and ticket prices drop significantly."
+    },
+    {
+     "tr": "Old Town (Eski Şehir) Meydanı Avrupa'nın en iyi Noel pazarlarından birine ev sahipliği yapar. Kavrulmuş badem kokusu ve masalsı ambiyans efsanedir.",
+     "en": "Old Town Square hosts one of the best Christmas markets in Europe. The scent of roasted almonds and the fairy-tale atmosphere are legendary."
+    }
+   ]
+  },
+  "rome": {
+   "country": "IT",
+   "months": [
+    {
+     "tr": "Havanın serin ve güneşli olduğu kış günleri. Kolezyum'da veya Vatikan Müzesi'nde o meşhur saatler süren kuyruklar yoktur, bilet bulmak çok kolaydır.",
+     "en": "Winter days with cool, sunny weather. The famous hours-long queues at the Colosseum and the Vatican Museums are gone, and tickets are very easy to get."
+    },
+    {
+     "tr": "Roma'da kış yumuşak geçer ancak yağmur ihtimali fazladır. Carbonara veya Amatriciana gibi ağır lokal makarnaların hakkını vermek için harika zamandır.",
+     "en": "Winter in Rome is mild, but rain is likely. A great time to do justice to hearty local pastas like carbonara or amatriciana."
+    },
+    {
+     "tr": "Baharın ilk günleri. Hava 15-18°C bandındadır, yürüyüş için çok rahattır. Paskalya haftası (Settimana Santa) bazen bu aya denk gelir, kalabalık artar.",
+     "en": "The first days of spring. Temperatures sit around 15–18°C, very comfortable for walking. Holy Week (Settimana Santa) sometimes falls in this month, and the crowds grow."
+    },
+    {
+     "tr": "21 Nisan \"Roma'nın Kuruluşu\" kutlamalarıyla gladyatör yürüyüşleri yapılır. İspanyol Merdivenleri devasa fuşya açelyalarla süslenir, hava harikadır.",
+     "en": "On 21 April, the \"Birth of Rome\" celebrations bring gladiator parades. The Spanish Steps are decked with huge fuchsia azaleas, and the weather is wonderful."
+    },
+    {
+     "tr": "Kusursuz Akdeniz ilkbaharı! Açık hava kafelerinde Aperol Spritz içmek, dar sokaklarda kaybolmak için en şahane hava; ancak şehir tamamen turist doludur.",
+     "en": "A flawless Mediterranean spring! The perfect weather for sipping Aperol Spritz at open-air cafés and getting lost in narrow streets, but the city is packed with tourists."
+    },
+    {
+     "tr": "Sıcaklıklar artar. Romalıların \"La Passeggiata\" dedikleri akşamüstü şık giyinip sokakta yürüyüş yapma geleneği için en güzel yaz akşamları başlar.",
+     "en": "Temperatures rise. The loveliest summer evenings begin for what Romans call \"La Passeggiata\": the tradition of dressing up in the early evening and strolling through the streets."
+    },
+    {
+     "tr": "Kavurucu sıcak! Taş binalar ve antik kalıntılar (Forum) öğle saatlerinde adeta bir fırına dönüşür. Roma çeşmeleri ve gelato (dondurma) kurtarıcıdır.",
+     "en": "Scorching heat! The stone buildings and ancient ruins (the Forum) practically turn into an oven at midday. Rome's fountains and gelato (ice cream) are lifesavers."
+    },
+    {
+     "tr": "Ferragosto! Roma halkı güneye veya denize kaçar. Kavurucu sıcak (40°C) nedeniyle gündüz sokaklar boşalır, bazı lokal dükkanlar kapanır. Tavsiye edilmez.",
+     "en": "Ferragosto! Romans escape south or to the sea. Because of the scorching heat (40°C), the streets empty during the day and some local shops close. Not recommended."
+    },
+    {
+     "tr": "Yılın en iyi aylarından biri. Yazın bunaltıcı sıcaklığı bitmiş ama akşamları hâlâ ince giysilerle açık havada oturulacak tatlı Akdeniz akşamları kalmıştır.",
+     "en": "One of the best months of the year. The oppressive summer heat is over, but there are still sweet Mediterranean evenings for sitting outdoors in light clothes."
+    },
+    {
+     "tr": "Ünlü \"Ottobrata Romana\" (Ekim altın günleri). Güneşli, ferah, harika bir sıcaklık. Turist yoğunluğu katlanılabilirdir, kesinlikle en çok önerilen aydır.",
+     "en": "The famous \"Ottobrata Romana\" (golden October days). Sunny, fresh and wonderfully warm. Tourist numbers are bearable; it's definitely the most recommended month."
+    },
+    {
+     "tr": "Yılın en çok yağış alan ayı. Hava serinlemeye başlar. Pantheon'da yağmurun oculus'tan (tavan deliğinden) içeri yağışını izlemek için otantik bir dönemdir.",
+     "en": "The wettest month of the year. The weather starts to cool. An authentic time to watch rain falling through the oculus (the opening in the roof) of the Pantheon."
+    },
+    {
+     "tr": "Geleneksel \"Presepi\" (İsa'nın doğuş sahneleri) kiliselerde sergilenir. Navona Meydanı'nda şenlikler kurulur. Hava serindir ama dondurucu değildir.",
+     "en": "Traditional \"Presepi\" (Nativity scenes) are displayed in churches. Festivities fill Piazza Navona. The weather is cool but not freezing."
+    }
+   ]
+  },
+  "sarajevo": {
+   "country": "BA",
+   "months": [
+    {
+     "tr": "Kışın en sert olduğu, karlar altındaki aydır. Yakınlardaki Jahorina ve Bjelašnica dağlarında kayak yapmak isteyenler için ana sezon başlar.",
+     "en": "The snowbound month when winter is at its harshest. The main season begins for skiers on the nearby Jahorina and Bjelašnica mountains."
+    },
+    {
+     "tr": "Dondurucu soğuklar devam eder. Başçarşı'da kapalı mekanlara sığınıp Boşnak kahvesi içmek ve geleneksel tatlıları denemek kışın en güzel aktivitesidir.",
+     "en": "The freezing cold continues. Ducking indoors in Baščaršija for Bosnian coffee and traditional sweets is the best winter activity."
+    },
+    {
+     "tr": "Karlar yavaş yavaş erimeye, bahar yüzünü göstermeye başlar. Ancak hava hâlâ oldukça serin ve yağışa meyillidir.",
+     "en": "The snow slowly starts to melt and spring begins to show its face. But the weather is still quite cool and prone to rain."
+    },
+    {
+     "tr": "Şehir yeşillenir. Miljacka Nehri kenarında yürüyüş yapmak ve tarihi sokakları dondurucu soğuk olmadan gezmek için ideal geçiş ayıdır.",
+     "en": "The city turns green. An ideal transition month for walks along the Miljacka River and exploring the historic streets without the freezing cold."
+    },
+    {
+     "tr": "Kusursuz bir bahar! Açık hava kafeleri dolar, hava ne terletir ne üşütür. Şehri baştan başa yürüyerek keşfetmek için en güzel aydır.",
+     "en": "A flawless spring! Open-air cafés fill up, and the weather is neither too hot nor too cold. The best month to explore the whole city on foot."
+    },
+    {
+     "tr": "Yaz başlar. Hava oldukça sıcaktır ama bunaltıcı değildir. Akşamları Saraybosna sokaklarında inanılmaz canlı bir enerji hakim olur.",
+     "en": "Summer begins. It's quite hot but not oppressive. In the evenings, an incredibly lively energy fills the streets of Sarajevo."
+    },
+    {
+     "tr": "Sıcak ve kalabalıktır. Yaz turizmi zirvededir, şehir turistlerle dolup taşar.",
+     "en": "Hot and crowded. Summer tourism is at its peak, and the city overflows with visitors."
+    },
+    {
+     "tr": "En sıcak aydır. Gündüzleri yürümek yorucu olabilir. Ayın ortasında meşhur Saraybosna Film Festivali yapılır, şehir Hollywood yıldızlarıyla ve turistlerle dolup taşar. Otel fiyatları zirvededir.",
+     "en": "The hottest month. Walking around during the day can be tiring. The famous Sarajevo Film Festival takes place mid-month, and the city overflows with Hollywood stars and tourists. Hotel prices peak."
+    },
+    {
+     "tr": "Cehennem sıcakları biter, muazzam bir Balkan sonbaharı başlar. Kültürel ve tarihi geziler için yılın en konforlu zamanlarındandır.",
+     "en": "The scorching heat ends and a magnificent Balkan autumn begins. One of the most comfortable times of the year for cultural and historical sightseeing."
+    },
+    {
+     "tr": "Başçarşı çevresindeki tepelerin sarı ve kızıla büründüğü fotojenik bir aydır. Akşamları serinlese de gündüz gezmek için harikadır.",
+     "en": "A photogenic month when the hills around Baščaršija turn yellow and red. Evenings get cool, but daytime is wonderful for exploring."
+    },
+    {
+     "tr": "Hızlı bir soğuma başlar, yağmur ve pus şehre çöker. Hüzünlü ama tarihi dokuya yakışan bir atmosfere bürünür, müzeler için idealdir.",
+     "en": "A rapid cool-down begins, and rain and mist settle over the city. It takes on a melancholy atmosphere that suits its historic fabric; ideal for museums."
+    },
+    {
+     "tr": "Kış soğukları ve kar geri döner. Şehir merkezindeki Holiday Market ile yeni yıl ruhu başlar. Kayak merkezleri tekrar hareketlenir.",
+     "en": "Winter cold and snow return. The Holiday Market in the city centre kicks off the New Year spirit. The ski resorts come back to life."
+    }
+   ]
+  },
+  "seoul": {
+   "country": "KR",
+   "months": [
+    {
+     "tr": "Sibirya rüzgarları nedeniyle dondurucu, kuru ve bıçak gibi kesen bir soğuk vardır. Devasa yeraltı alışveriş merkezlerine ve müzelere sığınmak şarttır.",
+     "en": "Siberian winds bring a freezing, dry cold that cuts like a knife. Taking refuge in the huge underground shopping centres and museums is a must."
+    },
+    {
+     "tr": "Dondurucu soğuk devam eder. \"Seollal\" (Ay Yeni Yılı) bayramında birçok dükkan ve restoran kapanır, şehir çok sessizleşir.",
+     "en": "The freezing cold continues. During \"Seollal\" (Lunar New Year), many shops and restaurants close and the city goes very quiet."
+    },
+    {
+     "tr": "Hava ısınmaya başlar ancak Çin ve Moğolistan'dan gelen \"Sarı Toz\" (Hwangsa) fırtınaları hava kalitesini düşürebilir. Maske takmak gerekebilir.",
+     "en": "It starts to warm up, but \"yellow dust\" (Hwangsa) storms blowing in from China and Mongolia can lower the air quality. You may need to wear a mask."
+    },
+    {
+     "tr": "Yılın en güzel ayı! Nisan başında kiraz çiçekleri (Sakura/Beotkkot) Yeouido Park'ı pembeye boyar. İnanılmaz kalabalık ama rüya gibi bir atmosferdir.",
+     "en": "The most beautiful month of the year! In early April, cherry blossoms (Sakura/Beotkkot) paint Yeouido Park pink. Incredibly crowded, but the atmosphere is dreamlike."
+    },
+    {
+     "tr": "Mükemmel bir ilkbahar. Buda'nın Doğum Günü için düzenlenen devasa \"Lotus Fener Festivali\" şehri ışıl ışıl yapar. Gezmek için en rahat aydır.",
+     "en": "A perfect spring. The huge \"Lotus Lantern Festival\" held for Buddha's Birthday lights up the city. The most comfortable month for sightseeing."
+    },
+    {
+     "tr": "Yaz sıcakları ve nem hissedilmeye başlar. Ayın sonuna doğru \"Changma\" yani muson yağmurları sezonu kendini gösterir.",
+     "en": "Summer heat and humidity start to make themselves felt. Towards the end of the month, the \"Changma\", the monsoon rain season, arrives."
+    },
+    {
+     "tr": "Sıcak, inanılmaz nemli ve çok yağışlı! Sürekli terleten ve aniden bastıran sağanaklarla dışarıda gezmenin en zor olduğu aylardandır.",
+     "en": "Hot, incredibly humid and very rainy! With constant sweating and sudden downpours, it's one of the hardest months for getting around outdoors."
+    },
+    {
+     "tr": "Yılın en bunaltıcı, nemli ve sıcak ayı. Tayfun riski bulunur. Sokak gezileri yerine klimalı AVM ve kafelere yönelmek mantıklıdır.",
+     "en": "The most oppressive, humid and hot month of the year. There's a risk of typhoons. It makes sense to swap street wandering for air-conditioned malls and cafés."
+    },
+    {
+     "tr": "Ayın ortasından sonra sıcaklar ve nem düşer. Kore'nin Şükran Günü \"Chuseok\" bu aydadır (şehirden göç olur, bazı yerler kapanır).",
+     "en": "After mid-month, the heat and humidity drop. Korea's Thanksgiving, \"Chuseok\", falls this month (people leave the city en masse and some places close)."
+    },
+    {
+     "tr": "Kusursuz bir sonbahar! Berrak mavi gökyüzü, nemsiz hava. Seul'ün etrafındaki dağlar (Bukhansan) sonbahar renkleriyle (Koyo) yürüyüş için efsanedir.",
+     "en": "A flawless autumn! Clear blue skies and dry air. The mountains around Seoul (Bukhansan) are legendary for hiking amid the autumn colours (Koyo)."
+    },
+    {
+     "tr": "Kızıl ve sarı yaprakların en yoğun olduğu aydır. Saray bahçeleri muhteşem görünür. Ay sonuna doğru hava belirgin şekilde soğumaya başlar.",
+     "en": "The month when red and yellow leaves are at their peak. The palace gardens look magnificent. Towards the end of the month, it gets noticeably colder."
+    },
+    {
+     "tr": "Kış soğukları ve kar şehre geri döner. Myeongdong gibi alışveriş caddeleri inanılmaz ışıklandırmalarla yeni yıl atmosferine girer.",
+     "en": "Winter cold and snow return to the city. Shopping streets like Myeongdong slip into a New Year mood with incredible light displays."
+    }
+   ]
+  },
+  "singapore": {
+   "country": "SG",
+   "months": [
+    {
+     "tr": "Nem oranının diğer aylara göre \"bir tık\" daha düşük olduğu, nispeten en rahat gezilebilen yağışsız dönemin başlangıcıdır.",
+     "en": "The start of the dry season: humidity is \"a notch\" lower than in other months, making it relatively the most comfortable time to get around."
+    },
+    {
+     "tr": "Çin Yeni Yılı etkinlikleriyle Chinatown bölgesi inanılmaz renklidir. Yağışın az olduğu, turistik açıdan çok popüler bir aydır.",
+     "en": "Chinese New Year celebrations make Chinatown incredibly colorful. Rain is scarce, and it's a very popular month with tourists."
+    },
+    {
+     "tr": "Hava sıcak ve güneşlidir. Akşamüstleri kısa süreli tropik sağanaklar görülebilir, şemsiye her zaman gereklidir.",
+     "en": "Hot and sunny. Short tropical downpours can hit in the late afternoon, so always carry an umbrella."
+    },
+    {
+     "tr": "Havanın biraz daha durgun ve bunaltıcı hissettirdiği aylardandır. Yıldırımlı kısa fırtınalar sık görülür.",
+     "en": "One of the months when the air feels a little stiller and more oppressive. Short thunderstorms with lightning are common."
+    },
+    {
+     "tr": "Güneybatı musonunun başladığı, sıcaklığın ve nemin yüksek olduğu dönem. Klimalı dev botanik bahçeleri (Gardens by the Bay) hayat kurtarır.",
+     "en": "The southwest monsoon sets in, bringing high heat and humidity. The giant air-conditioned botanical gardens (Gardens by the Bay) are a lifesaver."
+    },
+    {
+     "tr": "Meşhur \"Büyük Singapur İndirimi\" (Great Singapore Sale) başlar. Alışveriş tutkunları için Orchard Road'da vakit geçirme ayıdır.",
+     "en": "The famous Great Singapore Sale begins. For shopaholics, this is the month to spend time on Orchard Road."
+    },
+    {
+     "tr": "Singapur Yemek Festivali ile sokak lezzetlerinin zirvesidir. Komşu ülkelerdeki orman yangınlarından dolayı bazen \"Haze\" (sis/duman) görülebilir.",
+     "en": "Street food hits its peak with the Singapore Food Festival. Forest fires in neighboring countries sometimes bring \"haze\" (smoke and smog)."
+    },
+    {
+     "tr": "9 Ağustos Ulusal Gün çok coşkulu kutlanır, havai fişek gösterileri şahanedir. Duman/sis (Haze) riski bu ayda da devam edebilir.",
+     "en": "National Day on 9 August is celebrated with great enthusiasm, and the fireworks are spectacular. The risk of haze can continue into this month too."
+    },
+    {
+     "tr": "Sıcak ve nemli hava devam eder, ani ve kısa sağanaklar görülebilir. Klimalı müzeler ve Marina Bay'in akşam ışıkları için güzel bir aydır.",
+     "en": "The hot, humid weather carries on, with sudden short downpours. A nice month for air-conditioned museums and Marina Bay's evening lights."
+    },
+    {
+     "tr": "Dünyaca ünlü Formula 1 Gece Yarışı genellikle ayın başında düzenlenir! O hafta şehir çok enerjiktir ama otel fiyatları astronomik seviyelere çıkar. Ay ilerledikçe kuzeydoğu musonuna hazırlık başlar, yağışlar yavaş yavaş artar.",
+     "en": "The world-famous Formula 1 Night Race is usually held early in the month! That week the city is buzzing, but hotel prices skyrocket to astronomical levels. As the month goes on, the build-up to the northeast monsoon begins and rain gradually increases."
+    },
+    {
+     "tr": "Muson sezonu resmi olarak başlar. Yağmurlar daha uzun ve şiddetlidir. Açık hava planları suya düşebilir.",
+     "en": "The monsoon season officially begins. Rain lasts longer and falls harder. Outdoor plans may get washed out."
+    },
+    {
+     "tr": "Yılın en yağışlı ayıdır ancak Orchard Road'un devasa ve ünlü Noel ışıklandırmaları şehri masalsı bir havaya sokar.",
+     "en": "The wettest month of the year, but Orchard Road's huge, famous Christmas lights give the city a fairy-tale atmosphere."
+    }
+   ],
+   "note": {
+    "tr": "Singapur ekvatorda olduğu için yıl boyu 30-32°C sıcak ve çok nemlidir. Aylar arası farklar yağış ve festivallerle belirlenir.",
+    "en": "Singapore lies on the equator, so it is hot (30–32°C) and very humid all year round. The months differ mainly in rainfall and festivals."
+   }
+  },
+  "stockholm": {
+   "country": "SE",
+   "months": [
+    {
+     "tr": "Karanlık, dondurucu ve karlı. Güneş 08:30 gibi doğup 15:00 gibi batar. Müzeler (Vasa, ABBA) ve \"Fika\" (İsveç kahve molası) kültürü için uygundur.",
+     "en": "Dark, freezing and snowy. The sun rises around 08:30 and sets around 15:00. Good for museums (Vasa, ABBA) and the culture of \"fika\" (the Swedish coffee break)."
+    },
+    {
+     "tr": "Göller ve kanallar donar; yerel halk buz pateni yapar. Soğuğa dayanıklı olanlar için otantik bir İskandinav kışı deneyimi sunar.",
+     "en": "Lakes and canals freeze over and locals go ice skating. For those who can handle the cold, it offers an authentic Scandinavian winter experience."
+    },
+    {
+     "tr": "Günler hızla uzamaya başlasa da hava hâlâ çok soğuktur. Bahar kıyafetleri için çok erkendir.",
+     "en": "The days start getting longer fast, but it's still very cold. It's far too early for spring clothes."
+    },
+    {
+     "tr": "Ay sonuna doğru \"Valborg\" ateşiyle baharın gelişi kutlanır ancak hava rüzgarlı ve tahmin edilemezdir.",
+     "en": "Towards the end of the month, the arrival of spring is celebrated with \"Valborg\" (Walpurgis Night) bonfires, but the weather is windy and unpredictable."
+    },
+    {
+     "tr": "Kungsträdgården parkında kiraz çiçekleri açar. Şehir yeşermeye, sıcaklıklar yürüyüş yapılabilir seviyelere çıkmaya başlar. Harikadır.",
+     "en": "Cherry blossoms bloom in Kungsträdgården park. The city turns green and temperatures start climbing to good walking levels. Wonderful."
+    },
+    {
+     "tr": "\"Midsommar\" (Yaz Dönümü) çılgınlığı! Gündüzler neredeyse hiç bitmez (20 saat aydınlık). İnsanlar adalarına (takımadalar) kaçar.",
+     "en": "\"Midsommar\" (Midsummer) madness! The days barely end (20 hours of daylight). People escape to their islands (the archipelago)."
+    },
+    {
+     "tr": "Yılın en sıcak ve en güneşli ayı (22-25°C). Feribotlara atlayıp takımadaları gezmek, limanda denize girmek için kusursuzdur.",
+     "en": "The warmest and sunniest month of the year (22-25°C). Perfect for hopping on ferries to explore the archipelago and swimming in the harbor."
+    },
+    {
+     "tr": "Uzun ve sıcak yaz günleri devam eder. İsveçlilerin meşhur \"Kerevit Partileri\" (Kräftskiva) dönemi başlar. İdeal bir seyahat ayıdır.",
+     "en": "Long, warm summer days continue. The season of the Swedes' famous \"crayfish parties\" (kräftskiva) begins. An ideal month to travel."
+    },
+    {
+     "tr": "Havalar hızla soğur, turist kalabalığı biter. Keskin, temiz bir sonbahar havası vardır, parklar sararmaya başlar.",
+     "en": "It cools down quickly and the tourist crowds are gone. The autumn air is crisp and clean, and the parks begin to turn yellow."
+    },
+    {
+     "tr": "Güneşin yerini gri gökyüzü ve rüzgara bıraktığı karanlık kışa geçiş ayı. İç mekan aktivitelerine odaklanmak gerekir.",
+     "en": "The month of transition into the dark winter, when the sun gives way to gray skies and wind. Time to focus on indoor activities."
+    },
+    {
+     "tr": "Yılın belki de en zor ayı. Kar tam tutmaz ancak sürekli dondurucu bir yağmur/sulu kar ve kasvet vardır. Günler çok kısadır.",
+     "en": "Perhaps the toughest month of the year. The snow doesn't really settle, but there's constant freezing rain/sleet and gloom. The days are very short."
+    },
+    {
+     "tr": "Karanlığı Noel ışıkları ve mumlar bozar (Azize Lucia Günü). Gamla Stan'da (Eski Şehir) pazar kurulur, sıcak Glögg (baharatlı şarap) içilir.",
+     "en": "Christmas lights and candles break the darkness (St. Lucia's Day). A market sets up in Gamla Stan (the Old Town), and people sip hot glögg (spiced wine)."
+    }
+   ]
+  },
+  "tbilisi": {
+   "country": "GE",
+   "months": [
+    {
+     "tr": "Hava serin ve zaman zaman karlı olabilir. Kükürt hamamlarında (Abanotubani) ısınmak ve Gürcü mutfağının tadını çıkarmak için ideal kış rotasıdır.",
+     "en": "The weather is cool and can occasionally be snowy. An ideal winter destination for warming up in the sulfur baths (Abanotubani) and enjoying Georgian cuisine."
+    },
+    {
+     "tr": "Turizm açısından yılın en sakin ve ölü ayıdır. Fiyatlar çok düşüktür ancak hava yürüyüş için fazlasıyla soğuk olabilir.",
+     "en": "The quietest, deadest month of the year for tourism. Prices are very low, but it can be far too cold for walking around."
+    },
+    {
+     "tr": "Bahar rüzgarları sert esse de hava ısınmaya başlar. Şehrin tepelerindeki karlar yavaş yavaş erir.",
+     "en": "The spring winds may blow hard, but the weather starts to warm up. The snow on the city's hills slowly melts."
+    },
+    {
+     "tr": "Ağaçlar yeşerir, tarihi ahşap balkonlu evlerin olduğu sokakları gezmek keyifli hale gelir. Ortodoks Paskalyası dönemi renkli geçer.",
+     "en": "The trees turn green, and strolling the streets lined with historic wooden-balconied houses becomes a pleasure. The Orthodox Easter period is a colorful time."
+    },
+    {
+     "tr": "Yılın açık ara en güzel aylarından biri! Şehir cıvıl cıvıldır, sıcaklık 20-25°C arasındadır. Akşamüstü şarap teraslarında oturmak harikadır.",
+     "en": "Hands down one of the most beautiful months of the year! The city is buzzing and temperatures sit between 20-25°C. Sitting on a wine terrace in the late afternoon is wonderful."
+    },
+    {
+     "tr": "Yaz kendini iyice hissettirir, hava oldukça ısınır ancak Kafkaslardan gelen esintiler sayesinde boğucu bir hal almaz.",
+     "en": "Summer really makes itself felt and it gets quite hot, but breezes from the Caucasus keep it from becoming stifling."
+    },
+    {
+     "tr": "Çok sıcak! Nem olmasa da güneş yakıcıdır. Yerel halk Kazbegi gibi Kafkas Dağları'na kaçar, gündüz şehir merkezinde gezmek yorucudur.",
+     "en": "Very hot! It isn't humid, but the sun is scorching. Locals escape to the Caucasus Mountains, to places like Kazbegi, and sightseeing in the city center during the day is exhausting."
+    },
+    {
+     "tr": "Sıcaklığın ve kuraklığın zirvesi. Tiflis yerine Batum'a veya dağlık bölgelere (Svaneti) rota çevirmek daha mantıklı bir tatil planıdır.",
+     "en": "The peak of the heat and drought. Rather than Tbilisi, heading for Batumi or the mountain regions (Svaneti) makes for a smarter holiday plan."
+    },
+    {
+     "tr": "Sıcaklar düşer, mükemmel bir hava başlar. Aynı zamanda meşhur \"Rtveli\" (üzüm hasadı) zamanıdır; şarap rotaları ve festivaller için en iyi aydır.",
+     "en": "The heat eases and wonderful weather sets in. It's also the time of the famous \"Rtveli\" (grape harvest); the best month for wine routes and festivals."
+    },
+    {
+     "tr": "Sonbahar renkleri Narikala Kalesi'ne çıkarken efsane manzaralar sunar. \"Tbilisoba\" (Şehir Festivali) ile sokaklarda mangallar yanar, şenlik yapılır.",
+     "en": "Autumn colors offer epic views on the way up to Narikala Fortress. During \"Tbilisoba\" (the City Festival), barbecues fire up in the streets and the city celebrates."
+    },
+    {
+     "tr": "Yağmurlar artar, kışa hızlı bir geçiş yapılır. Ancak kapalı mekanlarda Khinkali ve Khachapuri yiyerek gastronomi turizmi için gayet uygundur.",
+     "en": "The rain picks up and winter arrives quickly. Still, it's perfect for food tourism, enjoying khinkali and khachapuri indoors."
+    },
+    {
+     "tr": "Rustaveli Caddesi olağanüstü yılbaşı ışıklarıyla donatılır. Avrupa ayarında, çok canlı ama daha ekonomik bir yeni yıl deneyimi sunar.",
+     "en": "Rustaveli Avenue is decked out in spectacular New Year lights. It offers a very lively New Year experience on a par with Europe, but more affordable."
+    }
+   ]
+  },
+  "tokyo": {
+   "country": "JP",
+   "months": [
+    {
+     "tr": "Hava oldukça soğuk ve kurudur, az yağış alır. Gökyüzü genelde pırıl pırıl mavidir, bu yüzden Fuji Dağı'nı şehirden görmek için en şanslı aydır.",
+     "en": "The weather is quite cold and dry, with little rain. The sky is usually a brilliant clear blue, which makes this the luckiest month for spotting Mount Fuji from the city."
+    },
+    {
+     "tr": "Soğuk hava devam eder. Ayın sonuna doğru açan erik (Ume) çiçekleri yaklaşan baharın ilk gizli ve sakin müjdecisidir.",
+     "en": "The cold continues. Plum (ume) blossoms opening towards the end of the month are the first quiet, secret heralds of the coming spring."
+    },
+    {
+     "tr": "Bahar başlar. Ayın sonlarına doğru beklenen mucize gerçekleşir; Sakura (kiraz çiçekleri) açar. Tüm Japonya parklara (Hanami) koşar.",
+     "en": "Spring begins. Towards the end of the month the long-awaited miracle happens: the sakura (cherry blossoms) bloom. All of Japan rushes to the parks (hanami)."
+    },
+    {
+     "tr": "Sakura mevsiminin zirvesi. Yoyogi ve Ueno parkları piknik yapanlarla dolar. Hava harikadır ancak inanılmaz kalabalık ve oteller çok pahalıdır.",
+     "en": "The peak of sakura season. Yoyogi and Ueno parks fill with picnickers. The weather is wonderful, but it's incredibly crowded and hotels are very expensive."
+    },
+    {
+     "tr": "Japonların \"Altın Hafta\" tatilinden (Golden Week - Mayıs ilk haftası) sonra giderseniz hava kusursuz, gökyüzü açık ve gezmek için yılın en rahat zamanıdır.",
+     "en": "If you go after Japan's Golden Week holiday (the first week of May), the weather is perfect, the skies are clear, and it's the most relaxed time of year for sightseeing."
+    },
+    {
+     "tr": "\"Tsuyu\" (Yağmur Sezonu). Hava nemli ve kapalıdır, sürekli çiseleyen bir yağmur vardır. Renkli şemsiyeler ve açan ortancalar fotoğrafçılar için güzeldir.",
+     "en": "\"Tsuyu\" (the rainy season). It's humid and overcast, with constant drizzle. Colorful umbrellas and blooming hydrangeas make it lovely for photographers."
+    },
+    {
+     "tr": "Yağmur sezonu biter, inanılmaz bir sıcak ve bunaltıcı nem başlar. Akşamları devasa \"Hanabi\" (havai fişek) festivalleri ve sokak şenlikleri olur.",
+     "en": "The rainy season ends and incredible heat and oppressive humidity set in. Evenings bring huge \"hanabi\" (fireworks) festivals and street festivities."
+    },
+    {
+     "tr": "Aşırı sıcak, klima olmayan yerlerde nefes almak zorlaşabilir. Ağustos böceklerinin devasa sesi tüm şehri sarar. Turistik gezi fiziksel olarak yorar.",
+     "en": "Extremely hot; breathing can get hard anywhere without air conditioning. The deafening buzz of cicadas fills the whole city. Sightseeing is physically exhausting."
+    },
+    {
+     "tr": "Tayfun sezonudur. Aniden bastıran şiddetli fırtınalar ulaşımı durdurabilir. Sıcaklık hâlâ yüksek olsa da nem yavaş yavaş kırılmaya başlar.",
+     "en": "Typhoon season. Sudden violent storms can bring transport to a halt. Temperatures are still high, but the humidity slowly starts to break."
+    },
+    {
+     "tr": "Sonbahar Tokyo için bir başka kusursuz zamandır. Nemsiz, berrak, ferah ve ılık bir hava hâkimdir. Cadılar Bayramı'nda Shibuya kavşağı çıldırır.",
+     "en": "Autumn is another perfect time for Tokyo. The air is dry, clear, fresh and mild. On Halloween, the Shibuya crossing goes wild."
+    },
+    {
+     "tr": "\"Momiji\" yani kızıl yaprak dönemi. Shinjuku Gyoen parkındaki akçaağaçların kızardığı, havanın serin ve net olduğu muhteşem bir dönemdir.",
+     "en": "\"Momiji\", the season of red leaves. A magnificent time when the maples in Shinjuku Gyoen park turn crimson and the air is cool and crisp."
+    },
+    {
+     "tr": "Kış başlar. Roppongi ve Shibuya sokaklarında dudak uçuklatıcı LED ışıklandırmaları (Winter Illuminations) şehri büyülü bir teknoloji ormanına çevirir.",
+     "en": "Winter begins. Jaw-dropping LED light displays (Winter Illuminations) on the streets of Roppongi and Shibuya turn the city into a magical forest of technology."
+    }
+   ]
+  },
+  "venice": {
+   "country": "IT",
+   "months": [
+    {
+     "tr": "Puslu, sisli, çok soğuk ve gizemli bir aydır. Şehir tamamen boşalır, o turistik karmaşa biter. Melankolik ve romantik fotoğraflar için eşsizdir.",
+     "en": "A hazy, foggy, very cold and mysterious month. The city empties out completely and the tourist chaos is over. Unbeatable for melancholic, romantic photos."
+    },
+    {
+     "tr": "Venedik Karnavalı! Şehir dünyanın dört bir yanından gelen maskeli kostümlerle dolar. İnanılmaz kalabalık, hareketli ve çok pahalıdır.",
+     "en": "The Venice Carnival! The city fills with masked costumes from all over the world. Incredibly crowded, lively and very expensive."
+    },
+    {
+     "tr": "Havanın ısınmaya başladığı ilk aylardır ancak yağmur sürprizleri yapabilir. Kanalların kenarında oturmak yavaş yavaş keyifli hale gelir.",
+     "en": "One of the first months when the weather starts to warm up, though rain can spring surprises. Sitting by the canals gradually becomes a pleasure."
+    },
+    {
+     "tr": "Paskalya dönemi şehre baharı getirir. Havanın güneşli ve çok rahat olduğu bir gezi dönemi başlar ancak kalabalıklar belirgin şekilde artar.",
+     "en": "Easter brings spring to the city. A season of sunny, very pleasant sightseeing weather begins, but the crowds grow noticeably."
+    },
+    {
+     "tr": "Gezmek için en muhteşem ay. Gondol turları için ideal, ılık ve güneşli. Sanat Bienali başlıyorsa şehir kültürel olarak da zirve yapar.",
+     "en": "The most magnificent month to visit. Mild and sunny, ideal for gondola rides. If the Art Biennale is opening, the city hits its cultural peak too."
+    },
+    {
+     "tr": "Yaz sıcakları kendini gösterir. Dar köprülerde ve San Marco Meydanı'nda kalabalıktan yürümek zorlaşabilir.",
+     "en": "The summer heat makes itself felt. Crowds can make walking difficult on the narrow bridges and in St. Mark's Square."
+    },
+    {
+     "tr": "Çok sıcak, inanılmaz kalabalık ve sivrisinekli bir ay. Ayrıca sığ kanallarda sular ısındığı için bazen kötü kokular oluşabilir. Yüksek sezondur.",
+     "en": "A very hot, incredibly crowded, mosquito-ridden month. And as the water warms up in the shallow canals, bad smells can sometimes develop. High season."
+    },
+    {
+     "tr": "En sıcak ve bunaltıcı ay. Dar sokaklarda nem hissedilir. Film Festivali ayın sonunda Lido adasında başlar ve tüm gözler oraya döner.",
+     "en": "The hottest, most oppressive month. You can feel the humidity in the narrow streets. The Film Festival opens on the Lido at the end of the month and all eyes turn there."
+    },
+    {
+     "tr": "Yılın en iyi aylarından bir diğeri. Hem Venedik Film Festivali'nin şıklığı şehri sarar hem de cehennem sıcakları sona erer.",
+     "en": "Another of the best months of the year. The glamour of the Venice Film Festival sweeps over the city, and the hellish heat finally comes to an end."
+    },
+    {
+     "tr": "Muhteşem sonbahar ışığı başlar. Ayın sonuna doğru \"Acqua Alta\" (yüksek su) dönemi başlar; MOSE bariyerleri sayesinde büyük su baskınları artık nadirdir ama San Marco Meydanı gibi alçak yerlerde su birikebilir.",
+     "en": "Magnificent autumn light arrives. Towards the end of the month the \"acqua alta\" (high water) season begins; thanks to the MOSE barriers major floods are now rare, but low spots like St. Mark's Square can still get wet."
+    },
+    {
+     "tr": "Yağmur, gri gökyüzü ve Acqua Alta'nın (yüksek su) en sık görüldüğü aydır. MOSE bariyerleri büyük baskınları önler ama alçak sokaklarda su birikebilir. Turistler azalır, sisli kanallar otantik bir deneyim sunar.",
+     "en": "The month of rain, gray skies and the most frequent acqua alta (high water). The MOSE barriers prevent major floods, but low-lying streets can still flood a little. Tourists thin out, and the misty canals make for an authentic experience."
+    },
+    {
+     "tr": "Dar sokaklar tatlı Noel ışıklarıyla süslenir. Soğuk ve nemli kış havası, kanalların üzerinde sis tabakası yaratır. Oldukça sessiz ve huzurludur.",
+     "en": "The narrow streets are decorated with charming Christmas lights. The cold, damp winter air lays a blanket of fog over the canals. Very quiet and peaceful."
+    }
+   ]
+  },
+  "vienna": {
+   "country": "AT",
+   "months": [
+    {
+     "tr": "Kış soğuğunun en yoğun olduğu aydır. Ünlü Viyana Balo Sezonu bu dönemde açılır. Şık kıyafetlerle klasik müzik konserlerine gitmek için mükemmeldir.",
+     "en": "The month when the winter cold is at its harshest. The famous Viennese ball season opens around this time. Perfect for dressing up and going to classical music concerts."
+    },
+    {
+     "tr": "Dondurucu hava devam eder. Schönbrunn gibi dev sarayların karlı manzaraları güzel olsa da, günün çoğunu müzelerde ve Sachertorte yiyerek kafelerde geçirmek iyidir.",
+     "en": "The freezing weather continues. Snowy views of huge palaces like Schönbrunn are beautiful, but it's best to spend most of the day in museums and in cafés eating Sachertorte."
+    },
+    {
+     "tr": "Paskalya (Ostern) pazarları meydanlara kurulmaya başlar, devasa boyalı yumurtalarla süslenir. Hava hâlâ paltoluktur.",
+     "en": "Easter (Ostern) markets start popping up in the squares, decorated with giant painted eggs. It's still coat weather."
+    },
+    {
+     "tr": "Bahar kendini hissettirir. Prater Eğlence Parkı hareketlenir. Bahçeler yeşillenmeye başlar, güneşli günlerde yürüyüş çok konforludur.",
+     "en": "Spring makes itself felt. The Prater amusement park comes to life. The gardens begin to turn green, and walking on sunny days is very comfortable."
+    },
+    {
+     "tr": "Kusursuz bir aydır! Belvedere ve Schönbrunn saraylarının bahçeleri çiçeklerle dolar. Açık havada klasik müzik tınıları duymaya başlarsınız.",
+     "en": "A flawless month! The gardens of the Belvedere and Schönbrunn palaces fill with flowers. You start to hear strains of classical music in the open air."
+    },
+    {
+     "tr": "Uzun günler, ılık ve ferah akşamlar. Tuna Adası Festivali (Donauinselfest) ile şehir gençleşir ve açık hava etkinlikleriyle dolar taşar.",
+     "en": "Long days, mild and breezy evenings. With the Danube Island Festival (Donauinselfest), the city feels younger and overflows with outdoor events."
+    },
+    {
+     "tr": "Şehir ısınır (bazen 30°C+). Ancak Rathaus (Belediye Binası) önünde devasa Açık Hava Müzik Film Festivali başlar ve akşamları gastronomi şöleni yaşanır.",
+     "en": "The city heats up (sometimes 30°C+). But the huge open-air Music Film Festival kicks off in front of the Rathaus (City Hall), and the evenings turn into a food feast."
+    },
+    {
+     "tr": "Sıcak yaz günleri devam eder. Yerel halk tatile çıkar. Müzeler, saraylar ve kafeler turistlerle doludur. Öğlen sıcaklarında parklarda dinlenmek iyidir.",
+     "en": "Hot summer days continue. Locals head off on holiday. Museums, palaces and cafés are full of tourists. Resting in the parks during the midday heat is a good idea."
+    },
+    {
+     "tr": "Çok şık bir sonbahar başlar. Turist akını yavaşlar, havalar muazzam bir kıvama gelir. Kültür sanat sezonu (Opera, Tiyatro) yeniden açılır.",
+     "en": "A very elegant autumn begins. The tourist rush slows down and the weather becomes just perfect. The arts and culture season (opera, theater) reopens."
+    },
+    {
+     "tr": "\"Müzelerin Uzun Gecesi\" gibi etkinlikler olur. Şehirdeki yüzlerce park altın sarısı yapraklara bürünür. Romantik ve çok konforlu bir gezi ayıdır.",
+     "en": "Events like the \"Long Night of Museums\" take place. Hundreds of parks across the city are cloaked in golden leaves. A romantic and very comfortable month to visit."
+    },
+    {
+     "tr": "Havanın soğuduğu, grisinin arttığı aydır. ANCAK ayın ortasından sonra Avrupa'nın tartışmasız en iyi Noel pazarları kurulmaya başlar ve şehir sihrine kavuşur.",
+     "en": "The month when it gets colder and grayer. BUT from mid-month on, Europe's undisputed best Christmas markets start opening and the city gets its magic back."
+    },
+    {
+     "tr": "Noel Masalı! Rathausplatz ve Karlsplatz'daki muazzam panayırlar, ışıklar, tarçın kokuları ve sıcak şarap (Punsch). Dondurucu soğuk olsa da ruhunuz ısınır.",
+     "en": "A Christmas fairy tale! Magnificent fairs on Rathausplatz and Karlsplatz, lights, the scent of cinnamon, and mulled wine (Punsch). It may be freezing, but your soul warms up."
+    }
+   ]
+  }
+ },
+ "best": {
+  "1": [
+   {
+    "city": "dubai",
+    "tr": "24–26°C gündüz sıcaklığıyla deniz, havuz ve çöl safarisi için nemin en düşük, konforun en yüksek olduğu zirve dönemdir.",
+    "en": "With daytime temperatures of 24–26°C, this is peak season for the sea, pools and desert safaris, with the lowest humidity and the highest comfort."
+   },
+   {
+    "city": "bangkok",
+    "tr": "Yağışlı muson sezonu tamamen biter; 27–30°C civarındaki kuru havada sokak pazarları ve tapınaklar terlemeden gezilir.",
+    "en": "The rainy monsoon season is completely over; in dry weather around 27–30°C you can explore street markets and temples without breaking a sweat."
+   },
+   {
+    "city": "singapore",
+    "tr": "Kış soğuklarından tropik iklime kaçış rotasıdır; Gardens by the Bay ve kapalı botanik alanlar yıl boyu canlılığını korur.",
+    "en": "The go-to escape from the winter cold to the tropics; Gardens by the Bay and the indoor botanical spaces stay vibrant all year round."
+   },
+   {
+    "city": "vienna",
+    "tr": "Tarihi balo sezonunun başlangıcıdır; saray konserleri, karlar altındaki müzeler ve canlı opera salonları kış kültürünü yaşatır.",
+    "en": "The historic ball season gets under way; palace concerts, snow-covered museums and lively opera houses keep winter culture alive."
+   },
+   {
+    "city": "rome",
+    "tr": "Akdeniz kışı ılımandır (12–14°C); yaz aylarında saatler süren Kolezyum ve Vatikan kuyrukları bu ayda tamamen kaybolur.",
+    "en": "The Mediterranean winter is mild (12–14°C); the hours-long Colosseum and Vatican queues of the summer months disappear completely this month."
+   }
+  ],
+  "2": [
+   {
+    "city": "venice",
+    "tr": "Dünyaca ünlü Venedik Karnavalı (Carnevale) bu ayda gerçekleşir; kanallarda tarihi kostümlü geçitler ve gotik kış atmosferi oluşur.",
+    "en": "The world-famous Venice Carnival (Carnevale) takes place this month; the canals fill with historic costume parades and a Gothic winter atmosphere."
+   },
+   {
+    "city": "marrakech",
+    "tr": "Yazın 45°C'yi aşan kavurucu sıcaklar yerine 19–21°C ılık bahar havası hakimdir; Medina sokakları ve saraylar rahatça dolaşılır.",
+    "en": "Instead of the scorching summer heat that tops 45°C, mild spring weather of 19–21°C prevails; the Medina's streets and palaces are easy to wander."
+   },
+   {
+    "city": "dubai",
+    "tr": "Ilıman çöl kışının son haftalarıdır; açık hava festivalleri ve sahil yürüyüşleri için sıcaklık hâlâ bunaltıcı seviyelerin altındadır.",
+    "en": "The final weeks of the mild desert winter; temperatures are still below stifling levels for outdoor festivals and beach walks."
+   },
+   {
+    "city": "singapore",
+    "tr": "Ay Yeni Yılı (Çin Yeni Yılı), Chinatown ve marina çevresinde devasa fenerler ve sokak şölenleriyle kutlanır.",
+    "en": "Lunar New Year (Chinese New Year) is celebrated around Chinatown and the Marina with giant lanterns and street feasts."
+   },
+   {
+    "city": "barcelona",
+    "tr": "14–16°C bandında yumuşak kış güneşi hissedilir; Santa Eulàlia kış festivali düzenlenir ve Gaudí eserleri tenha sezonda gezilir.",
+    "en": "Gentle winter sunshine in the 14–16°C range; the Santa Eulàlia winter festival takes place, and Gaudí's works can be visited in the quiet season."
+   }
+  ],
+  "3": [
+   {
+    "city": "tokyo",
+    "tr": "Mart sonuna doğru dünyaca ünlü Sakura (kiraz çiçeği) mevsimi başlar; Ueno ve Shinjuku parkları pembe çiçeklerle kaplanır.",
+    "en": "Towards the end of March the world-famous sakura (cherry blossom) season begins; Ueno and Shinjuku parks are blanketed in pink blossoms."
+   },
+   {
+    "city": "kyoto",
+    "tr": "Tarihi Zen tapınakları ve fenerli sokaklar erken açan kiraz çiçekleriyle canlanır; geleneksel Japon bahçeleri uyanışa geçer.",
+    "en": "Historic Zen temples and lantern-lit streets come alive with early-blooming cherry blossoms; traditional Japanese gardens begin to awaken."
+   },
+   {
+    "city": "athens",
+    "tr": "Yazın tırmanması zor olan Akropolis ve antik agoralarda, 16–18°C ılık bahar rüzgarıyla yorulmadan adım adım yürünür.",
+    "en": "The Acropolis and the ancient agoras, a tough climb in summer, can be explored step by step without tiring in the mild 16–18°C spring breeze."
+   },
+   {
+    "city": "lisbon",
+    "tr": "Atlantik baharı başlar (17–19°C); dik tepeler, seyir terasları (Miradouros) ve tarihi tramvay hatları terlemeden keşfedilir.",
+    "en": "The Atlantic spring begins (17–19°C); the steep hills, viewpoints (miradouros) and historic tram lines can be explored without breaking a sweat."
+   },
+   {
+    "city": "marrakech",
+    "tr": "22–24°C ideal sıcaklıkla Sahra Çölü ve Atlas Dağları turları için yılın iklimsel açıdan en dengeli ayıdır.",
+    "en": "With an ideal 22–24°C, it is the year's most climatically balanced month for Sahara Desert and Atlas Mountains tours."
+   }
+  ],
+  "4": [
+   {
+    "city": "amsterdam",
+    "tr": "Keukenhof lale tarlaları tam açma dönemindedir; 27 Nisan Kral Günü (Koningsdag) ile sokaklar ve kanallar turuncu festivale bürünür.",
+    "en": "Keukenhof's tulip fields are in full bloom; on 27 April, King's Day (Koningsdag) turns the streets and canals into an orange festival."
+   },
+   {
+    "city": "paris",
+    "tr": "Lüksemburg ve Tuileries bahçelerinde ağaçlar çiçek açar; Seine Nehri boyunca yürüyüşler ve açık hava kafe terasları için klasik bahardır.",
+    "en": "Trees blossom in the Luxembourg and Tuileries gardens; it's classic spring for walks along the Seine and open-air café terraces."
+   },
+   {
+    "city": "seoul",
+    "tr": "Yeouido Kiraz Çiçeği Festivali düzenlenir; Hanok köyleri ve saray bahçeleri nemsiz, berrak bir gökyüzü altında gezilir.",
+    "en": "The Yeouido Cherry Blossom Festival takes place; hanok villages and palace gardens can be explored under clear, dry skies."
+   },
+   {
+    "city": "rome",
+    "tr": "21 Nisan Roma'nın kuruluş yıl dönümü etkinlikleri yapılır; 19–21°C hava koşulları tarihi yarımadayı yürüyerek keşfetmek için idealdir.",
+    "en": "Events marking Rome's founding anniversary are held on 21 April; 19–21°C weather is ideal for exploring the historic centre on foot."
+   },
+   {
+    "city": "istanbul",
+    "tr": "Uluslararası Lale Festivali ile Emirgan Korusu ve Sultanahmet rengarenk olur; Boğaz hattında yürümek için en tatlı bahar havasıdır.",
+    "en": "With the International Tulip Festival, Emirgan Park and Sultanahmet burst into colour; it's the loveliest spring weather for walking along the Bosphorus."
+   }
+  ],
+  "5": [
+   {
+    "city": "florence",
+    "tr": "Boboli Bahçeleri yemyeşildir ve Toskana tepeleri çiçeklenir; kavurucu yaz sıcakları ve aşırı turist akını başlamadan sanat galerileri gezilir.",
+    "en": "The Boboli Gardens are lush and green and the Tuscan hills are in bloom; you can tour the art galleries before the scorching summer heat and the overwhelming tourist crowds arrive."
+   },
+   {
+    "city": "budapest",
+    "tr": "Tuna Nehri kıyısında 20–22°C ılık hava hissedilir; kale tepesi yürüyüşleri, akşam tekne turları ve nehir boyu terasları aktiftir.",
+    "en": "Mild 20–22°C weather along the Danube; Castle Hill walks, evening boat tours and riverside terraces are in full swing."
+   },
+   {
+    "city": "london",
+    "tr": "Ünlü Chelsea Çiçek Fuarı düzenlenir; gün ışığı uzar ve İngiltere genelinde istatistiksel olarak yağışın en düşük olduğu aylardandır.",
+    "en": "The famous Chelsea Flower Show takes place; the days grow longer, and statistically it is one of the driest months across England."
+   },
+   {
+    "city": "madrid",
+    "tr": "15 Mayıs San Isidro festivaliyle kentin en büyük yerel şenlikleri yaşanır; Retiro Parkı ve açık hava tapas barları tam kıvamındadır.",
+    "en": "With the San Isidro festival on 15 May, the city celebrates its biggest local fiestas; Retiro Park and the open-air tapas bars are at their best."
+   },
+   {
+    "city": "baku",
+    "tr": "Hazar kıyısında boğucu yaz nemi başlamadan 22–24°C ılık hava hakimdir; Sahil Bulvarı ve İçerişehir yürüyüşleri için en verimli aydır.",
+    "en": "Before the stifling summer humidity reaches the Caspian shore, mild 22–24°C weather prevails; the best month for strolls along the Seaside Boulevard and through Icherisheher (the Old City)."
+   }
+  ],
+  "6": [
+   {
+    "city": "stockholm",
+    "tr": "Yaz Dönümü (Midsommar) kutlamaları yapılır; gün ışığı 18 saati aşar, takımadalar arası vapur turları ve gece yarısı yürüyüşleri başlar.",
+    "en": "Midsummer (Midsommar) celebrations take place; daylight exceeds 18 hours, and archipelago ferry trips and midnight walks begin."
+   },
+   {
+    "city": "copenhagen",
+    "tr": "İskandinav yazı başlar; Nyhavn rıhtımı, liman havuzlarında yüzme alanları ve bisiklet rotaları en canlı günlerini yaşar.",
+    "en": "The Scandinavian summer begins; the Nyhavn waterfront, the swimming spots at the harbour baths and the cycling routes enjoy their liveliest days."
+   },
+   {
+    "city": "berlin",
+    "tr": "Açık hava kültürü zirve yapar; Fête de la Musique müzik şenlikleri, göl kıyısı aktiviteleri ve kanal boyu barları hareketlenir.",
+    "en": "Open-air culture peaks; the Fête de la Musique festivities, lakeside activities and canal-side bars come alive."
+   },
+   {
+    "city": "sarajevo",
+    "tr": "Dağlık coğrafyası sayesinde bunaltıcı Akdeniz sıcağından uzaktır; Başçarşı sokakları ve Miljacka Nehri kıyısı ılık esintilerle doludur.",
+    "en": "Thanks to its mountainous setting, it stays clear of the oppressive Mediterranean heat; the streets of Baščaršija and the banks of the Miljacka River are full of mild breezes."
+   },
+   {
+    "city": "prague",
+    "tr": "Vltava Nehri kıyısında akşam yürüyüşleri ve kale bahçeleri için güneş geç batar; tarihi köprüler ılık yaz akşamlarında canlıdır.",
+    "en": "The sun sets late, perfect for evening walks along the Vltava and in the castle gardens; the historic bridges come alive on warm summer evenings."
+   }
+  ],
+  "7": [
+   {
+    "city": "stockholm",
+    "tr": "Güney Avrupa 40°C sıcaklıkla kavrulurken 22–24°C ferah hava sunar; ada köylerine kaçış ve göl kenarı etkinlikleri için en iyi aydır.",
+    "en": "While Southern Europe bakes at 40°C, it offers refreshing 22–24°C weather; the best month for escaping to island villages and lakeside activities."
+   },
+   {
+    "city": "copenhagen",
+    "tr": "Kopenhag Caz Festivali şehri sarar; sokak lezzetleri pazarları ve su kenarı dinlenme alanları yılın en yüksek enerjisine ulaşır.",
+    "en": "The Copenhagen Jazz Festival takes over the city; street food markets and waterside lounging spots hit their highest energy of the year."
+   },
+   {
+    "city": "london",
+    "tr": "Wimbledon Tenis Turnuvası ve Hyde Park açık hava festivalleri gerçekleşir; açık hava sinemaları ve park piknikleri için en sıcak aydır.",
+    "en": "The Wimbledon tennis championships and Hyde Park's open-air festivals take place; it's the warmest month for outdoor cinemas and picnics in the park."
+   },
+   {
+    "city": "munich",
+    "tr": "İngiliz Bahçesi'nde Isar kıyısında güneşlenilir, kestane ağaçları altındaki bira bahçeleri dolar ve Bavyera göllerine kaçamak yapılır.",
+    "en": "People sunbathe on the banks of the Isar in the English Garden, the beer gardens under the chestnut trees fill up, and it's time for getaways to the Bavarian lakes."
+   },
+   {
+    "city": "brussels",
+    "tr": "Güneydeki aşırı sıcaklardan kaçıp 23°C civarında ılıman bir yaz yaşamak, Grand Place ve tarihi parkları rahatça turlamak için uygundur.",
+    "en": "Well suited to escaping the extreme heat of the south, enjoying a mild summer around 23°C and touring the Grand Place and historic parks in comfort."
+   }
+  ],
+  "8": [
+   {
+    "city": "berlin",
+    "tr": "Wannsee ve Schlachtensee göllerinde serinleme sezonudur; açık hava film festivalleri ve kültür etkinlikleriyle kent dinamiktir.",
+    "en": "It's the season for cooling off at the Wannsee and Schlachtensee lakes; the city buzzes with open-air film festivals and cultural events."
+   },
+   {
+    "city": "sarajevo",
+    "tr": "Uluslararası Saraybosna Film Festivali (SFF) tüm kente yayılır; akşamları serin dağ havası eşliğinde kültür sanat temposu yükselir.",
+    "en": "The international Sarajevo Film Festival (SFF) spreads across the whole city; in the evenings the arts and culture scene picks up pace in the cool mountain air."
+   },
+   {
+    "city": "tbilisi",
+    "tr": "Akşamları Kafkas Dağları'ndan inen serin esintiler eşliğinde kale manzaralı teraslar ve açık hava şarap mekanları aktiftir.",
+    "en": "With cool evening breezes coming down from the Caucasus Mountains, terraces overlooking the fortress and open-air wine spots are in full swing."
+   },
+   {
+    "city": "prague",
+    "tr": "Letná Parkı'ndan nehir manzaralı yaz akşamları, bahçe konserleri ve açık hava etkinlikleri için kentin en hareketli yaz dönemidir.",
+    "en": "The city's liveliest stretch of summer for river-view evenings from Letná Park, garden concerts and open-air events."
+   },
+   {
+    "city": "amsterdam",
+    "tr": "Tarihi kanallar üzerinde su konserlerinin yapıldığı Grachtenfestival düzenlenir; bot turları ve açık hava terasları için zirvedir.",
+    "en": "The Grachtenfestival brings concerts on the water along the historic canals; it's peak time for boat tours and open-air terraces."
+   }
+  ],
+  "9": [
+   {
+    "city": "munich",
+    "tr": "Eylül ortasında dünyanın en büyük halk şenliği olan Oktoberfest başlar; dev çadırlar, geleneksel kıyafetler ve panayırlar şehri doldurur.",
+    "en": "In mid-September the world's largest folk festival, Oktoberfest, kicks off; giant tents, traditional dress and funfairs fill the city."
+   },
+   {
+    "city": "barcelona",
+    "tr": "Şehrin en büyük festivali La Mercè düzenlenir (insan kuleleri, ateş geçitleri); deniz suyu sıcaktır ve yaz kalabalığı dağılmıştır.",
+    "en": "The city's biggest festival, La Mercè, takes place (human towers, fire parades); the sea is warm and the summer crowds have thinned out."
+   },
+   {
+    "city": "new-york",
+    "tr": "Yazın boğucu nemi sona erer, New York Moda Haftası başlar; Central Park ve High Line yürüyüşleri için yılın en elverişli havasıdır.",
+    "en": "The stifling summer humidity ends and New York Fashion Week begins; it's the year's best weather for walks in Central Park and along the High Line."
+   },
+   {
+    "city": "istanbul",
+    "tr": "Yaz sıcağının kırıldığı \"sarıyaz\" dönemidir; Boğaz vapuru turları, Adalar gezileri ve tarihi yarımada için 23–25°C ideal hava oluşur.",
+    "en": "This is the \"sarıyaz\" (late summer) period, when the summer heat breaks; ideal 23–25°C weather for Bosphorus ferry trips, outings to the Princes' Islands and the historic peninsula."
+   },
+   {
+    "city": "rome",
+    "tr": "Kavurucu yaz sıcakları biter; açık hava trattoria akşamları ve antik kalıntılar arasında yürüyüş için en dengeli İtalyan sonbaharıdır.",
+    "en": "The scorching summer heat is over; this is the most balanced Italian autumn for open-air trattoria evenings and walks among the ancient ruins."
+   }
+  ],
+  "10": [
+   {
+    "city": "tokyo",
+    "tr": "Yaz tayfunları ve nem tamamen geride kalır; berrak mavi gökyüzü ve 20°C civarındaki ılık hava tapınakları ve caddeleri gezmek için idealdir.",
+    "en": "Summer typhoons and humidity are completely behind you; clear blue skies and mild weather around 20°C are ideal for exploring temples and streets."
+   },
+   {
+    "city": "seoul",
+    "tr": "Saray bahçelerinde sarı ginkgo ve kızıl akçaağaç yaprakları dökülür; Seul Uluslararası Havai Fişek Festivali düzenlenir, nem sıfıra iner.",
+    "en": "Yellow ginkgo and crimson maple leaves fall in the palace gardens; the Seoul International Fireworks Festival takes place and humidity drops to zero."
+   },
+   {
+    "city": "florence",
+    "tr": "Toskana bağ bozumu ve zeytin hasadı mevsimidir; yaz kalabalığı çekilir, nehir kıyısı ve sanat galerileri huzurlu bir tempoya döner.",
+    "en": "It's grape and olive harvest season in Tuscany; the summer crowds recede, and the riverbanks and art galleries settle into a peaceful pace."
+   },
+   {
+    "city": "madrid",
+    "tr": "12 Ekim Fiesta Nacional kutlamaları yapılır; Retiro Parkı sonbahar renklerine bürünür ve müzeler arası yürüyüşler keyiflidir.",
+    "en": "Spain's Fiesta Nacional is celebrated on 12 October; Retiro Park takes on its autumn colours and strolling between museums is a pleasure."
+   },
+   {
+    "city": "marrakech",
+    "tr": "Çöl ikliminde yazın yakıcı sıcakları biter (25–27°C); Medina çarşıları, Majorelle Bahçesi ve çöl kampları için en verimli sonbahar ayıdır.",
+    "en": "The searing summer heat of the desert climate is over (25–27°C); the best autumn month for the Medina's souks, the Majorelle Garden and desert camps."
+   }
+  ],
+  "11": [
+   {
+    "city": "kyoto",
+    "tr": "Meşhur Momiji (kızıl akçaağaç) mevsiminin zirvesidir; tapınak bahçeleri aydınlatılır ve yılın en büyüleyici doğa manzaraları oluşur.",
+    "en": "The peak of the famous momiji (red maple) season; temple gardens are illuminated and the year's most enchanting natural scenery unfolds."
+   },
+   {
+    "city": "bangkok",
+    "tr": "Yağışlar sona erer; nehir ve göletlere mumlu sepetlerin bırakıldığı görsel şölen Loy Krathong (Işık Festivali) kutlanır.",
+    "en": "The rains come to an end; Loy Krathong (Festival of Lights) is celebrated, a visual feast of candlelit baskets set afloat on rivers and ponds."
+   },
+   {
+    "city": "dubai",
+    "tr": "Gündüzleri 28–30°C sıcaklıkla deniz ve plaj sezonu açılır; açık hava terasları, çöl kampları ve global etkinlikler başlar.",
+    "en": "With daytime temperatures of 28–30°C, the sea and beach season opens; open-air terraces, desert camps and global events get under way."
+   },
+   {
+    "city": "new-york",
+    "tr": "Central Park sonbahar renklerini korurken Macy's Şükran Günü Geçidi yapılır; vitrinler kış tatili ışıklandırmalarına hazırlanır.",
+    "en": "While Central Park still wears its autumn colours, the Macy's Thanksgiving Day Parade takes place; shop windows get ready for their holiday lights."
+   },
+   {
+    "city": "venice",
+    "tr": "Turist akını çekilir; 21 Kasım Madonna della Salute bayramı kutlanır, sisli kanallar ve köprüler sakin bir sinematik hava sunar.",
+    "en": "The tourist rush recedes; the Madonna della Salute feast is celebrated on 21 November, and misty canals and bridges offer a calm, cinematic atmosphere."
+   }
+  ],
+  "12": [
+   {
+    "city": "vienna",
+    "tr": "Rathausplatz ve Belvedere sarayları önünde Avrupa'nın en ünlü Noel pazarları kurulur; sıcak punç kokuları ve klasik müzik konserleri şehri sarar.",
+    "en": "Europe's most famous Christmas markets are set up at Rathausplatz and in front of the Belvedere palaces; the scent of hot punch and classical music concerts fill the city."
+   },
+   {
+    "city": "prague",
+    "tr": "Eski Şehir Meydanı'nda dev Noel ağacı kurulur; karlar altındaki gotik kuleler ve köprüler kış romantizmi için ideal bir ortam sağlar.",
+    "en": "A giant Christmas tree goes up in Old Town Square; snow-covered Gothic towers and bridges set the perfect scene for winter romance."
+   },
+   {
+    "city": "budapest",
+    "tr": "Vörösmarty Meydanı Noel pazarları açılır; sıfırın altındaki havada Széchenyi açık hava termal havuzlarında sıcak suda yüzme deneyimi yaşanır.",
+    "en": "The Vörösmarty Square Christmas markets open; in sub-zero air you can enjoy a swim in the hot water of the Széchenyi open-air thermal pools."
+   },
+   {
+    "city": "dubai",
+    "tr": "24–26°C civarında deniz havası sunar; yılbaşı gecesi Burj Khalifa çevresindeki görkemli havai fişek gösterileriyle kış kaçamağının merkezidir.",
+    "en": "Offers beach weather around 24–26°C; with the spectacular New Year's Eve fireworks around the Burj Khalifa, it's the hub of winter getaways."
+   },
+   {
+    "city": "london",
+    "tr": "Hyde Park'ta Winter Wonderland kurulur; Regent Street ve Covent Garden'ın devasa ışıklandırmalarıyla kışın en canlı alışveriş ve gezi rotasıdır.",
+    "en": "Winter Wonderland is set up in Hyde Park; with the huge light displays on Regent Street and in Covent Garden, it's winter's liveliest route for shopping and sightseeing."
+   }
+  ]
+ }
+}
