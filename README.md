@@ -156,8 +156,11 @@ is better (`app/services/transit_planner.py`):
 
 Timetables are read in the city's time zone (stored per city). Google publishes transit only a few
 weeks ahead, so for later trips the same weekday in the coming week is used. Where Google has no
-transit data, every leg is walked and the plan says so. Transit plans cost the most Google calls
-(two route matrices per day), so they are rate-limited per client.
+transit data at all (Japan, for apps using the API), long legs get an estimated ride instead of a
+long walk: 10 minutes to reach the stations and wait, plus the distance at 22 km/h. Such rides are
+marked as estimates, shown without lines and drawn dashed; short legs are still walked on Google's
+times. Transit plans cost the most Google calls (two route matrices per day; one in Japan, where
+the transit matrix would come back empty), so they are rate-limited per client.
 
 ## Places to eat, nightlife and events
 Meals and evenings are not planned into the route (when and where to eat or go out is personal);

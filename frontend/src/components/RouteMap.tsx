@@ -63,6 +63,8 @@ interface Segment {
   points: Point[];
   /** A walk within a transit plan: drawn dotted, so rides stand out. */
   walk: boolean;
+  /** An estimated ride (no transit data for the city): drawn dashed, as a straight line. */
+  estimated: boolean;
 }
 
 /** Street geometry for each leg of a day, falling back to straight lines for estimates. */
@@ -72,14 +74,15 @@ function daySegments(day: DayPlan, hotel: Point): Segment[] {
       to: [s.latitude, s.longitude] as Point,
       path: s.path_from_previous,
       mode: s.leg_from_previous?.mode,
+      estimated: Boolean(s.leg_from_previous?.estimated),
     })),
-    { to: hotel, path: day.return_path, mode: day.return_leg?.mode },
+    { to: hotel, path: day.return_path, mode: day.return_leg?.mode, estimated: Boolean(day.return_leg?.estimated) },
   ];
   let previous = hotel;
   return legs.map((leg) => {
     const points = leg.path ? decodePolyline(leg.path) : [previous, leg.to];
     previous = leg.to;
-    return { points, walk: leg.mode === "WALK" };
+    return { points, walk: leg.mode === "WALK", estimated: leg.estimated };
   });
 }
 
@@ -202,7 +205,7 @@ export function RouteMap(props: Props) {
                 color,
                 weight: dimmed ? 3 : 5,
                 opacity: dimmed ? 0.2 : 0.85,
-                dashArray: segment.walk ? "1 9" : undefined,
+                dashArray: segment.walk ? "1 9" : segment.estimated ? "10 8" : undefined,
                 lineCap: "round",
               }}
             />

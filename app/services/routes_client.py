@@ -80,6 +80,8 @@ class Leg:
     rides: tuple[TransitRide, ...] = ()
     walk_seconds: int | None = None  # time on foot within the leg
     alternative: tuple[TravelMode, int] | None = None  # the option not taken: (mode, seconds)
+    # A ride timed by estimate: Google has no public transport data for this place (Japan).
+    estimated: bool = False
 
 
 @dataclass(frozen=True)
@@ -98,6 +100,7 @@ class LoopRoute:
 class MatrixCell:
     seconds: int
     meters: int
+    estimated: bool = False  # not from Google: see transit_planner.estimated_transit
 
 
 # matrix[i][j]: from point i to point j, or None where there is no route.

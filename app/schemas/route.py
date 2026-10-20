@@ -81,6 +81,10 @@ class LegDetails(BaseModel):
         default=None, description="The option not taken: walking instead of transit, or a faster transit option."
     )
     alternative_minutes: int | None = None
+    estimated: bool = Field(
+        default=False,
+        description="A ride timed by estimate, without lines: Google has no public transport data for this city.",
+    )
 
 
 class PlannedStop(BaseModel):
@@ -137,7 +141,7 @@ class DayPlan(BaseModel):
     # True when outdoor stops were moved away from this day because rain is expected.
     rain_adjusted: bool = False
     # Transit plans routed by Google: False when Google has no public transport data here, so
-    # every leg is walked. None otherwise.
+    # the day's rides are estimates (LegDetails.estimated). None otherwise.
     transit_available: bool | None = None
     dropped_stops: list[str] = Field(
         default_factory=list, description="Stops left out because the day ran well over 8 hours."

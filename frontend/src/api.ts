@@ -57,6 +57,8 @@ export interface LegDetails {
   /** The option not taken: walking instead of transit, or a faster transit option. */
   alternative_mode: LegMode | null;
   alternative_minutes: number | null;
+  /** A ride timed by estimate, without lines: Google has no public transport data for this city. */
+  estimated?: boolean;
 }
 
 export interface PlannedStop {
@@ -102,7 +104,7 @@ export interface DayPlan {
   date: string | null;
   weather: DayWeather | null;
   rain_adjusted: boolean;
-  /** Transit plans: false when Google has no public transport data here (every leg is walked). */
+  /** Transit plans: false when Google has no public transport data here (rides are estimated). */
   transit_available?: boolean | null;
   /** Stops left out because the day ran well over 8 hours (English names). */
   dropped_stops?: string[];

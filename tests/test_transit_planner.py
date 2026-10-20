@@ -17,9 +17,13 @@ from app.services.routes_client import (
     parse_matrix,
 )
 from app.services.transit_planner import (
+    ESTIMATED_RIDE_KMH,
+    ESTIMATED_RIDE_OVERHEAD_SECONDS,
     TIMETABLE_HORIZON_DAYS,
     TRANSIT_MIN_SAVING_SECONDS,
     choose_leg,
+    estimated_transit,
+    has_transit_data,
     order_day_transit,
     timetable_day,
 )
@@ -61,6 +65,13 @@ def test_a_small_saving_is_not_worth_the_ride() -> None:
 def test_slower_or_barely_faster_transit_is_not_mentioned(transit_minutes: int) -> None:
     choice = choose_leg(walk=cell(20), transit=cell(transit_minutes))
     assert choice is not None and choice.mode is WALK and choice.alternative is None
+
+
+def test_a_guessed_faster_ride_is_not_mentioned_for_a_walk() -> None:
+    guessed = MatrixCell(seconds=10 * 60, meters=1000, estimated=True)
+    choice = choose_leg(cell(14), guessed)  # 4 min saving: walked
+    assert choice is not None and choice.mode is WALK
+    assert choice.alternative is None  # a real ride 4 min faster would be mentioned
 
 
 def test_one_sided_and_missing_routes() -> None:
@@ -145,14 +156,72 @@ def test_legs_depart_when_the_traveller_leaves() -> None:
     assert sorted(departures) == expected
 
 
-def test_without_transit_data_every_leg_is_walked() -> None:
-    client = FakeTransitClient(has_transit=False)
+def test_without_transit_data_long_legs_become_estimated_rides() -> None:
+    client = FakeTransitClient(has_transit=False)  # like Japan: Google gives no transit at all
     loop, transit_available = asyncio.run(
         order_day_transit(HOTEL, [east(3.0), east(-3.0)], [60, 60], client, None, PARIS_TZ)
     )
     assert not transit_available
+    assert {leg.mode for leg in loop.legs} == {TRANSIT}
+    for leg in loop.legs:
+        assert leg.estimated and not leg.rides and leg.polyline is None
+        assert leg.alternative is not None and leg.alternative[0] is WALK  # "on foot: 36 min"
+        assert leg.seconds < leg.alternative[1]
+    # Google isn't asked to route rides it has no data for.
+    assert all(mode is WALK for mode, _ in client.leg_calls)
+
+
+def test_without_transit_data_short_legs_are_still_walked_on_google_times() -> None:
+    client = FakeTransitClient(has_transit=False)
+    loop, _ = asyncio.run(order_day_transit(HOTEL, [east(0.4), east(0.8)], [60, 60], client, None, PARIS_TZ))
     assert {leg.mode for leg in loop.legs} == {WALK}
-    assert all(leg.alternative is None for leg in loop.legs)
+    assert not any(leg.estimated for leg in loop.legs)
+    assert all(leg.polyline == "walk-path" for leg in loop.legs)  # routed by Google
+
+
+def test_estimated_rides_keep_a_far_day_from_losing_its_stops() -> None:
+    stops = [east(3.0), east(-3.0), east(0.0, 3.0)]
+    values = [5.0, 1.0, 9.0]
+
+    def run(client: FakeTransitClient) -> list[int]:
+        loop, _ = asyncio.run(
+            order_day_transit(HOTEL, stops, [120, 120, 120], client, None, PARIS_TZ, values=values, max_minutes=510)
+        )
+        return sorted(loop.order)
+
+    assert run(FakeTransitClient(has_transit=False)) == [0, 1, 2]  # with estimated rides the day fits
+
+
+def test_a_short_pair_without_a_walking_route_is_not_made_a_ride() -> None:
+    near, far = east(0.2), east(4.0)
+    no_walk = [[None, None, MatrixCell(2900, 4000)], [None, None, None], [MatrixCell(2900, 4000), None, None]]
+    matrix = estimated_transit([HOTEL, near, far], no_walk)
+    assert matrix[0][1] is None and matrix[1][0] is None  # 200 m: left to the straight-line walk
+    assert matrix[1][2] is not None and matrix[1][2].estimated  # about 4 km: still a ride
+
+
+def test_a_country_without_transit_data_skips_the_transit_matrix() -> None:
+    client = FakeTransitClient()  # would have rides, but the country is known to have none for us
+    loop, transit_available = asyncio.run(
+        order_day_transit(HOTEL, [east(3.0), east(-3.0)], [60, 60], client, None, PARIS_TZ, transit_data=False)
+    )
+    assert [mode for mode, _, _ in client.matrix_calls] == [WALK]  # half the quota of a transit day
+    assert not transit_available
+    assert all(leg.mode is TRANSIT and leg.estimated for leg in loop.legs)
+
+
+def test_japan_has_no_transit_data() -> None:
+    assert not has_transit_data("JP")
+    assert has_transit_data("FR") and has_transit_data(None)
+
+
+def test_estimated_rides_fill_in_from_the_distance() -> None:
+    walk = [[None, MatrixCell(1800, 2200)], [MatrixCell(1800, 2200), None]]
+    matrix = estimated_transit([HOTEL, east(2.0)], walk)
+    ride = matrix[0][1]
+    assert ride is not None and ride.estimated and ride.meters == 2200
+    assert ride.seconds == ESTIMATED_RIDE_OVERHEAD_SECONDS + round(2.2 / ESTIMATED_RIDE_KMH * 3600)
+    assert matrix[0][0] is None
 
 
 def test_leg_routing_failure_keeps_the_matrix_times() -> None:
@@ -182,6 +251,17 @@ def test_plan_trip_in_transit_mode_returns_leg_details() -> None:
         assert day.total_travel_minutes == pytest.approx(
             sum(s.travel_minutes_from_previous for s in day.stops) + day.return_travel_minutes, abs=len(day.stops) + 1
         )
+
+
+def test_plan_trip_without_transit_data_marks_estimated_rides() -> None:
+    pois = ring(6, radius_km=4.0)
+    days = asyncio.run(plan_trip(pois, HOTEL, 1, None, TRANSIT, FakeTransitClient(has_transit=False), tz=PARIS_TZ))
+    [day] = days
+    assert day.transit_available is False and day.routing_source == "google"
+    legs = [s.leg_from_previous for s in day.stops] + [day.return_leg]
+    rides = [leg for leg in legs if leg and leg.mode == "TRANSIT"]
+    assert rides and all(leg.estimated and leg.rides == [] for leg in rides)
+    assert not any(leg.estimated for leg in legs if leg and leg.mode == "WALK")
 
 
 def test_walking_and_driving_plans_have_no_leg_details() -> None:

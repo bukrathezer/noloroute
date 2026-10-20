@@ -41,7 +41,12 @@ export function PlanResult(props: Props) {
   const allUnpriced = plan.unpriced_stop_count === stopCount;
   const days = activeDay ? plan.days.filter((d) => d.day_number === activeDay) : plan.days;
   const transit = plan.travel_mode === "TRANSIT";
-  const noTransitData = transit && plan.days.some((d) => d.transit_available === false);
+  // What the map shows: real rides (solid), estimated rides (dashed), or only walks.
+  const legs = plan.days.flatMap((d) => [...d.stops.map((s) => s.leg_from_previous), d.return_leg]);
+  const hasEstimated = legs.some((leg) => leg?.estimated);
+  const hasRealRides = legs.some((leg) => leg?.mode === "TRANSIT" && !leg.estimated);
+  // Plans saved before rides were estimated walked every leg where Google had no transit data.
+  const allWalked = transit && !hasEstimated && plan.days.some((d) => d.transit_available === false);
   const money = (amount: string) => {
     const value = Number(amount);
     if (value === 0) return r.free;
@@ -93,7 +98,13 @@ export function PlanResult(props: Props) {
       {plan.price_basis && plan.prices_checked_on && (
         <p className="hint">{r.priceBasis[plan.price_basis](formatMonth(plan.prices_checked_on, lang))}</p>
       )}
-      {transit && <p className="hint">{noTransitData ? r.noTransit : r.mapLegend}</p>}
+      {transit && hasEstimated && <p className="hint">{r.noTransit}</p>}
+      {allWalked && <p className="hint">{r.allWalked}</p>}
+      {transit && (
+        <p className="hint">
+          {hasEstimated ? (hasRealRides ? r.mapLegendMixed : r.mapLegendEstimated) : r.mapLegend}
+        </p>
+      )}
 
       {plan.days.length > 1 && (
         <div className="day-tabs" role="tablist">
@@ -360,6 +371,7 @@ function LegLine({ mode, details, minutes, km, fromHotel, lang }: LegLineProps) 
   const r = t.result;
   const distance = km.toLocaleString(lang, { maximumFractionDigits: 1 });
   const extras: string[] = [];
+  if (details?.estimated) extras.push(r.estimatedRide);
   if (details?.mode === "TRANSIT" && details.walk_minutes) extras.push(r.walkingPart(t.minutes(details.walk_minutes)));
   if (details?.alternative_mode && details.alternative_minutes != null) {
     extras.push(r.alternative[details.alternative_mode](t.minutes(details.alternative_minutes)));
