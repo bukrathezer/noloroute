@@ -20,6 +20,7 @@ from app.services.geo import LatLng
 from app.services.opening_hours import hours_on
 from app.services.route_optimizer import HotelTooFarError, build_day, order_day, plan_trip, stop_warning
 from app.services.routes_client import RoutesClient, TravelMode
+from app.services.transit_planner import has_transit_data
 from app.services.weather import DayWeather, WeatherClient, WeatherError
 
 router = APIRouter(prefix="/routes", tags=["routes"])
@@ -100,6 +101,7 @@ async def plan_route(
             dates=dates,
             weather=weather,
             tz=city_timezone(city),
+            transit_data=has_transit_data(city.country_code),
         )
     except HotelTooFarError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
@@ -136,7 +138,15 @@ async def remove_stop(
     remaining_ids = [s.poi_id for s in day.stops if s.poi_id != req.poi_id]
     city, pois = await run_in_threadpool(_load_city_and_pois, db, plan.city_id, remaining_ids)
     hotel = LatLng(plan.accommodation.lat, plan.accommodation.lng)
-    routed = await order_day(hotel, pois, plan.travel_mode, routes_client, day=day.date, tz=city_timezone(city))
+    routed = await order_day(
+        hotel,
+        pois,
+        plan.travel_mode,
+        routes_client,
+        day=day.date,
+        tz=city_timezone(city),
+        transit_data=has_transit_data(city.country_code),
+    )
     new_day = build_day(
         day.day_number, pois, routed, day_date=day.date, weather=day.weather, rain_adjusted=day.rain_adjusted
     )
@@ -187,7 +197,14 @@ async def reorder_days(
         if transit and stops:
             # The traveller picked these stops for the day, so none is dropped for running long.
             routed = await order_day(
-                hotel, stops, plan.travel_mode, routes_client, day=slot.date, tz=city_timezone(city), max_minutes=None
+                hotel,
+                stops,
+                plan.travel_mode,
+                routes_client,
+                day=slot.date,
+                tz=city_timezone(city),
+                max_minutes=None,
+                transit_data=has_transit_data(city.country_code),
             )
             new_day = build_day(position, stops, routed, day_date=slot.date, weather=slot.weather)
             new_day.dropped_stops = day.dropped_stops

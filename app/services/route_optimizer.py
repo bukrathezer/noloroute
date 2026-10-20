@@ -118,10 +118,12 @@ async def plan_trip(
     dates: Sequence[date] | None = None,
     weather: Sequence[DayWeather] | None = None,
     tz: tzinfo = UTC,
+    transit_data: bool = True,
 ) -> list[DayPlan]:
     """Plan the trip. `dates` (one per day) enables opening hours; `weather` (one per day) rain tweaks.
 
-    `tz` is the city's time zone, which transit timetables are read in.
+    `tz` is the city's time zone, which transit timetables are read in. `transit_data` False: Google
+    has no transit routes for the city, so transit plans estimate their rides (transit_planner).
     """
     if not pois or min(haversine_km(hotel, location(p)) for p in pois) > MAX_HOTEL_DISTANCE_KM:
         raise HotelTooFarError(f"Accommodation is more than {MAX_HOTEL_DISTANCE_KM:g} km from every sight")
@@ -142,7 +144,9 @@ async def plan_trip(
     # Days are independent, so route them concurrently.
     routed = await asyncio.gather(
         *(
-            order_day(hotel, group, mode, routes_client, day=dates[i] if dates else None, tz=tz)
+            order_day(
+                hotel, group, mode, routes_client, day=dates[i] if dates else None, tz=tz, transit_data=transit_data
+            )
             for i, group in enumerate(groups)
         )
     )
@@ -496,6 +500,7 @@ async def order_day(
     day: date | None = None,
     tz: tzinfo = UTC,
     max_minutes: int | None = MAX_DAY_MINUTES,
+    transit_data: bool = True,
 ) -> RoutedDay:
     """Order one day's stops and route its legs. `day` and `tz` pick the transit timetable.
 
@@ -512,7 +517,15 @@ async def order_day(
                 visits = [s.avg_duration_min for s in stops]
                 values = [trim_value(s) for s in stops]
                 loop, has_transit = await order_day_transit(
-                    hotel, points, visits, routes_client, day, tz, values=values, max_minutes=max_minutes
+                    hotel,
+                    points,
+                    visits,
+                    routes_client,
+                    day,
+                    tz,
+                    values=values,
+                    max_minutes=max_minutes,
+                    transit_data=transit_data,
                 )
                 return RoutedDay(loop, "google", transit_available=has_transit)
 
@@ -658,6 +671,7 @@ def leg_details(leg: Leg) -> LegDetails | None:
         walk_minutes=_minutes(leg.walk_seconds) if leg.walk_seconds is not None else None,
         alternative_mode=leg.alternative[0] if leg.alternative else None,
         alternative_minutes=_minutes(leg.alternative[1]) if leg.alternative else None,
+        estimated=leg.estimated,
     )
 
 

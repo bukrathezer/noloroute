@@ -11,7 +11,10 @@
    traveller would actually leave (09:00 plus the travel and visits before it). That gives the
    street path, the lines to take and the time for that exact departure.
 
-Without transit data (Google has none for many smaller cities) every leg is simply walked.
+Without any transit data for the place (Google gives none for Japan to apps like this one), long
+legs would all be walked: days of 5 km walks that lose their stops. Instead, rides are estimated
+from the distance (estimated_transit), short legs are still walked on Google's real times, and the
+estimated rides are marked as such, without lines.
 """
 
 import asyncio
@@ -22,7 +25,7 @@ from datetime import date, datetime, time, timedelta, tzinfo
 from itertools import pairwise
 
 from app.services.geo import DETOUR_FACTOR, LatLng, haversine_km
-from app.services.routes_client import Leg, LoopRoute, MatrixCell, RoutesAPIError, RoutesClient, TravelMode
+from app.services.routes_client import Leg, LoopRoute, Matrix, MatrixCell, RoutesAPIError, RoutesClient, TravelMode
 from app.services.tsp import shortest_loop
 
 logger = logging.getLogger(__name__)
@@ -36,6 +39,18 @@ MATRIX_DEPARTURE = time(12, 0)  # midday: typical daytime service, used to compa
 # coming week is used instead: most services repeat weekly.
 TIMETABLE_HORIZON_DAYS = 28
 WALK_SPEED_KMH = 4.5  # for a pair Google has no route for at all
+# An estimated ride (see estimated_transit): walking to and from the stations and waiting, plus the
+# distance at a typical big-city metro speed, stops and changes included.
+ESTIMATED_RIDE_OVERHEAD_SECONDS = 10 * 60
+ESTIMATED_RIDE_KMH = 22.0
+# Countries Google gives no transit routes for (checked for every city in October 2026). Their
+# transit matrix would come back empty, using up the daily Routes quota for nothing.
+NO_TRANSIT_DATA_COUNTRIES = frozenset({"JP"})
+
+
+def has_transit_data(country_code: str | None) -> bool:
+    """Whether to ask Google for transit routes in a country (see NO_TRANSIT_DATA_COUNTRIES)."""
+    return (country_code or "") not in NO_TRANSIT_DATA_COUNTRIES
 
 
 @dataclass(frozen=True)
@@ -46,6 +61,7 @@ class LegChoice:
     alternative: tuple[TravelMode, int] | None  # the option not taken, if it's worth showing
     cost: float  # what the ordering minimizes: the time, plus the penalty for transit
     routed: bool = True  # False: Google found no route, so this is a straight-line estimate
+    estimated: bool = False  # an estimated ride: no Google transit data here
 
 
 def choose_leg(walk: MatrixCell | None, transit: MatrixCell | None) -> LegChoice | None:
@@ -55,14 +71,24 @@ def choose_leg(walk: MatrixCell | None, transit: MatrixCell | None) -> LegChoice
         or walk.seconds <= WALK_ALWAYS_SECONDS
         or walk.seconds - transit.seconds < TRANSIT_MIN_SAVING_SECONDS
     ):
-        # Only mention transit when it would have been noticeably quicker.
-        worth_mentioning = transit and walk.seconds - transit.seconds >= ALTERNATIVE_MIN_SAVING_SECONDS
+        # Only mention transit when it would have been noticeably quicker (and known, not guessed).
+        worth_mentioning = (
+            transit and not transit.estimated and walk.seconds - transit.seconds >= ALTERNATIVE_MIN_SAVING_SECONDS
+        )
         faster = (TravelMode.TRANSIT, transit.seconds) if transit and worth_mentioning else None
         return LegChoice(TravelMode.WALK, walk.seconds, walk.meters, faster, cost=walk.seconds)
     if transit:
         on_foot = (TravelMode.WALK, walk.seconds) if walk else None
         cost = transit.seconds + TRANSIT_MIN_SAVING_SECONDS
-        return LegChoice(TravelMode.TRANSIT, transit.seconds, transit.meters, on_foot, cost=cost)
+        return LegChoice(
+            TravelMode.TRANSIT,
+            transit.seconds,
+            transit.meters,
+            on_foot,
+            cost=cost,
+            routed=not transit.estimated,  # Google has no ride to route
+            estimated=transit.estimated,
+        )
     return None
 
 
@@ -85,8 +111,12 @@ async def order_day_transit(
     tz: tzinfo,
     values: Sequence[float] | None = None,
     max_minutes: int | None = None,
+    transit_data: bool = True,
 ) -> tuple[LoopRoute, bool]:
     """Order a day and route its legs. Also returns whether Google had any transit route here.
+
+    `transit_data` False: Google is known to have no transit routes for the place, so only the
+    walking matrix is fetched and rides are estimated right away.
 
     While the day (visits plus travel) runs over `max_minutes`, the stop with the lowest value
     in `values` is dropped: it is left out of the returned order.
@@ -95,11 +125,16 @@ async def order_day_transit(
     """
     points = [hotel, *stops]
     service_day = timetable_day(day, datetime.now(tz).date())
-    walk, transit = await asyncio.gather(
-        client.compute_matrix(points, TravelMode.WALK),
-        client.compute_matrix(points, TravelMode.TRANSIT, departure=_at(service_day, MATRIX_DEPARTURE, tz)),
-    )
+    if transit_data:
+        walk, transit = await asyncio.gather(
+            client.compute_matrix(points, TravelMode.WALK),
+            client.compute_matrix(points, TravelMode.TRANSIT, departure=_at(service_day, MATRIX_DEPARTURE, tz)),
+        )
+    else:
+        walk, transit = await client.compute_matrix(points, TravelMode.WALK), []
     transit_available = any(cell for i, row in enumerate(transit) for j, cell in enumerate(row) if i != j)
+    if not transit_available:
+        transit = estimated_transit(points, walk)
 
     n = len(points)
     choices = [
@@ -141,6 +176,7 @@ async def _route_leg(client: RoutesClient, a: LatLng, b: LatLng, choice: LegChoi
         mode=choice.mode,
         walk_seconds=choice.seconds if choice.mode is TravelMode.WALK else None,
         alternative=choice.alternative,
+        estimated=choice.estimated,
     )
     if not choice.routed:
         return fallback
@@ -153,6 +189,36 @@ async def _route_leg(client: RoutesClient, a: LatLng, b: LatLng, choice: LegChoi
     # leg is a walk, and the alternative we had in mind no longer applies.
     alternative = choice.alternative if leg.mode is choice.mode else None
     return Leg(leg.seconds, leg.meters, leg.polyline, leg.mode, leg.rides, leg.walk_seconds, alternative)
+
+
+def estimated_transit(points: Sequence[LatLng], walk: Matrix) -> Matrix:
+    """Estimated ride times between every pair, for a place without any Google transit data.
+
+    A ride takes ESTIMATED_RIDE_OVERHEAD_SECONDS (to and from the stations, waiting) plus the
+    distance (the walking route's, else the straight line's with a detour) at ESTIMATED_RIDE_KMH.
+    Only legs where that clearly beats walking become rides (choose_leg): 2 km and more, roughly.
+    """
+    n = len(points)
+    matrix: Matrix = []
+    for i in range(n):
+        row: list[MatrixCell | None] = []
+        for j in range(n):
+            if i == j:
+                row.append(None)
+                continue
+            on_foot = walk[i][j]
+            meters = on_foot.meters if on_foot else round(haversine_km(points[i], points[j]) * DETOUR_FACTOR * 1000)
+            seconds = ESTIMATED_RIDE_OVERHEAD_SECONDS + round(meters / 1000 / ESTIMATED_RIDE_KMH * 3600)
+            if on_foot is None:
+                # No walking route to compare with in choose_leg: ride only where it clearly beats
+                # the straight-line walk used for such pairs, else leave the pair to that walk.
+                straight = _straight_walk(points[i], points[j]).seconds
+                if straight <= WALK_ALWAYS_SECONDS or straight - seconds < TRANSIT_MIN_SAVING_SECONDS:
+                    row.append(None)
+                    continue
+            row.append(MatrixCell(seconds, meters, estimated=True))
+        matrix.append(row)
+    return matrix
 
 
 def _best_order(choices: list[list[LegChoice]], kept: list[int]) -> list[int]:

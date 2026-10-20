@@ -82,6 +82,19 @@ def test_moving_dated_transit_days_reroutes_only_the_moved_ones(client: TestClie
     assert len(fake.matrix_calls) == calls_before + 4  # two matrices for each of the two moved days
 
 
+def test_a_city_in_japan_gets_estimated_rides_without_a_transit_matrix(
+    client: TestClient, fake: FakeTransitClient, seeded: Session
+) -> None:
+    seeded.get(City, CITY_ID).country_code = "JP"  # Google gives no transit routes there
+    seeded.flush()
+    result = plan(client, days=1)
+    assert [mode for mode, _, _ in fake.matrix_calls] == ["WALK"]
+    [day] = result["days"]
+    assert day["transit_available"] is False
+    rides = [leg for leg in legs(day) if leg and leg["mode"] == "TRANSIT"]
+    assert rides and all(leg["estimated"] and leg["rides"] == [] for leg in rides)
+
+
 def test_a_saved_transit_plan_keeps_its_legs(client: TestClient, fake: FakeTransitClient) -> None:
     result = plan(client)
     token = client.post("/api/v1/auth/register", json={"email": "ada@example.com", "password": PASSWORD})
