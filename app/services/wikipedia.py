@@ -143,8 +143,17 @@ _SAME_WORD = {"st": "saint", "ste": "sainte", "san": "saint", "santo": "saint", 
 _AREA_NOUNS = frozenset(
     {"neighbourhood", "neighborhood", "district", "quarter", "mahalle", "arrondissement", "municipality", "commune"}
     | {"village", "hamlet", "ward", "borough", "suburb", "settlement", "rione", "quartiere", "capital", "city"}
-    | {"town", "area", "region", "province"}
+    | {"town", "area", "region", "province", "community", "comune", "subdistrict", "locality", "county"}
+    | {"prefecture"}
 )
+# Items that aren't a place one can visit: something that happened there, or a business or body
+# behind a name ("Japanese department store chain" is not the Shibuya Sky deck near its store).
+# Not "organization" or "company": museums and operas are often described as their institution.
+_NOT_PLACE_NOUNS = frozenset({"chain", "brand", "conflict", "battle", "incident", "diocese", "festival"})
+# The street or square a place stands on, named in its name ("Brick Lane Jamme Masjid", "Holy
+# Trinity Church, Sloane Square"), is not the place. Not for markets: a street market is its street.
+_STREET_NOUNS = frozenset({"street", "road", "avenue", "boulevard", "lane"})
+_STREETS_THAT_ARENT = {"RELIGIOUS_SITE": _STREET_NOUNS | {"square"}, "MUSEUM": _STREET_NOUNS}
 _POSSESSIVE = re.compile(r"['’`]s\b")  # Peter's -> Peter
 # Wikidata's badges for a link to a redirect: the article it leads to is about something else
 # ("Grave of Jim Morrison" redirects to the singer's article).
@@ -208,12 +217,28 @@ def _same_word(a: str, b: str) -> bool:
     return a == b or (min(len(a), len(b)) > 3 and SequenceMatcher(None, a, b).ratio() >= 0.8)
 
 
+def description_head(description: str) -> str | None:
+    """What a Wikidata description says the item is: the last word before it says where or whose
+    ("historic district of Paris" -> district, "Japanese department store chain" -> chain)."""
+    text = re.sub(r"\([^)]*\)", " ", description.casefold())
+    words = re.split(r"\s(?:in|of|on|at|near|within|to|for|from|by|between)\s|,", text, maxsplit=1)[0].split()
+    return words[-1] if words else None
+
+
 def describes_area(description: str) -> bool:
     """Whether a Wikidata description says the item is an area ("historic district of Paris"),
     not just where it is ("square in the 8th arrondissement of Paris")."""
-    text = re.sub(r"\([^)]*\)", " ", description.casefold())
-    head = re.split(r"\s(?:in|of|on|at|near|within)\s|,", text, maxsplit=1)[0].split()
-    return bool(head) and head[-1] in _AREA_NOUNS
+    return description_head(description) in _AREA_NOUNS
+
+
+def describes_non_place(description: str) -> bool:
+    """Whether the item is something other than a place: an event, a chain, a diocese."""
+    return description_head(description) in _NOT_PLACE_NOUNS
+
+
+def describes_street(description: str, category: str) -> bool:
+    """Whether the item is a street (or square) that a place of this category only stands on."""
+    return description_head(description) in _STREETS_THAT_ARENT.get(category, frozenset())
 
 
 def name_score(place_name: str, candidate_name: str, candidate_description: str = "", category: str = "") -> float:
@@ -601,7 +626,9 @@ def _best(
     for qid, entity in entities.items():
         if not entity.articles:
             continue  # nothing to describe it with
-        if not place_is_area and describes_area(entity.description):
+        if describes_non_place(entity.description):
+            continue
+        if not place_is_area and (describes_area(entity.description) or describes_street(entity.description, category)):
             continue
         score = max((name_score(place_name, name, entity.description, category) for name in entity.names), default=0.0)
         if score < MATCH_THRESHOLD:

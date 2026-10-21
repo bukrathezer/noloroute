@@ -46,6 +46,7 @@ from app.services.route_optimizer import REVIEWS_PER_SITELINK_SQUARED
 from app.services.translate import TranslateClient, TranslateError
 from app.services.wikipedia import WikiClient
 from scripts.curated_pois import CURATED_NAMES_TR
+from scripts.wikidata_overrides import PART, WRONG
 
 CHUNK = 50  # places saved together, so an interrupted run keeps its progress
 DESCRIPTION_MAX = 300  # the size of the description columns
@@ -181,7 +182,8 @@ def turkish_names(
     """Turkish names for the rows that have none yet: {POI id: name}. `save` stores them as they
     come (every CHUNK Google answers, and at the end); without it nothing is stored."""
     missing = [r for r in rows if r.name_tr is None]
-    second = second_listings(rows)
+    # The item's label doesn't name these places: second listings of it, parts of it, wrong items.
+    second = second_listings(rows) | {r.id for r in rows if r.place_id in PART or r.place_id in WRONG}
     rank = {row.id: i for i, row in enumerate(rows)}  # rows come most popular first
     found: dict[str, str] = {}
     unsaved: dict[str, str] = {}
