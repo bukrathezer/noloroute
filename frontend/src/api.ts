@@ -205,6 +205,13 @@ export interface SavedRoute extends SavedRouteSummary {
   plan: PlanResponse;
 }
 
+/** A plan shared by link (/p/<id>): a frozen copy anyone can open. */
+export interface SharedPlan {
+  id: string;
+  created_at: string;
+  plan: PlanResponse;
+}
+
 // Sent as "Authorization: Bearer <token>" on every request once the user logs in.
 let authToken: string | null = null;
 
@@ -280,6 +287,12 @@ export const reorderDays = (plan: PlanResponse, dayOrder: number[]) =>
 
 export const updateSavedRoute = (id: string, plan: PlanResponse) =>
   request<SavedRoute>(`/api/v1/routes/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify({ plan }) });
+
+/** `lang`: the language of the link's preview in messaging apps. */
+export const sharePlan = (plan: PlanResponse, lang: "tr" | "en") =>
+  request<{ id: string; path: string }>("/api/v1/shares", { method: "POST", body: JSON.stringify({ plan, lang }) });
+
+export const getSharedPlan = (id: string) => request<SharedPlan>(`/api/v1/shares/${encodeURIComponent(id)}`);
 
 export const deleteAccount = (password: string) =>
   request<void>("/api/v1/auth/me", { method: "DELETE", body: JSON.stringify({ password }) });

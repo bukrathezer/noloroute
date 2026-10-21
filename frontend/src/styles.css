@@ -917,6 +917,63 @@ button.stop:hover,
   cursor: progress;
 }
 
+/* Share and save; on a narrow screen they wrap below the summary. */
+.result-header {
+  flex-wrap: wrap;
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.share-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.share-box label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.share-box input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.share-box p {
+  margin: 0;
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.shared-note {
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
 .saved-badge {
   flex: none;
   padding: 6px 10px;

@@ -4,6 +4,7 @@ from app.models.city import City
 from app.models.poi import POI
 from app.models.route_stop import RouteStop
 from app.models.saved_route import SavedRoute
+from app.models.shared_plan import SharedPlan
 from app.models.user import User
 
-__all__ = ["City", "POI", "RouteStop", "SavedRoute", "User"]
+__all__ = ["City", "POI", "RouteStop", "SavedRoute", "SharedPlan", "User"]

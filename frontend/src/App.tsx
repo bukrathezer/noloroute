@@ -7,19 +7,22 @@ import {
   fetchMe,
   type Guide,
   getSavedRoute,
+  getSharedPlan,
   type PlanResponse,
   planRoute,
   removeStop,
   reorderDays,
   saveRoute,
   setAuthToken,
+  type SharedPlan,
+  sharePlan,
   type TokenResponse,
   updateSavedRoute,
   type User,
 } from "./api";
 import { AuthPanel } from "./components/AuthPanel";
 import { type FormState, PlanForm } from "./components/PlanForm";
-import { PlanResult, type SaveState } from "./components/PlanResult";
+import { PlanResult, type SaveState, type ShareState } from "./components/PlanResult";
 import { Privacy } from "./components/Privacy";
 import { type GuideMap, type Point, RouteMap } from "./components/RouteMap";
 import { SavedRoutes } from "./components/SavedRoutes";
@@ -29,6 +32,8 @@ import { cityName, initialLang, type Lang, STRINGS } from "./i18n";
 
 const SOURCE_URL = "https://github.com/bukrathezer/noloroute";
 const AUTH_STORAGE_KEY = "auth";
+// A shared plan's link (app/api/v1/routes_share.py).
+const SHARE_PATH = /^\/p\/([A-Za-z0-9]{8})$/;
 
 type View = "plan" | "guide" | "auth" | "saved" | "privacy";
 // The two tabs; the other views are screens that go back to the tab they were opened from.
@@ -41,6 +46,23 @@ const GUIDE_CITY_ZOOM = 11;
 interface Auth {
   token: string;
   user: User;
+}
+
+// The plan of the link the page was opened with (/p/<id>): loading, not there, or shown until it
+// changes. Dropped once the user does something else. The address bar keeps the link while it
+// loads, is shown, or failed to load (a reload tries again).
+type SharedLink =
+  | { id: string; status: "loading" | "missing" | "failed" }
+  | { id: string; status: "shown"; plan: PlanResponse };
+
+function linkOfPage(): SharedLink | null {
+  const id = SHARE_PATH.exec(window.location.pathname)?.[1];
+  return id ? { id, status: "loading" } : null;
+}
+
+function leaveSharedLink() {
+  window.history.replaceState(null, "", "/");
+  document.title = "NoloRoute"; // the link's page came with the plan's title
 }
 
 function loadAuth(): Auth | null {
@@ -92,6 +114,11 @@ export function App() {
   const [savedRouteId, setSavedRouteId] = useState<string | null>(null);
   const [removingStop, setRemovingStop] = useState<string | null>(null);
   const [movingDay, setMovingDay] = useState<number | null>(null);
+  const [sharedLink, setSharedLink] = useState<SharedLink | null>(linkOfPage);
+  // Waits here until the city list is there to fill in the form.
+  const [openedShare, setOpenedShare] = useState<SharedPlan | null>(null);
+  // Sharing the plan shown: forgotten once the plan changes.
+  const [share, setShare] = useState<{ plan: PlanResponse; state: ShareState } | null>(null);
   // The travel guide, by language (fetched once each), and what it shows.
   const [guides, setGuides] = useState<Partial<Record<Lang, Guide>>>({});
   const [guideFailed, setGuideFailed] = useState<Partial<Record<Lang, boolean>>>({});
@@ -126,6 +153,46 @@ export function App() {
   const guide = guides[lang] ?? null;
 
   useEffect(() => {
+    if (sharedLink?.status !== "loading") return;
+    const { id } = sharedLink;
+    let ignore = false;
+    getSharedPlan(id)
+      .then((opened) => {
+        if (!ignore) setOpenedShare(opened);
+      })
+      .catch((e) => {
+        if (ignore) return;
+        const status = e instanceof ApiError && e.status === 404 ? "missing" : "failed";
+        setSharedLink((link) => (link?.id === id && link.status === "loading" ? { id, status } : link));
+      });
+    return () => {
+      ignore = true;
+    };
+    // Only for the link the page was opened with.
+  }, []);
+
+  // Shown once the city list is there to fill in the form, unless the user started something else.
+  useEffect(() => {
+    if (!openedShare || (cities.length === 0 && !citiesFailed)) return;
+    setOpenedShare(null);
+    if (sharedLink?.status !== "loading" || sharedLink.id !== openedShare.id) return;
+    showStoredPlan(openedShare.plan, null, false);
+    setSharedLink({ id: openedShare.id, status: "shown", plan: openedShare.plan });
+  }, [openedShare, cities, citiesFailed]);
+
+  // Another plan (edited, planned, a saved one opened): the link has nothing more to say.
+  useEffect(() => {
+    if (!sharedLink) return;
+    if (sharedLink.status === "shown" ? plan !== sharedLink.plan : plan !== null) setSharedLink(null);
+  }, [plan, sharedLink]);
+
+  useEffect(() => {
+    if ((sharedLink === null || sharedLink.status === "missing") && SHARE_PATH.test(window.location.pathname)) {
+      leaveSharedLink();
+    }
+  }, [sharedLink]);
+
+  useEffect(() => {
     document.documentElement.lang = lang;
     try {
       localStorage.setItem("lang", lang);
@@ -155,8 +222,9 @@ export function App() {
 
   const updateForm = (patch: Partial<FormState>) => {
     setForm((f) => ({ ...f, ...patch }));
-    // Any change makes the current plan stale.
+    // Any change makes the current plan stale, and the page's link (if any) beside the point.
     requestId.current++;
+    setSharedLink(null);
     setPlan(null);
     setError(null);
     setActiveDay(null);
@@ -236,27 +304,34 @@ export function App() {
     setAuthReason(null);
   };
 
+  // A plan made earlier (a saved route, a shared link), shown as if just planned. The form gets its
+  // trip, except a start date already past: planning again from that date would be refused.
+  // `open`: switch to the planner (a saved route is opened from My routes).
+  function showStoredPlan(stored: PlanResponse, savedId: string | null, open = true) {
+    const start = stored.start_date;
+    requestId.current++;
+    setForm({
+      city: cities.find((c) => c.id === stored.city_id) ?? null,
+      hotel: stored.accommodation,
+      hotelLabel: null,
+      days: stored.duration_days,
+      mode: stored.travel_mode,
+      budget: stored.budget ?? "",
+      startDate: start == null ? "" : start >= todayIso() ? start : addDays(todayIso(), 1),
+    });
+    setPlan(stored);
+    setActiveDay(null);
+    setError(null);
+    setLoading(false);
+    setSaveState(savedId ? "saved" : "idle");
+    setSavedRouteId(savedId);
+    if (open) showMain("plan");
+  }
+
   const openSavedRoute = async (id: string) => {
     try {
       const saved = await getSavedRoute(id);
-      const city = cities.find((c) => c.id === saved.plan.city_id) ?? null;
-      requestId.current++;
-      setForm({
-        city,
-        hotel: saved.plan.accommodation,
-        hotelLabel: null,
-        days: saved.plan.duration_days,
-        mode: saved.plan.travel_mode,
-        budget: saved.plan.budget ?? "",
-        startDate: saved.plan.start_date ?? "",
-      });
-      setPlan(saved.plan);
-      setActiveDay(null);
-      setError(null);
-      setLoading(false);
-      setSaveState("saved");
-      setSavedRouteId(saved.id);
-      showMain("plan");
+      showStoredPlan(saved.plan, saved.id);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) logout();
       else setError(errorMessage(e, lang));
@@ -301,6 +376,28 @@ export function App() {
       if (id === requestId.current) setError(t.result.moveFailed);
     } finally {
       setMovingDay(null);
+    }
+  };
+
+  const onShare = async () => {
+    if (!plan) return;
+    const shown = plan;
+    const city = cities.find((c) => c.id === shown.city_id);
+    const title = t.share.title(city ? cityName(city, lang) : shown.city_id, shown.duration_days);
+    const linkTo = (path: string) => new URL(path, window.location.origin).href;
+    // The plan of the page's link already has one.
+    if (sharedLink?.status === "shown" && sharedLink.plan === shown) {
+      setShare({ plan: shown, state: { status: "done", url: linkTo(`/p/${sharedLink.id}`), title } });
+      return;
+    }
+    setShare({ plan: shown, state: { status: "sharing" } });
+    // Unless another plan is being shared by now.
+    const settle = (state: ShareState) => setShare((s) => (s?.plan === shown ? { plan: shown, state } : s));
+    try {
+      const { path } = await sharePlan(shown, lang);
+      settle({ status: "done", url: linkTo(path), title });
+    } catch {
+      settle({ status: "error" });
     }
   };
 
@@ -487,6 +584,13 @@ export function App() {
               </p>
             )}
 
+            {sharedLink?.status === "loading" && <p className="hint">{t.share.loading}</p>}
+            {(sharedLink?.status === "missing" || sharedLink?.status === "failed") && (
+              <p className="error" role="alert">
+                {sharedLink.status === "missing" ? t.share.notFound : t.share.loadError}
+              </p>
+            )}
+
             {plan && (
               <PlanResult
                 plan={plan}
@@ -502,6 +606,9 @@ export function App() {
                 removingStop={removingStop}
                 onMoveDay={onMoveDay}
                 movingDay={movingDay}
+                shareState={share?.plan === plan ? share.state : null}
+                onShare={onShare}
+                sharedWithYou={sharedLink?.status === "shown" && sharedLink.plan === plan}
               />
             )}
         </div>
