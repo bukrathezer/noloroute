@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/bukrathezer/noloroute/actions/workflows/ci.yml/badge.svg)](https://github.com/bukrathezer/noloroute/actions/workflows/ci.yml)
 
+noloroute.com
+
 **Live demo:** https://noloroute-api-bymcvopkyq-ew.a.run.app · **API docs:** https://noloroute-api-bymcvopkyq-ew.a.run.app/docs
 
 Generates a custom day-by-day travel route based on where you're staying,
