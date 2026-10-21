@@ -25,6 +25,7 @@ from app.db.session import SessionLocal
 from app.models import POI, City
 from app.services.geo import LatLng
 from app.services.wikipedia import COUNTRY_LANGUAGE, Match, WikiApi, WikiClient, WikiError, describe, match_place
+from scripts.wikidata_overrides import PART, WRONG
 
 CHUNK = 25  # places matched and saved together, so an interrupted run keeps its progress
 
@@ -32,6 +33,7 @@ CHUNK = 25  # places matched and saved together, so an interrupted run keeps its
 @dataclass(frozen=True)
 class Place:
     id: str
+    place_id: str
     name: str
     where: LatLng
     category: str
@@ -73,6 +75,7 @@ def describe_city(
     places = [
         Place(
             r.id,
+            r.place_id,
             r.name,
             LatLng(r.latitude, r.longitude),
             r.category,
@@ -91,6 +94,9 @@ def describe_city(
         # A place whose lookup fails stays unchecked, so the next run tries it again.
         matches: dict[str, Match | None] = {}
         for place in chunk:
+            if place.place_id in WRONG:  # checked by hand: no item fits (scripts/wikidata_overrides.py)
+                matches[place.id] = None
+                continue
             try:
                 matches[place.id] = match_place(
                     api, place.name, place.where, place.category, local_language, place.is_area
@@ -123,7 +129,8 @@ def describe_city(
                     .where(POI.id == place.id)
                     .values(
                         wikidata_id=qid,
-                        wikidata_sitelinks=match.sitelink_count if match else None,
+                        # Part of a larger whole: the whole's fame isn't the place's own.
+                        wikidata_sitelinks=match.sitelink_count if match and place.place_id not in PART else None,
                         description_tr=stored["tr"],
                         description_en=stored["en"],
                         description_translated=translated,

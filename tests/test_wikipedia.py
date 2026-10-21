@@ -12,8 +12,11 @@ from app.services.wikipedia import (
     Entity,
     WikiClient,
     WikiError,
+    _best,
     describe,
     describes_area,
+    describes_non_place,
+    describes_street,
     head_kind,
     is_sight_class,
     match_place,
@@ -121,10 +124,60 @@ def test_the_exact_kind_of_place_beats_a_related_one() -> None:
         ("square in the 8th arrondissement of Paris", False),
         ("Roman Catholic church in the 1st arrondissement of Paris", False),
         ("city park in Istanbul", False),
+        # Found matched to temples, mosques and parks named after them (audit, October 2026).
+        ("community in Dubai, United Arab Emirates", True),
+        ("subdistrict (tambon) in Phra Pradaeng district, Samut Prakan province", True),
+        ("locality of the borough Pankow of Berlin", True),
+        ("Italian comune", True),
     ],
 )
 def test_area_descriptions(description: str, area: bool) -> None:
     assert describes_area(description) is area
+
+
+@pytest.mark.parametrize(
+    ("description", "non_place"),
+    [
+        ("Japanese department store chain", True),
+        ("1864 conflict in Japan", True),
+        ("Roman Catholic diocese in Sweden", True),
+        # Institutions are kept: the museum and its building are one visit.
+        ("non-profit organization in the USA", False),
+        ("opera company in Stockholm, Sweden", False),
+        ("bicameral federal legislature of Austria", False),
+        ("war memorial in Berlin", False),
+    ],
+)
+def test_non_place_descriptions(description: str, non_place: bool) -> None:
+    assert describes_non_place(description) is non_place
+
+
+@pytest.mark.parametrize(
+    ("description", "category", "street"),
+    [
+        ("street in the London Borough of Tower Hamlets", "RELIGIOUS_SITE", True),
+        ("square in London", "RELIGIOUS_SITE", True),
+        ("street in Manhattan, New York City", "MUSEUM", True),
+        ("ancient square in Athens", "MUSEUM", False),  # the Roman Agora is the square
+        ("street in London", "MARKET", False),  # Portobello Road Market is the road
+        ("square in the 8th arrondissement of Paris", "PARK", False),
+    ],
+)
+def test_streets_a_place_only_stands_on(description: str, category: str, street: bool) -> None:
+    assert describes_street(description, category) is street
+
+
+def test_a_place_is_not_matched_to_a_chain_or_the_street_in_its_name() -> None:
+    entities = {
+        "Q-chain": Entity("Q-chain", ["Shibuya 109"], "Japanese department store chain", {"en": "109"}, 17),
+        "Q-street": Entity(
+            "Q-street", ["Brick Lane"], "street in the London Borough of Tower Hamlets", {"en": "x"}, 21
+        ),
+    }
+    distances = {"Q-chain": 286.0, "Q-street": 268.0}
+    assert _best("Shibuya Sky", "VIEWPOINT", {"Q-chain": entities["Q-chain"]}, distances, "nearby", False) is None
+    street = {"Q-street": entities["Q-street"]}
+    assert _best("Brick Lane Jamme Masjid", "RELIGIOUS_SITE", street, distances, "nearby", False) is None
 
 
 def test_shorten_drops_parentheses_and_keeps_one_long_sentence() -> None:
