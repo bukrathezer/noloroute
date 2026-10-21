@@ -29,7 +29,7 @@ Usage (from the repo root):
 import argparse
 import re
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from contextlib import ExitStack
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -120,11 +120,13 @@ def localize_city(
     budget: Budget,
     dry_run: bool = False,
     log: Callable[[str], None] = print,
+    only: Collection[str] | None = None,
 ) -> Report:
     """Fill a city's missing Turkish names and one-language descriptions (see the module docstring).
 
     `google` and `translator` may be None (no API key): then only the free names are filled. A dry
-    run asks Wikidata (free) but neither Google service, and writes nothing.
+    run asks Wikidata (free) but neither Google service, and writes nothing. `only`: fill just the
+    places with these Google place ids (the rest of the city still tells second listings apart).
     """
     city = db.get(City, city_id)
     if city is None:
@@ -164,8 +166,10 @@ def localize_city(
         report,
         save=None if dry_run else save_names,
         log=log,
+        only=only,
     )
-    translate_descriptions(db, rows, None if dry_run else translator, budget, report, log)
+    chosen = rows if only is None else [r for r in rows if r.place_id in only]
+    translate_descriptions(db, chosen, None if dry_run else translator, budget, report, log)
     return report
 
 
@@ -178,10 +182,12 @@ def turkish_names(
     report: Report,
     save: Callable[[dict[str, str]], None] | None = None,
     log: Callable[[str], None] = print,
+    only: Collection[str] | None = None,
 ) -> dict[str, str]:
     """Turkish names for the rows that have none yet: {POI id: name}. `save` stores them as they
-    come (every CHUNK Google answers, and at the end); without it nothing is stored."""
-    missing = [r for r in rows if r.name_tr is None]
+    come (every CHUNK Google answers, and at the end); without it nothing is stored. `only`: just
+    the rows with these Google place ids."""
+    missing = [r for r in rows if r.name_tr is None and (only is None or r.place_id in only)]
     # The item's label doesn't name these places: second listings of it, parts of it, wrong items.
     second = second_listings(rows) | {r.id for r in rows if r.place_id in PART or r.place_id in WRONG}
     rank = {row.id: i for i, row in enumerate(rows)}  # rows come most popular first

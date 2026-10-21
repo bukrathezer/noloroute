@@ -90,6 +90,24 @@ def test_fix_matches_cleans_existing_matches_once(seeded: Session, overrides) ->
     assert pois(seeded)["Sight 1"].name_tr == "Hyde Park Gül Bahçesi"
 
 
+def test_localizing_after_the_fix_names_only_the_corrected_places(seeded: Session, overrides) -> None:
+    google = FakeGoogle()
+    localize_city(
+        seeded,
+        CITY_ID,
+        FakeLabels({}),
+        google,
+        None,
+        Budget(name_requests=100, characters=0),
+        log=lambda _: None,
+        only=["test-place-0", "test-place-1"],
+    )
+    after = pois(seeded)
+    assert sorted(google.asked) == ["test-place-0", "test-place-1"]  # no other place costs a request
+    assert after["Sight 0"].name_tr and after["Sight 1"].name_tr
+    assert after["Sight 2"].name_tr is None
+
+
 def test_the_override_lists_are_consistent() -> None:
     from scripts.wikidata_overrides import PART, WRONG
 
