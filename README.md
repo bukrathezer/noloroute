@@ -219,6 +219,14 @@ password flow (`POST /api/v1/auth/login`) and receive a JWT, sent as `Authorizat
   the plan as if just planned: the viewer can save, edit or plan again; the link stays as it was.
 - The link shows the plan's accommodation point, as the routes start there; the app says so.
 
+## Installing as an app
+The site is a Progressive Web App: phones and desktop browsers can add it like an app, with its
+own icon and window (`frontend/public/manifest.webmanifest`; icon sources in `frontend/brand/`).
+Chrome and Edge offer it through the "Install the app" link in the footer; on iPhone and iPad the
+same link explains "Add to Home Screen" in the browser's Share menu. The service worker (`frontend/public/sw.js`)
+caches nothing but `offline.html`, shown when a page is opened without a connection: plans need
+the server anyway, and the app's files must always be the latest deploy.
+
 ## Cities and keeping them fresh
 Sights come from Google Places Nearby Search (`scripts/ingest_places.py`), which costs about $35
 per 1,000 requests and returns at most 20 places per request, so the search is **adaptive**:

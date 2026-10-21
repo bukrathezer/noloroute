@@ -29,6 +29,7 @@ import { SavedRoutes } from "./components/SavedRoutes";
 import { type GuideFocus, TravelGuide } from "./components/TravelGuide";
 import { addDays, firstTripDayIn, fromIso, todayIso } from "./dates";
 import { cityName, initialLang, type Lang, STRINGS } from "./i18n";
+import { canAddToHomeScreen, useInstallPrompt } from "./install";
 
 const SOURCE_URL = "https://github.com/bukrathezer/noloroute";
 const AUTH_STORAGE_KEY = "auth";
@@ -119,6 +120,8 @@ export function App() {
   const [openedShare, setOpenedShare] = useState<SharedPlan | null>(null);
   // Sharing the plan shown: forgotten once the plan changes.
   const [share, setShare] = useState<{ plan: PlanResponse; state: ShareState } | null>(null);
+  const { canInstall, install } = useInstallPrompt();
+  const [showIosInstall, setShowIosInstall] = useState(false);
   // The travel guide, by language (fetched once each), and what it shows.
   const [guides, setGuides] = useState<Partial<Record<Lang, Guide>>>({});
   const [guideFailed, setGuideFailed] = useState<Partial<Record<Lang, boolean>>>({});
@@ -614,7 +617,10 @@ export function App() {
         </div>
 
         <footer className="footer">
-          <a href="/docs">{t.footer.api}</a>
+          {/* In a new window: inside the installed app it would have no way back. */}
+          <a href="/docs" target="_blank" rel="noreferrer">
+            {t.footer.api}
+          </a>
           <span aria-hidden="true">·</span>
           <a href={SOURCE_URL} target="_blank" rel="noreferrer">
             {t.footer.source}
@@ -623,7 +629,21 @@ export function App() {
           <button type="button" className="link-button footer-link" onClick={() => setView("privacy")}>
             {t.footer.privacy}
           </button>
+          {(canInstall || canAddToHomeScreen()) && (
+            <>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                className="link-button footer-link install"
+                aria-expanded={canInstall ? undefined : showIosInstall}
+                onClick={canInstall ? install : () => setShowIosInstall((shown) => !shown)}
+              >
+                {t.footer.install}
+              </button>
+            </>
+          )}
         </footer>
+        {showIosInstall && <p className="hint small">{t.footer.iosInstall}</p>}
       </aside>
 
       <main className={loading && view === "plan" ? "map-area loading" : "map-area"}>

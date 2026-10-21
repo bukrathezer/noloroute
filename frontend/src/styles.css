@@ -1208,6 +1208,11 @@ button.stop:hover,
   color: inherit;
 }
 
+.footer-link.install {
+  color: var(--brand);
+  font-weight: 600;
+}
+
 .suggestion-toggle {
   font-size: 14px;
 }
@@ -1250,6 +1255,7 @@ a.suggestion-name:hover {
 
 .footer {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: auto;
   padding-top: 8px;

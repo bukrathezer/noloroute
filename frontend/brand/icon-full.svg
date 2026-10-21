@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- The logo on a full square, for icons the device shapes itself: public/icon-maskable-512.png
+       (Android crops it to a circle or squircle: the art stays inside the central safe zone) and
+       public/apple-touch-icon.png (180x180; iOS rounds the corners). The art is public/favicon.svg's. -->
+  <rect width="512" height="512" fill="#0f766e"/>
+  <g transform="translate(256 256) scale(13) translate(-15.7 -15.55)">
+    <path d="M9 23c0-4 3-5 6-6s6-2 6-6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="0.1 4.2"/>
+    <circle cx="9" cy="23" r="2.6" fill="#fff"/>
+    <path d="M21 5.5a4 4 0 0 0-4 4c0 3 4 6.5 4 6.5s4-3.5 4-6.5a4 4 0 0 0-4-4z" fill="#fbbf24"/>
+    <circle cx="21" cy="9.5" r="1.4" fill="#0f766e"/>
+  </g>
+</svg>

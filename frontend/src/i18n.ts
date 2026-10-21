@@ -190,7 +190,13 @@ const en = {
       "Your IP address is kept in memory for a short while to limit repeated requests. There are no ads, no tracking cookies, and no data is sold.",
     ],
   },
-  footer: { api: "API docs", source: "Source code", privacy: "Privacy" },
+  footer: {
+    api: "API docs",
+    source: "Source code",
+    privacy: "Privacy",
+    install: "Install the app",
+    iosInstall: "On iPhone and iPad: open the browser's Share menu, then choose “Add to Home Screen”.",
+  },
   minutes: (total: number) => formatDuration(total, "h", "min"),
   weather: {
     conditions: {
@@ -487,7 +493,13 @@ const tr: Strings = {
       "Tekrarlanan istekleri sınırlamak için IP adresin kısa bir süre bellekte tutulur. Reklam yok, takip çerezi yok, veri satılmaz.",
     ],
   },
-  footer: { api: "API dokümanı", source: "Kaynak kod", privacy: "Gizlilik" },
+  footer: {
+    api: "API dokümanı",
+    source: "Kaynak kod",
+    privacy: "Gizlilik",
+    install: "Uygulamayı yükle",
+    iosInstall: "iPhone ve iPad'de: tarayıcının Paylaş menüsünü aç, sonra “Ana Ekrana Ekle”yi seç.",
+  },
   minutes: (total) => formatDuration(total, "sa", "dk"),
   weather: {
     conditions: {
