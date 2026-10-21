@@ -7,7 +7,8 @@
 
 Only places that still carry what the override takes away are changed, so a second run does
 nothing. The Turkish names are filled again by scripts/localize_pois.py: with --localize right
-away (Google names for these places, within --max-name-requests), otherwise by the next ingestion.
+away, for these places only (Google names, within --max-name-requests; a later run fills the ones
+a budget left out), otherwise by the next ingestion.
 
 Usage (from the repo root):
     python -m scripts.fix_wikidata_matches --dry-run
@@ -18,7 +19,7 @@ import argparse
 import sys
 from contextlib import ExitStack
 
-from sqlalchemy import select, update
+from sqlalchemy import distinct, select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -76,13 +77,19 @@ def main() -> None:
         print(f"{'would change' if args.dry_run else 'changed'} {len(changed)} places in {len(cities)} cities")
         if args.dry_run or not args.localize:
             return
+        # The corrected places still without a Turkish name: cleared now, or left by an earlier budget.
+        fixed = [*WRONG, *PART]
+        unnamed_in = db.scalars(
+            select(distinct(POI.city_id)).where(POI.place_id.in_(fixed), POI.name_tr.is_(None))
+        ).all()
+        db.commit()
         api_key = get_settings().google_places_api_key
         budget = Budget(name_requests=args.max_name_requests, characters=0)
         with ExitStack() as stack:
             wiki = stack.enter_context(WikiClient())
             google = stack.enter_context(PlacesClient(api_key)) if api_key else None
-            for city_id in sorted(cities):
-                report = localize_city(db, city_id, wiki, google, None, budget)
+            for city_id in sorted(unnamed_in):
+                report = localize_city(db, city_id, wiki, google, None, budget, only=fixed)
                 print(f"== {city_id}: {report.summary()}")
 
 
