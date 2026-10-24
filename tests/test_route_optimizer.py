@@ -27,6 +27,7 @@ from app.services.route_optimizer import (
     split_into_days,
     stop_minutes,
     stop_warning,
+    tighten_days,
     to_weather_out,
 )
 from app.services.routes_client import Leg, LoopRoute, RoutesAPIError, TravelMode, _parse_duration
@@ -441,6 +442,31 @@ def test_filling_varies_categories() -> None:
     park = make_poi("p1", 0.6, category="PARK", duration=250, reviews=10_000)  # only one of the two fits
     [day] = fill_days([[chosen]], [chosen, museum, park], HOTEL, MODE, None)
     assert [p.id for p in day if p.id != "m0"] == ["p1"]  # slightly less popular, but a new category
+
+
+def test_an_over_long_day_loses_the_far_sight_not_the_close_ones() -> None:
+    # On foot: four sights by the hotel and one 5 km the other way, a bit more famous than each.
+    close = [make_poi(f"c{i}", 0.3, 0.1 * i, category=f"C{i}", duration=90, reviews=10_000) for i in range(4)]
+    far = make_poi("far", -5.0, duration=60, reviews=15_000)
+    [day] = tighten_days([[*close, far]], HOTEL, TravelMode.WALK)
+    assert {p.id for p in day} == {"c0", "c1", "c2", "c3"}
+
+
+def test_tightening_leaves_days_that_fit() -> None:
+    day = [make_poi("a", 0.5), make_poi("b", -0.5)]
+    assert tighten_days([day, []], HOTEL, TravelMode.WALK) == [day, []]
+
+
+def test_tightening_keeps_must_sees_and_one_stop() -> None:
+    must_see = make_poi("must-see", -5.0, duration=60, rating=None, reviews=None)  # hand-picked
+    close = make_poi("close", 0.3, duration=430, reviews=50_000)
+    [day] = tighten_days([[close, must_see]], HOTEL, TravelMode.WALK)
+    assert [p.id for p in day] == ["must-see"]
+    [alone] = tighten_days([[make_poi("huge", 6.0, duration=600)]], HOTEL, TravelMode.WALK)
+    assert [p.id for p in alone] == ["huge"]
+    musts = [make_poi(f"m{i}", 4.0 * (-1) ** i, duration=200, rating=None, reviews=None) for i in range(3)]
+    [kept] = tighten_days([musts], HOTEL, TravelMode.WALK)
+    assert len(kept) == 3  # only must-sees: none goes
 
 
 # --- famous sights first ------------------------------------------------------------------------

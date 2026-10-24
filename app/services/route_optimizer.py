@@ -10,6 +10,11 @@
                     with the least total distance wins.
 3. fit_to_dates     With trip dates: a stop that is closed on its day moves to the least busy day
                     it is open on (or is dropped); on rainy days, outdoor stops move to a dry day.
+   tighten_days     A stretch of the round trip can hold sights in opposite directions from the
+                    hotel (in a big city on foot, hours of walking). While a day's estimated time
+                    runs well over 8 hours, the stop that costs it most for what it is worth leaves
+                    it; filling then gives the time to sights nearby. Not for transit, which is
+                    trimmed on real travel times (see order_day).
    fill_days        Selection reserves a fixed travel time per stop, too much where sights are
                     close together. Each day's time is re-estimated from its real distances, and
                     days with room get the best nearby sights that still fit.
@@ -138,6 +143,8 @@ async def plan_trip(
     rain_adjusted = [False] * days
     if dates:
         groups, rain_adjusted = fit_to_dates(groups, dates, rainy, mode)
+    if mode is not TravelMode.TRANSIT:
+        groups = tighten_days(groups, hotel, mode)
     groups = fill_days(groups, pois, hotel, mode, budget, dates=dates, rainy=rainy)
     groups = famous_days_first(groups, pois, dates=dates, rainy=rainy)
 
@@ -364,6 +371,42 @@ def fit_to_dates(
             if move(poi, day, [d for d in days if not rainy[d] and open_on(poi, d)]):
                 rain_adjusted[day] = True
     return groups, rain_adjusted
+
+
+def tighten_days(groups: list[list[POI]], hotel: LatLng, mode: TravelMode) -> list[list[POI]]:
+    """Take stops off days whose estimated time (straight-line travel along the best loop) runs
+    over MAX_DAY_MINUTES: each time the one worth least per minute it adds to the day, its visit
+    plus the detour to reach it. A far sight that drags the day across the city goes before two
+    close ones worth more together. Hand-picked must-sees stay (see trim_value), and so does a
+    day's last stop.
+
+    Trimming after routing would drop the least popular stops instead, keeping the long walk.
+    The estimate for transit is too rough for this (a metro ride counts as a slow bus).
+    """
+    tightened = []
+    for group in groups:
+        group = list(group)
+        while len(group) > 1:
+            order = _estimated_order(hotel, group)
+            path = [hotel, *(location(s) for s in order), hotel]
+            travel = sum(_travel_minutes(a, b, mode) for a, b in pairwise(path))
+            if sum(s.avg_duration_min for s in order) + travel <= MAX_DAY_MINUTES:
+                break
+
+            # path has the hotel first: each stop sits between the points before and after it.
+            costs = [
+                max(1.0, stop.avg_duration_min)
+                + _travel_minutes(a, here, mode)
+                + _travel_minutes(here, b, mode)
+                - _travel_minutes(a, b, mode)
+                for stop, (a, here, b) in zip(order, zip(path, path[1:], path[2:], strict=False), strict=True)
+            ]
+            worst = min(range(len(order)), key=lambda i: trim_value(order[i]) / costs[i])
+            if math.isinf(trim_value(order[worst])):
+                break  # only must-sees left
+            group.remove(order[worst])
+        tightened.append(group)
+    return tightened
 
 
 def fill_days(
