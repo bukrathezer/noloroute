@@ -15,6 +15,7 @@ from app.api.v1 import (
     routes_places,
     routes_poi,
     routes_route,
+    routes_share,
     routes_suggestions,
 )
 from app.core.config import get_settings
@@ -58,8 +59,18 @@ app = FastAPI(title="NoloRoute API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 API_V1_PREFIX = "/api/v1"
-for module in (routes_auth, routes_city, routes_guide, routes_places, routes_poi, routes_route, routes_suggestions):
+for module in (
+    routes_auth,
+    routes_city,
+    routes_guide,
+    routes_places,
+    routes_poi,
+    routes_route,
+    routes_share,
+    routes_suggestions,
+):
     app.include_router(module.router, prefix=API_V1_PREFIX)
+app.include_router(routes_share.page_router)  # /p/<id>, a shared plan's link
 
 
 @app.get("/health", tags=["health"])
@@ -87,5 +98,6 @@ class FrontendFiles(StaticFiles):
 # The built web frontend (frontend/dist) is served from the same origin as the API, so one
 # Cloud Run service hosts both and no CORS setup is needed. Mounted last: API routes win.
 FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+app.state.frontend_index = FRONTEND_DIST / "index.html"  # shared plan links fill in its preview tags
 if FRONTEND_DIST.is_dir():
     app.mount("/", FrontendFiles(directory=FRONTEND_DIST, html=True), name="frontend")

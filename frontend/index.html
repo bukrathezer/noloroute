@@ -5,7 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Day-by-day travel routes planned around where you stay." />
     <meta name="theme-color" content="#0f766e" />
+    <!-- Link previews in messaging apps. A shared plan's page (/p/<id>) fills in its own
+         title, description and url (app/api/v1/routes_share.py). -->
+    <meta property="og:site_name" content="NoloRoute" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="NoloRoute" />
+    <meta property="og:description" content="Day-by-day travel routes planned around where you stay." />
+    <meta property="og:url" content="https://noloroute.com/" />
+    <meta property="og:image" content="https://noloroute.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Installing the site as an app (sw.js, manifest.webmanifest; sources in brand/). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="NoloRoute" />
     <title>NoloRoute</title>
   </head>
   <body>

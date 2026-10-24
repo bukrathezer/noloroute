@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- The link preview image (public/og-image.jpg is this, rendered at 1200x630, JPEG quality 0.9). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#0b4f4a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- streets -->
+  <g stroke="#ffffff" stroke-opacity="0.07" stroke-width="14" fill="none" stroke-linecap="round">
+    <path d="M520 680 L1240 120"/>
+    <path d="M700 -40 L1240 560"/>
+    <path d="M560 -40 Q 760 300 1240 380"/>
+    <path d="M480 300 L1240 260"/>
+  </g>
+  <!-- the route: hotel, two stops, the pin -->
+  <path d="M600 500 Q 690 480 760 400 T 900 330 T 1012 214" fill="none" stroke="#ffffff" stroke-width="11"
+        stroke-linecap="round" stroke-dasharray="0.1 27"/>
+  <circle cx="600" cy="500" r="24" fill="#ffffff"/>
+  <g font-family="Inter, 'Segoe UI', system-ui, sans-serif" font-weight="700" font-size="32" fill="#0f766e"
+     text-anchor="middle">
+    <circle cx="760" cy="400" r="31" fill="#ffffff"/>
+    <text x="760" y="411">1</text>
+    <circle cx="900" cy="330" r="31" fill="#ffffff"/>
+    <text x="900" y="341">2</text>
+  </g>
+  <g transform="translate(760 22) scale(12)">
+    <path d="M21 5.5a4 4 0 0 0-4 4c0 3 4 6.5 4 6.5s4-3.5 4-6.5a4 4 0 0 0-4-4z" fill="#fbbf24"/>
+    <circle cx="21" cy="9.5" r="1.4" fill="#0f766e"/>
+  </g>
+  <g font-family="Inter, 'Segoe UI', system-ui, sans-serif" fill="#ffffff">
+    <text x="88" y="300" font-size="104" font-weight="700" letter-spacing="-2">NoloRoute</text>
+    <text x="92" y="372" font-size="38" fill-opacity="0.78">noloroute.com</text>
+  </g>
+</svg>

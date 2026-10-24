@@ -117,7 +117,7 @@ async def plan_route(
         days=days,
         price_basis=city.price_basis,
         prices_checked_on=city.prices_checked_on,
-        **_plan_totals(days),
+        **plan_totals(days),
     )
 
 
@@ -154,7 +154,7 @@ async def remove_stop(
     new_day.dropped_stops_tr = _turkish_dropped(day) + new_day.dropped_stops_tr
 
     days = [new_day if d.day_number == day.day_number else d for d in plan.days]
-    return plan.model_copy(update={"days": days, **_plan_totals(days)})
+    return plan.model_copy(update={"days": days, **plan_totals(days)})
 
 
 @router.post("/plan/reorder-days", response_model=RoutePlanResponse)
@@ -234,7 +234,7 @@ async def reorder_days(
     rerouted = await asyncio.gather(*(move(position, day, slot) for position, day, slot in moved))
     new_by_position = {d.day_number: d for d in rerouted}
     days = [new_by_position.get(position, day) for position, day, _ in moves]
-    return plan.model_copy(update={"days": days, **_plan_totals(days)})
+    return plan.model_copy(update={"days": days, **plan_totals(days)})
 
 
 def _turkish_dropped(day: DayPlan) -> list[str]:
@@ -257,7 +257,7 @@ def _load_pois(db: Session, city_id: str, poi_ids: list[str]) -> list[POI]:
     return [by_id[i] for i in poi_ids]
 
 
-def _plan_totals(days: list[DayPlan]) -> dict[str, Decimal | int]:
+def plan_totals(days: list[DayPlan]) -> dict[str, Decimal | int]:
     prices = [stop.entry_price for day in days for stop in day.stops]
     return {
         "total_entry_cost": sum((p for p in prices if p is not None), Decimal(0)),
@@ -275,7 +275,7 @@ MAX_SAVED_ROUTES_LISTED = 100
 
 @router.post("", response_model=SavedRouteOut, status_code=status.HTTP_201_CREATED)
 def save_route(req: SaveRouteRequest, user: CurrentUser, db: DbSession) -> SavedRouteOut:
-    city = _validated_city(db, req.plan)
+    city = validated_city(db, req.plan)
     route = SavedRoute(name=(req.name or "").strip() or _default_name(city, req.plan.duration_days), user_id=user.id)
     _apply_plan(route, req.plan)
     db.add(route)
@@ -288,7 +288,7 @@ def save_route(req: SaveRouteRequest, user: CurrentUser, db: DbSession) -> Saved
 def update_saved_route(route_id: str, req: SaveRouteRequest, user: CurrentUser, db: DbSession) -> SavedRouteOut:
     """Replace a saved route's plan (e.g. after removing stops); the name changes only if given."""
     route = _owned_route(db, user, route_id)
-    _validated_city(db, req.plan)
+    validated_city(db, req.plan)
     _apply_plan(route, req.plan)
     if name := (req.name or "").strip():
         route.name = name
@@ -330,7 +330,7 @@ def _owned_route(db: Session, user: User, route_id: str) -> SavedRoute:
     return route
 
 
-def _validated_city(db: Session, plan: RoutePlanResponse) -> City:
+def validated_city(db: Session, plan: RoutePlanResponse) -> City:
     """The plan comes from the client, so check the city exists and every stop is one of its POIs."""
     city = db.get(City, plan.city_id)
     if city is None:
@@ -375,12 +375,12 @@ def _summary(route: SavedRoute, stop_count: int) -> SavedRouteSummary:
 
 
 def _saved_route_out(db: Session, route: SavedRoute) -> SavedRouteOut:
-    plan = _with_current_texts(db, RoutePlanResponse.model_validate(route.plan))
+    plan = with_current_texts(db, RoutePlanResponse.model_validate(route.plan))
     stop_count = sum(len(day.stops) for day in plan.days)
     return SavedRouteOut(**_summary(route, stop_count).model_dump(), plan=plan)
 
 
-def _with_current_texts(db: Session, plan: RoutePlanResponse) -> RoutePlanResponse:
+def with_current_texts(db: Session, plan: RoutePlanResponse) -> RoutePlanResponse:
     """The plan with its places' current names and descriptions in both languages.
 
     A saved plan is a snapshot: one saved before Turkish names or translated descriptions existed

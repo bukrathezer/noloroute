@@ -190,7 +190,13 @@ const en = {
       "Your IP address is kept in memory for a short while to limit repeated requests. There are no ads, no tracking cookies, and no data is sold.",
     ],
   },
-  footer: { api: "API docs", source: "Source code", privacy: "Privacy" },
+  footer: {
+    api: "API docs",
+    source: "Source code",
+    privacy: "Privacy",
+    install: "Install the app",
+    iosInstall: "On iPhone and iPad: open the browser's Share menu, then choose “Add to Home Screen”.",
+  },
   minutes: (total: number) => formatDuration(total, "h", "min"),
   weather: {
     conditions: {
@@ -247,6 +253,21 @@ const en = {
     saveChanges: "Save changes",
     error: "Couldn't save the route. Please try again.",
     defaultName: (city: string, days: number) => `${city} · ${days} ${days === 1 ? "day" : "days"}`,
+  },
+  share: {
+    button: "Share",
+    sharing: "Creating the link…",
+    error: "Couldn't create the link. Please try again.",
+    linkLabel: "Link to this plan",
+    copy: "Copy link",
+    copied: "Copied ✓",
+    send: "Send…",
+    note: "Anyone with the link can see the plan, including where you stay.",
+    sharedWithYou: "This plan was shared with you. Changes you make stay with you; the link stays as it is.",
+    loading: "Opening the shared plan…",
+    notFound: "This shared plan wasn't found. The link may be mistyped.",
+    loadError: "Couldn't open the shared plan. Please try again.",
+    title: (city: string, days: number) => `${city} · ${days}-day trip plan`,
   },
   saved: {
     title: "My routes",
@@ -472,7 +493,13 @@ const tr: Strings = {
       "Tekrarlanan istekleri sınırlamak için IP adresin kısa bir süre bellekte tutulur. Reklam yok, takip çerezi yok, veri satılmaz.",
     ],
   },
-  footer: { api: "API dokümanı", source: "Kaynak kod", privacy: "Gizlilik" },
+  footer: {
+    api: "API dokümanı",
+    source: "Kaynak kod",
+    privacy: "Gizlilik",
+    install: "Uygulamayı yükle",
+    iosInstall: "iPhone ve iPad'de: tarayıcının Paylaş menüsünü aç, sonra “Ana Ekrana Ekle”yi seç.",
+  },
   minutes: (total) => formatDuration(total, "sa", "dk"),
   weather: {
     conditions: {
@@ -529,6 +556,21 @@ const tr: Strings = {
     saveChanges: "Değişiklikleri kaydet",
     error: "Rota kaydedilemedi. Lütfen tekrar dene.",
     defaultName: (city, days) => `${city} · ${days} gün`,
+  },
+  share: {
+    button: "Paylaş",
+    sharing: "Link hazırlanıyor…",
+    error: "Link oluşturulamadı. Lütfen tekrar dene.",
+    linkLabel: "Bu planın linki",
+    copy: "Linki kopyala",
+    copied: "Kopyalandı ✓",
+    send: "Gönder…",
+    note: "Linki alan herkes planı ve konaklama noktanı görebilir.",
+    sharedWithYou: "Bu plan seninle paylaşıldı. Yaptığın değişiklikler sadece sende kalır; link aynı kalır.",
+    loading: "Paylaşılan plan açılıyor…",
+    notFound: "Bu paylaşılan plan bulunamadı. Link yanlış yazılmış olabilir.",
+    loadError: "Paylaşılan plan açılamadı. Lütfen tekrar dene.",
+    title: (city, days) => `${city} · ${days} günlük gezi planı`,
   },
   saved: {
     title: "Rotalarım",

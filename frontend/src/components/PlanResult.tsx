@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, useRef, useState } from "react";
 import type { DayWeather, LegDetails, PlannedStop, PlanResponse, TravelMode } from "../api";
 import { formatDay, formatMonth } from "../dates";
 import { type Lang, STRINGS } from "../i18n";
@@ -9,6 +9,11 @@ import { Suggestions } from "./Suggestions";
 
 // "dirty": a saved route was edited and the changes are not stored yet.
 export type SaveState = "idle" | "saving" | "saved" | "dirty" | "error";
+
+export type ShareState =
+  | { status: "sharing" | "error" }
+  /** `title`: for the phone's share sheet, e.g. "Paris · 2-day trip plan". */
+  | { status: "done"; url: string; title: string };
 
 interface Props {
   plan: PlanResponse;
@@ -27,11 +32,17 @@ interface Props {
   onMoveDay: (dayNumber: number, direction: -1 | 1) => void;
   /** The day being moved right now, if any. */
   movingDay: number | null;
+  /** Sharing this plan by link, once asked for. */
+  shareState: ShareState | null;
+  onShare: () => void;
+  /** The plan was opened from someone's link. */
+  sharedWithYou: boolean;
 }
 
 export function PlanResult(props: Props) {
   const { plan, lang, activeDay, onActiveDayChange, highlightedStop, onHighlightStop } = props;
   const { saveState, onSave, onShowSaved, onRemoveStop, removingStop, onMoveDay, movingDay } = props;
+  const { shareState, onShare, sharedWithYou } = props;
   const t = STRINGS[lang];
   const r = t.result;
   const stopCount = plan.days.reduce((n, d) => n + d.stops.length, 0);
@@ -61,20 +72,40 @@ export function PlanResult(props: Props) {
     <section className="plan-result" aria-live="polite">
       <div className="result-header">
         <h2>{r.summary(stopCount, plan.duration_days)}</h2>
-        {saveState === "saved" ? (
-          <button type="button" className="saved-badge" onClick={onShowSaved}>
-            ✓ {t.save.saved}
+        <div className="result-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onShare}
+            disabled={shareState?.status === "sharing"}
+          >
+            {shareState?.status === "sharing" ? t.share.sharing : t.share.button}
           </button>
-        ) : (
-          <button type="button" className="secondary-button" onClick={onSave} disabled={saveState === "saving"}>
-            {saveState === "saving" ? t.save.saving : saveState === "dirty" ? t.save.saveChanges : t.save.button}
-          </button>
-        )}
+          {saveState === "saved" ? (
+            <button type="button" className="saved-badge" onClick={onShowSaved}>
+              ✓ {t.save.saved}
+            </button>
+          ) : (
+            <button type="button" className="secondary-button" onClick={onSave} disabled={saveState === "saving"}>
+              {saveState === "saving" ? t.save.saving : saveState === "dirty" ? t.save.saveChanges : t.save.button}
+            </button>
+          )}
+        </div>
       </div>
+      {sharedWithYou && <p className="hint shared-note">{t.share.sharedWithYou}</p>}
       {saveState === "error" && (
         <p className="error" role="alert">
           {t.save.error}
         </p>
+      )}
+      {shareState?.status === "error" && (
+        <p className="error" role="alert">
+          {t.share.error}
+        </p>
+      )}
+      {/* Keyed by the link: a new one starts without "Copied". */}
+      {shareState?.status === "done" && (
+        <ShareBox key={shareState.url} url={shareState.url} title={shareState.title} lang={lang} />
       )}
       <dl className="stats">
         <div>
@@ -299,6 +330,45 @@ export function PlanResult(props: Props) {
   );
 }
 
+/** The link, ready to copy or (on phones) to send through another app. */
+function ShareBox({ url, title, lang }: { url: string; title: string; lang: Lang }) {
+  const s = STRINGS[lang].share;
+  const input = useRef<HTMLInputElement>(null);
+  const [copied, setCopied] = useState(false);
+  const canSend = typeof navigator.share === "function";
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+    } catch {
+      // No clipboard access: select the link so it can be copied by hand.
+      input.current?.select();
+    }
+  };
+
+  return (
+    <div className="share-box">
+      <label>
+        <span className="muted small">{s.linkLabel}</span>
+        <input ref={input} type="text" readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
+      </label>
+      <div className="share-actions">
+        <button type="button" className="pill-button" onClick={copy}>
+          {copied ? s.copied : s.copy}
+        </button>
+        {canSend && (
+          // Closing the share sheet without sending rejects: nothing to do then.
+          <button type="button" className="pill-button" onClick={() => navigator.share({ title, url }).catch(() => {})}>
+            {s.send}
+          </button>
+        )}
+      </div>
+      <p className="muted small">{s.note}</p>
+    </div>
+  );
+}
+
 interface Description {
   text: string;
   /** The language of the Wikipedia article it comes from. */
@@ -388,7 +458,7 @@ function LegLine({ mode, details, minutes, km, fromHotel, lang }: LegLineProps) 
         <span className="ride" key={`${ride.line}|${ride.from_stop}|${ride.to_stop}`}>
           <span
             className="line-chip"
-            style={{ background: ride.line_color ?? undefined, color: ride.line_text_color ?? undefined }}
+            style={{ background: hexColor(ride.line_color), color: hexColor(ride.line_text_color) }}
             title={[ride.agency, ride.headsign && r.towards(ride.headsign)].filter(Boolean).join(" · ") || undefined}
           >
             <span aria-hidden="true">{VEHICLE_ICONS[ride.vehicle] ?? "🚍"}</span>
@@ -399,6 +469,11 @@ function LegLine({ mode, details, minutes, km, fromHotel, lang }: LegLineProps) 
       ))}
     </div>
   );
+}
+
+/** A colour code like "#ffcd00", or undefined for anything else (shared plans come from strangers). */
+function hexColor(value: string | null): string | undefined {
+  return value && /^#[0-9a-f]{6}$/i.test(value) ? value : undefined;
 }
 
 const WEATHER_ICONS: Record<DayWeather["condition"], string> = {

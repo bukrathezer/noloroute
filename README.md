@@ -18,7 +18,7 @@ budget instead.
 - Cities: Paris, Istanbul and 30 popular cities abroad (`scripts/city_catalog.py`)
 - Input: accommodation location (lat/lng), trip length (days), budget
 - Output: points of interest split into days, ordered to minimize travel distance/time
-- User accounts with saved routes
+- User accounts with saved routes, and plans shared by link
 - POI categories: museums, landmarks, parks, religious sites, viewpoints, markets
 
 ## Tech Stack
@@ -209,6 +209,23 @@ password flow (`POST /api/v1/auth/login`) and receive a JWT, sent as `Authorizat
   delete the current user's routes; `DELETE /api/v1/auth/me` deletes the account (password required).
 - Login, registration and place search are rate-limited per client (in memory, per instance). A saved route keeps a snapshot of the plan as shown (travel times, street
   paths), so reopening it needs no new Routes API calls; another user's route answers 404.
+
+## Sharing a plan
+- `POST /api/v1/shares` stores a copy of a plan (no login, rate-limited per client) and returns
+  its link, e.g. `noloroute.com/p/aB3dE9xQ`; the same plan shared again keeps its link.
+  `GET /api/v1/shares/{id}` opens it for anyone, with the places' current names and descriptions.
+- `/p/{id}` serves the web app with the plan's title and first stops in its preview tags (Open
+  Graph), in the sharer's language, so messaging apps show what the link is about. The app opens
+  the plan as if just planned: the viewer can save, edit or plan again; the link stays as it was.
+- The link shows the plan's accommodation point, as the routes start there; the app says so.
+
+## Installing as an app
+The site is a Progressive Web App: phones and desktop browsers can add it like an app, with its
+own icon and window (`frontend/public/manifest.webmanifest`; icon sources in `frontend/brand/`).
+Chrome and Edge offer it through the "Install the app" link in the footer; on iPhone and iPad the
+same link explains "Add to Home Screen" in the browser's Share menu. The service worker (`frontend/public/sw.js`)
+caches nothing but `offline.html`, shown when a page is opened without a connection: plans need
+the server anyway, and the app's files must always be the latest deploy.
 
 ## Cities and keeping them fresh
 Sights come from Google Places Nearby Search (`scripts/ingest_places.py`), which costs about $35
