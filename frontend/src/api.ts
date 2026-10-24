@@ -75,6 +75,8 @@ export interface PlannedStop {
   travel_minutes_from_previous: number;
   distance_km_from_previous: number;
   path_from_previous: string | null;
+  /** The way here crosses water by ferry, though walked or driven (missing from older plans). */
+  ferry_from_previous?: boolean;
   /** Transit plans only (missing from plans saved before transit existed). */
   leg_from_previous?: LegDetails | null;
   entry_price: string | null;
@@ -97,6 +99,7 @@ export interface DayPlan {
   return_travel_minutes: number;
   return_distance_km: number;
   return_path: string | null;
+  return_ferry?: boolean;
   return_leg?: LegDetails | null;
   total_travel_minutes: number;
   total_visit_minutes: number;

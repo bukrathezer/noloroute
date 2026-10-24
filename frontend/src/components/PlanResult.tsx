@@ -229,6 +229,7 @@ export function PlanResult(props: Props) {
                     minutes={stop.travel_minutes_from_previous}
                     km={stop.distance_km_from_previous}
                     fromHotel={stop.order_in_day === 1}
+                    ferry={stop.ferry_from_previous ?? false}
                     lang={lang}
                   />
                   <div className="stop-row">
@@ -275,6 +276,7 @@ export function PlanResult(props: Props) {
                   minutes={day.return_travel_minutes}
                   km={day.return_distance_km}
                   fromHotel={false}
+                  ferry={day.return_ferry ?? false}
                   lang={lang}
                 />
                 <div className="stop">
@@ -432,15 +434,18 @@ interface LegLineProps {
   minutes: number;
   km: number;
   fromHotel: boolean;
+  /** The way crosses water by ferry, though walked or driven. */
+  ferry: boolean;
   lang: Lang;
 }
 
 /** The travel line above a stop: "Walking 12 min · 0.9 km", plus the rides of a transit leg. */
-function LegLine({ mode, details, minutes, km, fromHotel, lang }: LegLineProps) {
+function LegLine({ mode, details, minutes, km, fromHotel, ferry, lang }: LegLineProps) {
   const t = STRINGS[lang];
   const r = t.result;
   const distance = km.toLocaleString(lang, { maximumFractionDigits: 1 });
   const extras: string[] = [];
+  if (ferry) extras.push(r.ferry);
   if (details?.estimated) extras.push(r.estimatedRide);
   if (details?.mode === "TRANSIT" && details.walk_minutes) extras.push(r.walkingPart(t.minutes(details.walk_minutes)));
   if (details?.alternative_mode && details.alternative_minutes != null) {

@@ -155,6 +155,9 @@ is better (`app/services/transit_planner.py`):
 4. Each leg of the final order is routed again at the time the traveller would actually leave
    (09:00 local time, plus the travel and visits before it). That gives the street path and the
    lines to take (line, direction, stops); the plan also shows the option not taken, e.g. "on foot: 45 min".
+5. Where there is no other way (Venice's islands), Google's walking routes take a ferry: such a
+   "walk" is routed as transit instead, so the boat and its line are shown. Where Google has no
+   transit route, and in walking and driving plans, the leg says it includes a ferry.
 
 Timetables are read in the city's time zone (stored per city). Google publishes transit only a few
 weeks ahead, so for later trips the same weekday in the coming week is used. Where Google has no
