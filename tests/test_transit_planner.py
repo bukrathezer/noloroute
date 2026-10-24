@@ -231,6 +231,31 @@ def test_leg_routing_failure_keeps_the_matrix_times() -> None:
     assert TRANSIT in {leg.mode for leg in loop.legs}
 
 
+def test_a_walk_that_takes_a_ferry_is_routed_as_the_ride() -> None:
+    # 1.2 km: walking (14 min) is about as quick as transit (10 min), but Google's walk takes a ferry.
+    client = FakeTransitClient(transit_min_km=0.5, ferry_from_km=1.0)
+    loop, _ = asyncio.run(order_day_transit(HOTEL, [east(1.2)], [60], client, None, PARIS_TZ))
+    there, back = loop.legs
+    assert there.mode is TRANSIT and there.rides and not there.ferry
+    assert back.mode is TRANSIT
+    assert sorted(mode for mode, _ in client.leg_calls) == [TRANSIT, TRANSIT, WALK, WALK]  # legs run side by side
+
+
+def test_a_ferry_walk_stays_marked_when_the_ride_cant_be_routed() -> None:
+    client = FakeTransitClient(transit_min_km=0.5, ferry_from_km=1.0, fail_transit_legs=True)
+    loop, _ = asyncio.run(order_day_transit(HOTEL, [east(1.2)], [60], client, None, PARIS_TZ))
+    assert all(leg.mode is WALK and leg.ferry and leg.polyline == "walk-path" for leg in loop.legs)
+
+
+def test_without_a_transit_route_a_ferry_walk_stays_marked() -> None:
+    client = FakeTransitClient(has_transit=False, ferry_from_km=1.0)
+    days = asyncio.run(plan_trip([make_poi("island", 1.2)], HOTEL, 1, None, TRANSIT, client, tz=PARIS_TZ))
+    [stop] = days[0].stops
+    assert stop.leg_from_previous is not None and stop.leg_from_previous.mode == "WALK"
+    assert stop.ferry_from_previous and days[0].return_ferry
+    assert TRANSIT not in [mode for mode, _ in client.leg_calls]  # no transit data: not asked for
+
+
 def test_matrix_failure_falls_back_to_estimates() -> None:
     routed = asyncio.run(order_day(HOTEL, ring(4), TRANSIT, FakeTransitClient(fail_matrix=True)))
     assert routed.source == "estimate"
@@ -326,6 +351,36 @@ def test_parse_leg_turns_transit_steps_into_rides() -> None:
 def test_parse_leg_without_rides_is_a_walk() -> None:
     parsed = parse_leg({"duration": "400s", "steps": [{"travelMode": "WALK", "staticDuration": "400s"}]})
     assert parsed.mode is WALK and parsed.rides == () and parsed.walk_seconds == 400
+    assert not parsed.ferry
+
+
+def test_parse_leg_notices_a_ferry_on_a_walk() -> None:
+    steps = [
+        {"travelMode": "WALK", "staticDuration": "900s"},
+        {"travelMode": "WALK", "staticDuration": "600s", "navigationInstruction": {"maneuver": "FERRY"}},
+    ]
+    assert parse_leg({"duration": "1500s", "steps": steps}).ferry
+
+
+def test_a_routed_leg_with_a_ferry_warning_takes_a_ferry() -> None:
+    route = {
+        "routes": [
+            {"legs": [{"duration": "2160s", "distanceMeters": 2900}], "warnings": ["This route includes a ferry."]}
+        ]
+    }
+    client = RoutesClient("key", transport=httpx.MockTransport(lambda _: httpx.Response(200, json=route)))
+    assert asyncio.run(client.route_leg(HOTEL, east(2.9), WALK)).ferry
+
+
+def test_loop_legs_with_a_ferry_are_marked() -> None:
+    legs = [
+        {"duration": "600s", "distanceMeters": 800, "steps": [{"navigationInstruction": {"maneuver": "TURN_LEFT"}}]},
+        {"duration": "900s", "distanceMeters": 900, "steps": [{"navigationInstruction": {"maneuver": "FERRY"}}]},
+    ]
+    route = {"routes": [{"legs": legs}]}
+    client = RoutesClient("key", transport=httpx.MockTransport(lambda _: httpx.Response(200, json=route)))
+    loop = asyncio.run(client.optimize_loop(HOTEL, [east(1)], WALK))
+    assert [leg.ferry for leg in loop.legs] == [False, True]
 
 
 class FakeMatrixAPI:

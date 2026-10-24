@@ -92,6 +92,7 @@ const en = {
     noTransit:
       "Google has no public transport data for this city, so rides are estimated from the distance and shown without lines. Check the lines in a local transit app.",
     estimatedRide: "estimated",
+    ferry: "⛴️ includes a ferry",
     mapLegend: "On the map, dotted lines are walks and solid lines are rides.",
     mapLegendEstimated: "On the map, dotted lines are walks and dashed lines are estimated rides.",
     mapLegendMixed: "On the map, dotted lines are walks, solid lines are rides and dashed lines are estimated rides.",
@@ -370,6 +371,7 @@ const tr: Strings = {
     noTransit:
       "Google bu şehir için toplu taşıma verisi vermiyor; toplu taşıma süreleri mesafeye göre tahmin edildi ve hatlar gösterilemiyor. Hatları yerel bir toplu taşıma uygulamasından kontrol et.",
     estimatedRide: "tahmini",
+    ferry: "⛴️ vapur/feribot dahil",
     mapLegend: "Haritada noktalı çizgiler yürüyüşü, düz çizgiler toplu taşımayı gösterir.",
     mapLegendEstimated: "Haritada noktalı çizgiler yürüyüşü, kesik çizgiler tahmini toplu taşımayı gösterir.",
     mapLegendMixed:

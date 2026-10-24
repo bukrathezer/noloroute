@@ -17,12 +17,17 @@ class FakeTransitClient:
         has_transit: bool = True,
         fail_matrix: bool = False,
         fail_legs: bool = False,
+        fail_transit_legs: bool = False,
         transit_min_km: float = TRANSIT_MIN_KM,
+        ferry_from_km: float | None = None,
     ) -> None:
         self.has_transit = has_transit
+        # Walks at least this long take a ferry (as Google's do to an island).
+        self.ferry_from_km = ferry_from_km
         self.transit_min_km = transit_min_km
         self.fail_matrix = fail_matrix
         self.fail_legs = fail_legs
+        self.fail_transit_legs = fail_transit_legs
         self.matrix_calls: list[tuple[TravelMode, int, datetime | None]] = []  # mode, points, departure
         self.leg_calls: list[tuple[TravelMode, datetime | None]] = []
 
@@ -52,13 +57,14 @@ class FakeTransitClient:
         self, origin: LatLng, destination: LatLng, mode: TravelMode, departure: datetime | None = None
     ) -> Leg:
         self.leg_calls.append((mode, departure))
-        if self.fail_legs:
+        if self.fail_legs or (self.fail_transit_legs and mode is TravelMode.TRANSIT):
             raise RoutesAPIError("leg down")
         seconds = self.seconds(origin, destination, mode)
         assert seconds is not None, "only legs with a route are asked for"
         meters = round(haversine_km(origin, destination) * 1000)
         if mode is TravelMode.WALK:
-            return Leg(seconds, meters, "walk-path", TravelMode.WALK, walk_seconds=seconds)
+            ferry = self.ferry_from_km is not None and meters >= self.ferry_from_km * 1000
+            return Leg(seconds, meters, "walk-path", TravelMode.WALK, walk_seconds=seconds, ferry=ferry)
         ride = TransitRide(
             vehicle="SUBWAY",
             line="M1",

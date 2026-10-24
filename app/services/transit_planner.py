@@ -161,15 +161,22 @@ async def order_day_transit(
 
     legs = await asyncio.gather(
         *(
-            _route_leg(client, points[a], points[b], choices[a][b], departure)
+            _route_leg(client, points[a], points[b], choices[a][b], departure, transit_available)
             for (a, b), departure in zip(path, departures, strict=True)
         )
     )
     return LoopRoute(order=[i - 1 for i in order], legs=list(legs)), transit_available
 
 
-async def _route_leg(client: RoutesClient, a: LatLng, b: LatLng, choice: LegChoice, departure: datetime) -> Leg:
-    """The chosen leg with its path and rides; the matrix numbers (without a path) if that fails."""
+async def _route_leg(
+    client: RoutesClient, a: LatLng, b: LatLng, choice: LegChoice, departure: datetime, has_transit: bool = True
+) -> Leg:
+    """The chosen leg with its path and rides; the matrix numbers (without a path) if that fails.
+
+    A walk that turns out to take a ferry (Google's walks do where there is no other way, as to
+    Venice's islands) is a ride in fact: it is routed as transit, so the boat's line is shown.
+    Where Google has no transit route, it stays a walk, marked as taking a ferry.
+    """
     fallback = Leg(
         choice.seconds,
         choice.meters,
@@ -185,10 +192,20 @@ async def _route_leg(client: RoutesClient, a: LatLng, b: LatLng, choice: LegChoi
     except RoutesAPIError as exc:
         logger.warning("Leg routing failed, using matrix times: %s", exc)
         return fallback
+    # (Not when transit was asked for already: Google found a walk best then.)
+    if choice.mode is TravelMode.WALK and leg.mode is TravelMode.WALK and leg.ferry and has_transit:
+        try:
+            ride = await client.route_leg(a, b, TravelMode.TRANSIT, departure=departure)
+        except RoutesAPIError:
+            ride = None
+        if ride is not None and ride.mode is TravelMode.TRANSIT:
+            return Leg(ride.seconds, ride.meters, ride.polyline, ride.mode, ride.rides, ride.walk_seconds)
     # At the exact departure time Google may find that walking is best after all: then the
     # leg is a walk, and the alternative we had in mind no longer applies.
     alternative = choice.alternative if leg.mode is choice.mode else None
-    return Leg(leg.seconds, leg.meters, leg.polyline, leg.mode, leg.rides, leg.walk_seconds, alternative)
+    return Leg(
+        leg.seconds, leg.meters, leg.polyline, leg.mode, leg.rides, leg.walk_seconds, alternative, ferry=leg.ferry
+    )
 
 
 def estimated_transit(points: Sequence[LatLng], walk: Matrix) -> Matrix:

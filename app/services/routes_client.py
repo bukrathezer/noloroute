@@ -6,7 +6,7 @@
 """
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
@@ -23,6 +23,7 @@ LOOP_FIELD_MASK = ",".join(
         "routes.legs.duration",
         "routes.legs.distanceMeters",
         "routes.legs.polyline.encodedPolyline",  # street-level path, drawn on the map
+        "routes.legs.steps.navigationInstruction.maneuver",  # a ferry on the way (see FERRY_MANEUVERS)
     ]
 )
 LEG_FIELD_MASK = ",".join(
@@ -33,8 +34,13 @@ LEG_FIELD_MASK = ",".join(
         "routes.legs.steps.travelMode",
         "routes.legs.steps.staticDuration",
         "routes.legs.steps.transitDetails",  # line, stops and vehicle of each ride
+        "routes.legs.steps.navigationInstruction.maneuver",
+        "routes.warnings",  # e.g. "This route includes a ferry."
     ]
 )
+# Where there is no other way (Venice's islands), Google's walking and driving routes take a ferry:
+# a walk to San Michele is a vaporetto ride in fact.
+FERRY_MANEUVERS = {"FERRY", "FERRY_TRAIN"}
 # "status" must be asked for, or every element looks successful.
 MATRIX_FIELD_MASK = "originIndex,destinationIndex,status,condition,duration,distanceMeters"
 MAX_INTERMEDIATES = 25  # API limit when optimizeWaypointOrder is on
@@ -82,6 +88,8 @@ class Leg:
     alternative: tuple[TravelMode, int] | None = None  # the option not taken: (mode, seconds)
     # A ride timed by estimate: Google has no public transport data for this place (Japan).
     estimated: bool = False
+    # A walk or drive that takes a ferry on the way (see FERRY_MANEUVERS).
+    ferry: bool = False
 
 
 @dataclass(frozen=True)
@@ -139,6 +147,7 @@ class RoutesClient:
                 seconds=_parse_duration(leg.get("duration", "0s")),
                 meters=leg.get("distanceMeters", 0),
                 polyline=leg.get("polyline", {}).get("encodedPolyline"),
+                ferry=_takes_ferry(leg),
             )
             for leg in route["legs"]
         ]
@@ -186,7 +195,13 @@ class RoutesClient:
         if mode is TravelMode.TRANSIT and departure is not None:
             body["departureTime"] = _timestamp(departure)
         route = await self._first_route(body, LEG_FIELD_MASK)
-        return parse_leg(route["legs"][0])
+        leg = parse_leg(route["legs"][0])
+        # A backup for the steps' maneuvers; warnings come in the place's language, so not always
+        # in English. A ride with a ferry warning is a boat ride, not a walk taking one.
+        warned = any("ferry" in warning.lower() for warning in route.get("warnings", []))
+        if warned and leg.mode is TravelMode.WALK and not leg.ferry:
+            leg = replace(leg, ferry=True)
+        return leg
 
     async def _first_route(self, body: dict[str, Any], field_mask: str) -> dict[str, Any]:
         routes = (await self._post(COMPUTE_ROUTES_URL, body, field_mask)).get("routes")
@@ -235,6 +250,16 @@ def parse_leg(leg: dict[str, Any]) -> Leg:
         mode=TravelMode.TRANSIT if rides else TravelMode.WALK,
         rides=tuple(rides),
         walk_seconds=walk_seconds,
+        ferry=_takes_ferry(leg),
+    )
+
+
+def _takes_ferry(leg: dict[str, Any]) -> bool:
+    """Whether a walking or driving leg crosses water by ferry (a transit ride on one is a ride)."""
+    return any(
+        step.get("navigationInstruction", {}).get("maneuver") in FERRY_MANEUVERS
+        for step in leg.get("steps", [])
+        if step.get("travelMode") != "TRANSIT"
     )
 
 

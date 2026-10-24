@@ -103,6 +103,9 @@ class PlannedStop(BaseModel):
     distance_km_from_previous: float
     # Google encoded polyline of the street path from the previous point; None for estimates.
     path_from_previous: str | None
+    ferry_from_previous: bool = Field(
+        default=False, description="The way here crosses water by ferry, though walked or driven."
+    )
     # Transit plans only (and absent from plans saved before transit existed).
     leg_from_previous: LegDetails | None = None
     entry_price: Decimal | None = Field(examples=["17.00"])
@@ -131,6 +134,7 @@ class DayPlan(BaseModel):
     return_travel_minutes: int
     return_distance_km: float
     return_path: str | None
+    return_ferry: bool = False
     return_leg: LegDetails | None = None
     total_travel_minutes: int
     total_visit_minutes: int
