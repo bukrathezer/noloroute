@@ -11,10 +11,12 @@ from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy.exc import OperationalError  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
+from app.api.v1.routes_auth import get_email_sender  # noqa: E402
 from app.api.v1.routes_route import get_routes_client  # noqa: E402
 from app.core.rate_limit import reset_all_limiters  # noqa: E402
 from app.db.session import engine, get_db  # noqa: E402
 from app.main import app  # noqa: E402
+from tests.accounts import FakeEmailSender  # noqa: E402
 from tests.seed import seed_city  # noqa: E402
 
 
@@ -50,11 +52,15 @@ def seeded(db_session: Session) -> Session:
 
 @pytest.fixture
 def client(seeded: Session) -> Iterator[TestClient]:
-    """API client wired to the rolled-back session, with Google routing replaced by estimates."""
+    """API client wired to the rolled-back session, with Google routing replaced by estimates and
+    emails caught in `client.outbox`."""
+    outbox = FakeEmailSender()
     app.dependency_overrides[get_db] = lambda: seeded
     app.dependency_overrides[get_routes_client] = lambda: None
+    app.dependency_overrides[get_email_sender] = lambda: outbox
     try:
         with TestClient(app) as test_client:
+            test_client.outbox = outbox  # type: ignore[attr-defined]
             yield test_client
     finally:
         app.dependency_overrides.clear()

@@ -1786,13 +1786,14 @@ a.suggestion-name:hover {
   line-height: 1.55;
 }
 
-.welcome-form {
+/* Logging in and signing up (AuthForm), in the auth panel and on the welcome screen. */
+.auth-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.welcome-field {
+.auth-field {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1800,7 +1801,7 @@ a.suggestion-name:hover {
   font-size: 13px;
 }
 
-.welcome-field input {
+.auth-field input {
   height: 46px;
   padding: 0 14px;
   border: 1px solid var(--border);
@@ -1811,15 +1812,49 @@ a.suggestion-name:hover {
   font-size: 15px;
 }
 
-.welcome-field input:focus {
+.auth-field input:focus {
   outline: none;
   border-color: var(--brand);
   box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
-.welcome-form .primary-button {
+.auth-field .code-input {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.auth-form .primary-button {
   height: 50px;
   font-size: 16px;
+}
+
+.auth-notice {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.auth-forgot {
+  align-self: flex-end;
+  margin-top: -4px;
+  font-size: 13px;
+}
+
+.auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.auth-links .link-button:disabled {
+  color: var(--muted);
+  cursor: default;
 }
 
 .welcome-or {

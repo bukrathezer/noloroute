@@ -252,14 +252,43 @@ export const fetchGuide = (lang: "tr" | "en") => request<Guide>(`/api/v1/guide?l
 export const planRoute = (req: PlanRequest) =>
   request<PlanResponse>("/api/v1/routes/plan", { method: "POST", body: JSON.stringify(req) });
 
-export const register = (email: string, password: string) =>
-  request<TokenResponse>("/api/v1/auth/register", { method: "POST", body: JSON.stringify({ email, password }) });
+/** A six-digit code went to the address (sign-up, password reset). */
+export interface CodeSent {
+  status: "code_sent";
+  email: string;
+}
 
-// The login endpoint follows the OAuth2 password flow, which uses form fields, not JSON.
-export const login = (email: string, password: string) =>
+export type CodePurpose = "verify" | "reset";
+
+/** Starts a sign-up: the account opens once the emailed code is entered (verifyEmail). */
+export const register = (email: string, password: string, lang: "tr" | "en") =>
+  request<CodeSent>("/api/v1/auth/register", { method: "POST", body: JSON.stringify({ email, password, lang }) });
+
+/** `password`: the one the code was asked for with (signing up, or logging in). */
+export const verifyEmail = (email: string, code: string, password: string) =>
+  request<TokenResponse>("/api/v1/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ email, code, password }),
+  });
+
+export const resendCode = (email: string, purpose: CodePurpose, lang: "tr" | "en") =>
+  request<CodeSent>("/api/v1/auth/resend-code", { method: "POST", body: JSON.stringify({ email, purpose, lang }) });
+
+export const forgotPassword = (email: string, lang: "tr" | "en") =>
+  request<CodeSent>("/api/v1/auth/forgot-password", { method: "POST", body: JSON.stringify({ email, lang }) });
+
+export const resetPassword = (email: string, code: string, password: string) =>
+  request<TokenResponse>("/api/v1/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ email, code, password }),
+  });
+
+// The login endpoint follows the OAuth2 password flow, which uses form fields, not JSON. An account
+// still to confirm gets a code (403 "email_not_verified"), in `lang`.
+export const login = (email: string, password: string, lang: "tr" | "en") =>
   request<TokenResponse>("/api/v1/auth/login", {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept-Language": lang },
     body: new URLSearchParams({ username: email, password }).toString(),
   });
 

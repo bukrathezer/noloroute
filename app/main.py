@@ -19,6 +19,7 @@ from app.api.v1 import (
     routes_suggestions,
 )
 from app.core.config import get_settings
+from app.services.email import LogSender, ResendSender
 from app.services.events import EventsClient
 from app.services.place_search import PlaceSearchClient
 from app.services.routes_client import RoutesClient
@@ -42,7 +43,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.weather_client = WeatherClient()  # Open-Meteo needs no key
     ticketmaster_key = (get_settings().ticketmaster_api_key or "").strip()
     app.state.events_client = EventsClient(ticketmaster_key) if ticketmaster_key else None
+    resend_key = (get_settings().resend_api_key or "").strip()
+    app.state.email_sender = ResendSender(resend_key, get_settings().email_from) if resend_key else LogSender()
     yield
+    app.state.email_sender.close()
     clients = (
         app.state.routes_client,
         app.state.place_search_client,

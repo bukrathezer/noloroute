@@ -1,12 +1,13 @@
 """Plans shared by link, against a real PostgreSQL database (rolled back after each test)."""
 
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.v1 import routes_share
@@ -221,8 +222,13 @@ def plan_cost(plan: dict[str, Any]) -> str:
     return str(sum(prices, Decimal(0)))
 
 
-def test_sharing_stops_for_the_day_after_the_daily_limit(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(routes_share, "MAX_SHARES_PER_DAY", 1)
+def test_sharing_stops_for_the_day_after_the_daily_limit(
+    client: TestClient, seeded: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # One more than the database already holds (a development database may have some from today).
+    since = datetime.now(UTC) - timedelta(days=1)
+    already = seeded.scalar(select(func.count()).where(SharedPlan.created_at > since)) or 0
+    monkeypatch.setattr(routes_share, "MAX_SHARES_PER_DAY", already + 1)
     plan = make_plan(client)
     first = share(client, plan)
     assert share(client, plan) == first  # the same plan again creates nothing

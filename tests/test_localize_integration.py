@@ -13,6 +13,7 @@ from app.services.places_client import PlacesAPIError
 from app.services.translate import TranslateError
 from scripts.describe_pois import describe_city
 from scripts.localize_pois import Budget, localize_city
+from tests.accounts import sign_up
 from tests.seed import CITY_ID, HOTEL, POI_COUNT
 from tests.test_describe_integration import FakeWiki
 
@@ -298,8 +299,7 @@ def test_a_route_saved_before_turkish_names_shows_them_when_opened(client: TestC
     old["days"][0]["dropped_stops"] = ["Sight 5"]
     old["days"][0]["dropped_stops_tr"] = []  # what a plan from before looks like
 
-    token = client.post("/api/v1/auth/register", json={"email": "ada@example.com", "password": PASSWORD})
-    headers = {"Authorization": f"Bearer {token.json()['access_token']}"}
+    headers = sign_up(client, "ada@example.com", PASSWORD)
     saved = client.post("/api/v1/routes", json={"plan": old}, headers=headers).json()
 
     run(seeded, google=FakeGoogle())
@@ -373,8 +373,7 @@ def test_a_saved_route_keeps_its_turkish_dropped_names_and_skips_ambiguous_ones(
     result["days"][0]["dropped_stops"], result["days"][0]["dropped_stops_tr"] = ["Sight 5"], ["Saklanan Ad"]
     result["days"][1]["dropped_stops"], result["days"][1]["dropped_stops_tr"] = ["Twin Mosque"], []
 
-    token = client.post("/api/v1/auth/register", json={"email": "ada@example.com", "password": PASSWORD})
-    headers = {"Authorization": f"Bearer {token.json()['access_token']}"}
+    headers = sign_up(client, "ada@example.com", PASSWORD)
     saved = client.post("/api/v1/routes", json={"plan": result}, headers=headers).json()
     days = client.get(f"/api/v1/routes/{saved['id']}", headers=headers).json()["plan"]["days"]
     assert days[0]["dropped_stops_tr"] == ["Saklanan Ad"]  # stored with the plan: kept
