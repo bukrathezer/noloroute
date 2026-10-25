@@ -2,7 +2,7 @@
 // when it is opened without a connection. Nothing else is cached: plans need the server anyway,
 // and the app's files must always be the latest deploy (the server already sets their caching).
 // Change the version whenever offline.html changes: it is only fetched again when this file does.
-const CACHE = "noloroute-offline-v1";
+const CACHE = "noloroute-offline-v2";
 const OFFLINE_PAGE = "/offline.html"; // self-contained: no other file needed
 
 self.addEventListener("install", (event) => {

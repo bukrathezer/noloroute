@@ -155,7 +155,7 @@ export function RouteMap(props: Props) {
               pathOptions={
                 strong
                   ? { color: "#b45309", fillColor: "#f59e0b", fillOpacity: 0.95, weight: 3 }
-                  : { color: "#0f766e", fillColor: "#14b8a6", fillOpacity: 0.75, weight: 2 }
+                  : { color: "#1d4ed8", fillColor: "#3b82f6", fillOpacity: 0.75, weight: 2 }
               }
               eventHandlers={{ click: () => guide.onPickCity(c) }}
             >
@@ -176,7 +176,7 @@ export function RouteMap(props: Props) {
                 key={c.id}
                 center={[c.center_lat, c.center_lng]}
                 radius={9}
-                pathOptions={{ color: "#0f766e", fillColor: "#14b8a6", fillOpacity: 0.9, weight: 3 }}
+                pathOptions={{ color: "#1d4ed8", fillColor: "#3b82f6", fillOpacity: 0.9, weight: 3 }}
                 eventHandlers={{ click: () => onPickCity(c) }}
               >
                 <Tooltip

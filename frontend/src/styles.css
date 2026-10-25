@@ -1,14 +1,16 @@
 :root {
-  --brand: #0f766e;
-  --brand-strong: #0d5f59;
-  --brand-soft: #e6f4f2;
-  --on-brand: #ffffff; /* text on a --brand background */
-  --bg: #f6f6f3;
+  --brand: #2563eb; /* links, accents, outlines */
+  --brand-strong: #1d4ed8;
+  --brand-soft: #e8effd;
+  --brand-fill: #2563eb; /* filled buttons and selections */
+  --brand-fill-strong: #1d4ed8;
+  --on-brand: #ffffff; /* text on a --brand-fill background */
+  --bg: #f5f7fb;
   --surface: #ffffff;
-  --surface-2: #f1f1ed;
-  --text: #1c1b19;
-  --muted: #6b6a64;
-  --border: #e3e2dc;
+  --surface-2: #eef2f8;
+  --text: #0f172a;
+  --muted: #5b6478;
+  --border: #dde3ee;
   --danger: #b42318;
   --danger-soft: #fdecea;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 16px rgb(0 0 0 / 0.06);
@@ -18,16 +20,19 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --brand: #2dd4bf;
-    --brand-strong: #5eead4;
-    --brand-soft: #123532;
-    --on-brand: #062a27;
-    --bg: #0f1211;
-    --surface: #171b1a;
-    --surface-2: #1f2523;
-    --text: #e9ecea;
-    --muted: #9aa3a0;
-    --border: #2a312f;
+    /* Black and navy, with blue accents. Text-blue is lighter than button-blue, so both read. */
+    --brand: #60a5fa;
+    --brand-strong: #93c5fd;
+    --brand-soft: #0f1e44;
+    --brand-fill: #2563eb;
+    --brand-fill-strong: #1d4ed8;
+    --on-brand: #ffffff;
+    --bg: #05070d;
+    --surface: #0b1122;
+    --surface-2: #111a31;
+    --text: #e8edf7;
+    --muted: #93a0bf;
+    --border: #1c2744;
     --danger: #f97066;
     --danger-soft: #3a1a17;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
@@ -331,7 +336,7 @@ a {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--brand);
+  background: var(--brand-fill);
 }
 
 .coords {
@@ -449,7 +454,7 @@ a {
 
 /* DayPicker's look, in this app's colours. Cells are sized to fit the narrowest panel. */
 .trip-calendar .rdp-root {
-  --rdp-accent-color: var(--brand);
+  --rdp-accent-color: var(--brand-fill);
   --rdp-accent-background-color: var(--brand-soft);
   --rdp-range_start-color: var(--on-brand);
   --rdp-range_end-color: var(--on-brand);
@@ -479,8 +484,8 @@ a {
 
 /* The first day while the last one is being picked. */
 .trip-calendar .trip-start .rdp-day_button {
-  border-color: var(--brand);
-  background: var(--brand);
+  border-color: var(--brand-fill);
+  background: var(--brand-fill);
   color: var(--on-brand);
 }
 
@@ -550,7 +555,7 @@ a {
   height: 46px;
   border: none;
   border-radius: 10px;
-  background: var(--brand);
+  background: var(--brand-fill);
   color: var(--on-brand);
   font-weight: 700;
   cursor: pointer;
@@ -558,7 +563,7 @@ a {
 }
 
 .primary-button:hover:not(:disabled) {
-  background: var(--brand-strong);
+  background: var(--brand-fill-strong);
 }
 
 .primary-button:disabled {
@@ -971,7 +976,7 @@ button.stop:hover,
   padding: 8px 10px;
   border-radius: 9px;
   background: var(--brand-soft);
-  color: var(--brand);
+  color: var(--brand-strong);
 }
 
 .saved-badge {
@@ -980,7 +985,7 @@ button.stop:hover,
   border: none;
   border-radius: 9px;
   background: var(--brand-soft);
-  color: var(--brand);
+  color: var(--brand-strong);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -1415,8 +1420,8 @@ a.suggestion-name:hover {
 }
 
 .month-picker button.selected {
-  border-color: var(--brand);
-  background: var(--brand);
+  border-color: var(--brand-fill);
+  background: var(--brand-fill);
   color: var(--on-brand);
 }
 
@@ -1589,4 +1594,379 @@ a.suggestion-name:hover {
   align-self: flex-start;
   margin-left: 0;
   font-size: 13px;
+}
+
+/* ---------- welcome screen (first visit) ---------- */
+
+/* Always dark, whatever the system theme: the globe is drawn for it. */
+.welcome {
+  --brand: #60a5fa;
+  --brand-strong: #93c5fd;
+  --brand-soft: #0f1e44;
+  --brand-fill: #2563eb;
+  --brand-fill-strong: #1d4ed8;
+  --on-brand: #ffffff;
+  --bg: #05070d;
+  --surface: #0b1122;
+  --surface-2: #111a31;
+  --text: #e8edf7;
+  --muted: #93a0bf;
+  --border: #1c2744;
+  color-scheme: dark;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.welcome-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px clamp(16px, 4vw, 56px);
+}
+
+.welcome-header .logo {
+  font-size: 22px;
+}
+
+.welcome-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.welcome-nav .link-button {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.welcome-main {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(24px, 4vw, 64px);
+  padding: 0 clamp(16px, 4vw, 56px) 40px;
+}
+
+.welcome-globe {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.globe {
+  width: min(100%, 680px);
+  height: auto;
+}
+
+.globe-halo {
+  fill: none;
+  stroke: #1e3a8a;
+  stroke-opacity: 0.35;
+}
+
+.globe-sphere {
+  stroke: #1e3a8a;
+  stroke-width: 1.5;
+}
+
+/* Each land point is a zero-length line with round caps: one path draws them all. */
+.globe-land {
+  fill: none;
+  stroke: #2e5aae;
+  stroke-width: 3.4;
+  stroke-linecap: round;
+}
+
+.globe-city-dots {
+  fill: none;
+  stroke: #7db4ff;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+@keyframes globe-dash {
+  to {
+    stroke-dashoffset: -140;
+  }
+}
+
+.globe-arcs {
+  fill: none;
+  stroke: #93c5fd;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-dasharray: 5 8;
+  animation: globe-dash 6s linear infinite;
+}
+
+@keyframes globe-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.8);
+  }
+}
+
+.globe-pulse {
+  fill: #7db4ff;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: globe-pulse 2.6s ease-in-out infinite;
+}
+
+.globe-mark text {
+  fill: #c3cde4;
+  font-size: 13px;
+}
+
+.globe-mark.hub .globe-pulse {
+  fill: #fbbf24;
+}
+
+.globe-mark.hub text {
+  fill: #fde68a;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .globe-arcs,
+  .globe-pulse {
+    animation: none;
+  }
+}
+
+.welcome-card {
+  width: min(100%, 460px);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 34px 36px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+}
+
+.welcome-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.welcome-eyebrow {
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.welcome-intro h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.welcome-intro p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.welcome-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.welcome-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.welcome-field input {
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+}
+
+.welcome-field input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.welcome-form .primary-button {
+  height: 50px;
+  font-size: 16px;
+}
+
+.welcome-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.welcome-or span {
+  flex-grow: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.welcome-guest {
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--brand-strong);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.welcome-guest:hover {
+  background: var(--brand-soft);
+}
+
+.welcome-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Phones: the globe shrinks above the card. */
+@media (max-width: 900px) {
+  .welcome-main {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .welcome-globe {
+    flex: none;
+    width: min(100%, 340px);
+  }
+
+  .welcome-card {
+    padding: 24px 20px;
+  }
+
+  .welcome-intro h1 {
+    font-size: 28px;
+  }
+}
+
+/* ---------- invitation on a shared plan ---------- */
+
+@keyframes invite-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.share-invite {
+  position: absolute;
+  right: 24px;
+  bottom: 40px; /* clear of the map's attribution line */
+  z-index: 1000; /* above the map's own panes */
+  width: min(380px, calc(100% - 32px));
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 12px 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  animation: invite-in 0.4s ease-out;
+}
+
+.share-invite-body {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.share-invite-body > span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.share-invite-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.share-invite-actions .primary-button,
+.share-invite-actions .secondary-button {
+  height: 38px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.share-invite-close {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.share-invite-close:hover {
+  background: var(--surface-2);
+}
+
+/* Phones: the map is short, so the card stays compact along its bottom. */
+@media (max-width: 900px) {
+  .share-invite {
+    left: 12px;
+    right: 12px;
+    bottom: 28px;
+    width: auto;
+    padding: 12px 8px 12px 14px;
+  }
+
+  .share-invite-body > span {
+    display: none;
+  }
+
+  .share-invite-actions {
+    margin-top: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-invite {
+    animation: none;
+  }
 }
