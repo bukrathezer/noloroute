@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.api.v1.routes_route import TRANSIT_ROUTINGS_PER_IP, city_timezone, get_routes_client
 from app.main import app
 from app.models import City, SavedRoute
+from tests.accounts import sign_up
 from tests.fake_routes import FakeTransitClient
 from tests.seed import CITY_ID, HOTEL
 
@@ -97,8 +98,7 @@ def test_a_city_in_japan_gets_estimated_rides_without_a_transit_matrix(
 
 def test_a_saved_transit_plan_keeps_its_legs(client: TestClient, fake: FakeTransitClient) -> None:
     result = plan(client)
-    token = client.post("/api/v1/auth/register", json={"email": "ada@example.com", "password": PASSWORD})
-    headers = {"Authorization": f"Bearer {token.json()['access_token']}"}
+    headers = sign_up(client, "ada@example.com", PASSWORD)
 
     saved = client.post("/api/v1/routes", json={"plan": result}, headers=headers).json()
     reopened = client.get(f"/api/v1/routes/{saved['id']}", headers=headers).json()
@@ -113,8 +113,7 @@ def test_plans_saved_before_transit_still_open(client: TestClient, seeded: Sessi
         del day["return_leg"], day["transit_available"]
         for stop in day["stops"]:
             del stop["leg_from_previous"]
-    token = client.post("/api/v1/auth/register", json={"email": "old@example.com", "password": PASSWORD})
-    headers = {"Authorization": f"Bearer {token.json()['access_token']}"}
+    headers = sign_up(client, "old@example.com", PASSWORD)
     user_id = client.get("/api/v1/auth/me", headers=headers).json()["id"]
     route = SavedRoute(
         name="Old route",

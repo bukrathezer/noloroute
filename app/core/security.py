@@ -9,6 +9,9 @@ expiry time. The server checks the signature (made with JWT_SECRET_KEY) on every
 instead of looking up a session, so a forged or edited token is rejected.
 """
 
+import hashlib
+import hmac
+import secrets
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -37,6 +40,17 @@ def verify_password(password: str, password_hash: str | None) -> bool:
         _password_hash.verify(password, _DUMMY_HASH)
         return False
     return _password_hash.verify(password, password_hash)
+
+
+def new_email_code() -> str:
+    """A six-digit one-time code, from a cryptographic random source."""
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def hash_email_code(code: str, email: str, purpose: str) -> str:
+    """A keyed hash (HMAC with the token key) of an emailed code: a leaked table of them can't be
+    checked against the million possible codes without the key."""
+    return hmac.new(_secret_key().encode(), f"{purpose}:{email}:{code}".encode(), hashlib.sha256).hexdigest()
 
 
 def create_access_token(user_id: str, now: datetime | None = None) -> str:

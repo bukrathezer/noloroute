@@ -46,6 +46,11 @@ class RateLimiter:
             self.record(key, now)
         return wait
 
+    def forget(self, key: str) -> None:
+        """Start `key` from zero (e.g. failed logins once the password is reset)."""
+        with self._lock:
+            self._hits.pop(key, None)
+
     def reset(self) -> None:
         with self._lock:
             self._hits.clear()

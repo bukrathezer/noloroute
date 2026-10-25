@@ -12,6 +12,10 @@ class Settings(BaseSettings):
 
     database_url: str
     google_places_api_key: str | None = None
+    # Resend (resend.com) sends the sign-up and password-reset codes; without a key they are only
+    # logged (local development).
+    resend_api_key: str | None = None
+    email_from: str = "NoloRoute <hesap@noloroute.com>"
     # Ticketmaster Discovery API (events); without it the events lookup is off.
     ticketmaster_api_key: str | None = None
 

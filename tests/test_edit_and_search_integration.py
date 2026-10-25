@@ -10,15 +10,14 @@ from app.api.v1.routes_places import get_place_search_client
 from app.main import app
 from app.services.geo import LatLng
 from app.services.place_search import PlaceLocation, PlaceSearchError, Suggestion
+from tests.accounts import sign_up
 from tests.seed import CITY_ID, HOTEL
 
 PASSWORD = "s3cure-enough-password"
 
 
 def register(client: TestClient, email: str = "ada@example.com") -> dict[str, str]:
-    resp = client.post("/api/v1/auth/register", json={"email": email, "password": PASSWORD})
-    assert resp.status_code == 201, resp.text
-    return {"Authorization": f"Bearer {resp.json()['access_token']}"}
+    return sign_up(client, email, PASSWORD)
 
 
 def make_plan(client: TestClient, days: int = 2) -> dict[str, Any]:

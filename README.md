@@ -200,9 +200,19 @@ instead each day can list suggestions, looked up only when the traveller asks
   session token covers all keystrokes and the final pick, which Google bills as a single session.
 
 ## Accounts and saved routes
-Users register with an email and password (`POST /api/v1/auth/register`) or log in with the OAuth2
-password flow (`POST /api/v1/auth/login`) and receive a JWT, sent as `Authorization: Bearer <token>`
-(the **Authorize** button in `/docs` uses the same flow).
+Users sign up with an email and password (`POST /api/v1/auth/register`); a six-digit code goes to
+the address, and `POST /api/v1/auth/verify-email` with it opens the account. They log in with the
+OAuth2 password flow (`POST /api/v1/auth/login`) and receive a JWT, sent as
+`Authorization: Bearer <token>` (the **Authorize** button in `/docs` uses the same flow).
+
+- Codes are emailed through Resend (`RESEND_API_KEY`; without it, local development, they are
+  logged), last 15 minutes, allow 5 guesses and are stored only as HMAC hashes. Code emails are a
+  minute apart and five an hour per address. `POST /api/v1/auth/resend-code` sends a new one.
+- An account still to confirm (also one made before codes existed) gets a new code at login, which
+  answers 403 `email_not_verified`. Signing up again before confirming sets the new password.
+- `POST /api/v1/auth/forgot-password` emails a reset code and `POST /api/v1/auth/reset-password`
+  sets the new password with it; both answer the same whether or not the address has an account.
+- Throwaway addresses (`app/data/disposable_domains.txt`) can't sign up.
 
 - Passwords are stored only as Argon2id hashes; login gives the same answer, with similar timing,
   for an unknown email and a wrong password.
