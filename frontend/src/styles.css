@@ -1645,6 +1645,7 @@ a.suggestion-name:hover {
 
 .welcome-main {
   flex-grow: 1;
+  overflow-x: clip; /* those labels must not widen a phone's page */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1662,6 +1663,7 @@ a.suggestion-name:hover {
 .globe {
   width: min(100%, 680px);
   height: auto;
+  overflow: visible; /* labels of cities at the edge reach past the sphere's box */
 }
 
 .globe-halo {

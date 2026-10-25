@@ -579,7 +579,17 @@ export function App() {
     <div className="app">
       <aside className="panel">
         <header className="brand">
-          <a className="logo" href="/" ref={logo}>
+          <a
+            className="logo"
+            href="/"
+            ref={logo}
+            onClick={(e) => {
+              // Guests go back to the welcome screen; the planner keeps what they were doing.
+              if (auth) return;
+              e.preventDefault();
+              setShowWelcome(true);
+            }}
+          >
             <img src="/favicon.svg" alt="" width={28} height={28} />
             <span>NoloRoute</span>
           </a>
