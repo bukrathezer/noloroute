@@ -7,6 +7,8 @@ import { cityName, type Lang } from "../i18n";
 // the app's cities on it and arcs from Istanbul to some of the farthest.
 const HUB = "istanbul";
 const LINKED = ["paris", "london", "new-york", "tokyo", "seoul", "dubai", "bangkok", "singapore", "marrakech"];
+// Labelled on the left of their dot, clear of a close neighbour's label (London's of Paris's).
+const LABEL_LEFT = new Set(["london", "seoul"]);
 const SIZE = 680;
 const CENTER = SIZE / 2;
 const RADIUS = 300;
@@ -156,7 +158,7 @@ export function Globe({ cities, lang, label }: Props) {
           className={city.id === HUB ? "globe-mark hub" : "globe-mark"}
         >
           <circle r={city.id === HUB ? 6 : 4} className="globe-pulse" />
-          <text x={9} y={-8}>
+          <text x={LABEL_LEFT.has(city.id) ? -9 : 9} y={-8} textAnchor={LABEL_LEFT.has(city.id) ? "end" : "start"}>
             {cityName(city, lang)}
           </text>
         </g>
