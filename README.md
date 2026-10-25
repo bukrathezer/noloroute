@@ -221,6 +221,15 @@ password flow (`POST /api/v1/auth/login`) and receive a JWT, sent as `Authorizat
   Graph), in the sharer's language, so messaging apps show what the link is about. The app opens
   the plan as if just planned: the viewer can save, edit or plan again; the link stays as it was.
 - The link shows the plan's accommodation point, as the routes start there; the app says so.
+- Someone who opens a link without an account gets, after a few seconds, a small invitation to
+  sign up in a corner of the map; closed once, it doesn't come back.
+
+## Welcome screen
+A first visit opens on a welcome screen: a slowly turning globe with the app's cities and arcs from
+Istanbul, beside logging in, signing up or going on as a guest. It isn't shown again after that, nor
+to someone logged in or opening a shared plan. The globe's land is a grid of dots baked from
+Natural Earth's public-domain map (`scripts/make_globe_dots.py` writes `frontend/src/globeDots.ts`),
+so visitors download only those points; the screen is loaded on demand, with the globe.
 
 ## Installing as an app
 The site is a Progressive Web App: phones and desktop browsers can add it like an app, with its

@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Component,
+  lazy,
+  type ReactNode,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ApiError,
   type City,
@@ -20,19 +30,44 @@ import {
   updateSavedRoute,
   type User,
 } from "./api";
-import { AuthPanel } from "./components/AuthPanel";
+import { type AuthMode, AuthPanel } from "./components/AuthPanel";
 import { type FormState, PlanForm } from "./components/PlanForm";
 import { PlanResult, type SaveState, type ShareState } from "./components/PlanResult";
 import { Privacy } from "./components/Privacy";
 import { type GuideMap, type Point, RouteMap } from "./components/RouteMap";
 import { SavedRoutes } from "./components/SavedRoutes";
+import { ShareInvite } from "./components/ShareInvite";
 import { type GuideFocus, TravelGuide } from "./components/TravelGuide";
 import { addDays, firstTripDayIn, fromIso, todayIso } from "./dates";
 import { cityName, initialLang, type Lang, STRINGS } from "./i18n";
 import { canAddToHomeScreen, useInstallPrompt } from "./install";
 
+// Only first visits see it: loaded on demand, globe and all.
+const Welcome = lazy(() => import("./components/Welcome"));
+
+// If the welcome screen can't load (a network blip, a deploy since the page loaded), go on to the app.
+class SkipOnError extends Component<{ onError: () => void; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch() {
+    this.props.onError();
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
 const SOURCE_URL = "https://github.com/bukrathezer/noloroute";
 const AUTH_STORAGE_KEY = "auth";
+const WELCOME_SEEN_KEY = "welcomeSeen";
+const INVITE_CLOSED_KEY = "shareInviteClosed";
+// How long someone looks at a shared plan before it invites them to sign up.
+const INVITE_DELAY_MS = 4000;
 // A shared plan's link (app/api/v1/routes_share.py).
 const SHARE_PATH = /^\/p\/([A-Za-z0-9]{8})$/;
 
@@ -75,6 +110,22 @@ function loadAuth(): Auth | null {
   }
 }
 
+function readFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setFlag(key: string) {
+  try {
+    localStorage.setItem(key, "1");
+  } catch {
+    // Storage unavailable: it just shows again next time.
+  }
+}
+
 function storeAuth(auth: Auth | null) {
   try {
     if (auth) localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
@@ -110,6 +161,14 @@ export function App() {
   const [view, setView] = useState<View>("plan");
   const [mainView, setMainView] = useState<MainView>("plan");
   const [authReason, setAuthReason] = useState<"save" | null>(null);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  // The welcome screen, for a first visit: not after logging in, nor for someone opening a shared plan.
+  const [showWelcome, setShowWelcome] = useState(() => !auth && !linkOfPage() && !readFlag(WELCOME_SEEN_KEY));
+  const [inviteReady, setInviteReady] = useState(false);
+  const [inviteClosed, setInviteClosed] = useState(() => readFlag(INVITE_CLOSED_KEY));
+  // Leaving the welcome screen puts the keyboard focus on the app, not lost on the page.
+  const logo = useRef<HTMLAnchorElement>(null);
+  const focusAppNext = useRef(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   // Set when the shown plan is a saved route, so edits update it instead of saving a copy.
   const [savedRouteId, setSavedRouteId] = useState<string | null>(null);
@@ -182,6 +241,21 @@ export function App() {
     showStoredPlan(openedShare.plan, null, false);
     setSharedLink({ id: openedShare.id, status: "shown", plan: openedShare.plan });
   }, [openedShare, cities, citiesFailed]);
+
+  useEffect(() => {
+    if (!showWelcome && focusAppNext.current) {
+      focusAppNext.current = false;
+      logo.current?.focus();
+    }
+  }, [showWelcome]);
+
+  // Someone looking at a shared plan for a few seconds gets a small invitation to sign up.
+  const sharedPlanShown = sharedLink?.status === "shown" && sharedLink.plan === plan;
+  useEffect(() => {
+    if (!sharedPlanShown) return;
+    const timer = setTimeout(() => setInviteReady(true), INVITE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [sharedPlanShown]);
 
   // Another plan (edited, planned, a saved one opened): the link has nothing more to say.
   useEffect(() => {
@@ -278,6 +352,7 @@ export function App() {
       if (e instanceof ApiError && e.status === 401) {
         logout();
         setAuthReason("save");
+        setAuthMode("login");
         setView("auth");
       } else {
         setSaveState("error");
@@ -291,6 +366,7 @@ export function App() {
       save(plan);
     } else {
       setAuthReason("save");
+      setAuthMode("login");
       setView("auth");
     }
   };
@@ -464,16 +540,46 @@ export function App() {
     };
   }, [view, cities, guide, guides, guideMonth, guideCity, guideFocus]);
 
-  const showAuth = () => {
+  const showAuth = (mode: AuthMode = "login") => {
     setAuthReason(null);
+    setAuthMode(mode);
     setView("auth");
   };
+
+  const leaveWelcome = () => {
+    setFlag(WELCOME_SEEN_KEY);
+    focusAppNext.current = true;
+    setShowWelcome(false);
+  };
+
+  if (showWelcome) {
+    return (
+      <SkipOnError onError={() => setShowWelcome(false)}>
+        <Suspense fallback={<div className="welcome" />}>
+          <Welcome
+          lang={lang}
+          onSwitchLanguage={() => setLang(lang === "tr" ? "en" : "tr")}
+          cities={cities}
+          onAuthenticated={(result) => {
+            leaveWelcome();
+            onAuthenticated(result);
+          }}
+          onGuest={leaveWelcome}
+          onGuide={() => {
+            leaveWelcome();
+            openGuide();
+          }}
+          />
+        </Suspense>
+      </SkipOnError>
+    );
+  }
 
   return (
     <div className="app">
       <aside className="panel">
         <header className="brand">
-          <a className="logo" href="/">
+          <a className="logo" href="/" ref={logo}>
             <img src="/favicon.svg" alt="" width={28} height={28} />
             <span>NoloRoute</span>
           </a>
@@ -483,7 +589,7 @@ export function App() {
                 {t.account.myRoutes}
               </button>
             ) : (
-              <button type="button" className="pill-button" onClick={showAuth}>
+              <button type="button" className="pill-button" onClick={() => showAuth()}>
                 {t.account.login}
               </button>
             )}
@@ -495,8 +601,10 @@ export function App() {
 
         {view === "auth" && (
           <AuthPanel
+            key={authMode}
             lang={lang}
             reason={authReason}
+            initialMode={authMode}
             onAuthenticated={onAuthenticated}
             onBack={() => setView(mainView)}
           />
@@ -660,6 +768,17 @@ export function App() {
           lang={lang}
           guide={guideMap}
         />
+        {sharedPlanShown && inviteReady && !auth && !inviteClosed && view === "plan" && (
+          <ShareInvite
+            lang={lang}
+            onRegister={() => showAuth("register")}
+            onLogin={() => showAuth("login")}
+            onClose={() => {
+              setFlag(INVITE_CLOSED_KEY);
+              setInviteClosed(true);
+            }}
+          />
+        )}
       </main>
     </div>
   );

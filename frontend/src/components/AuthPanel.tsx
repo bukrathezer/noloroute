@@ -2,17 +2,12 @@ import { type FormEvent, useState } from "react";
 import { ApiError, login, register, type TokenResponse } from "../api";
 import { type Lang, STRINGS } from "../i18n";
 
-interface Props {
-  lang: Lang;
-  /** Shown above the form when the user got here by trying to save a route. */
-  reason: "save" | null;
-  onAuthenticated: (result: TokenResponse) => void;
-  onBack: () => void;
-}
+export type AuthMode = "login" | "register";
 
-export function AuthPanel({ lang, reason, onAuthenticated, onBack }: Props) {
+/** The email and password form, for this panel and the welcome screen. */
+export function useAuthForm(lang: Lang, onAuthenticated: (result: TokenResponse) => void, initialMode: AuthMode) {
   const t = STRINGS[lang].auth;
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,6 +31,31 @@ export function AuthPanel({ lang, reason, onAuthenticated, onBack }: Props) {
       setBusy(false);
     }
   };
+
+  const switchTo = (next: AuthMode) => {
+    setMode(next);
+    setError(null);
+  };
+
+  return { mode, switchTo, email, setEmail, password, setPassword, busy, error, submit };
+}
+
+interface Props {
+  lang: Lang;
+  /** Shown above the form when the user got here by trying to save a route. */
+  reason: "save" | null;
+  initialMode?: AuthMode;
+  onAuthenticated: (result: TokenResponse) => void;
+  onBack: () => void;
+}
+
+export function AuthPanel({ lang, reason, initialMode = "login", onAuthenticated, onBack }: Props) {
+  const t = STRINGS[lang].auth;
+  const { mode, switchTo, email, setEmail, password, setPassword, busy, error, submit } = useAuthForm(
+    lang,
+    onAuthenticated,
+    initialMode,
+  );
 
   return (
     <section className="auth-panel">
@@ -93,10 +113,7 @@ export function AuthPanel({ lang, reason, onAuthenticated, onBack }: Props) {
       <button
         type="button"
         className="link-button switch-mode"
-        onClick={() => {
-          setMode(mode === "login" ? "register" : "login");
-          setError(null);
-        }}
+        onClick={() => switchTo(mode === "login" ? "register" : "login")}
       >
         {mode === "login" ? t.toRegister : t.toLogin}
       </button>
