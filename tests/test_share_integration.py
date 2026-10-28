@@ -1,5 +1,7 @@
 """Plans shared by link, against a real PostgreSQL database (rolled back after each test)."""
 
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -30,12 +32,24 @@ INDEX_HTML = """<!doctype html>
 """
 
 
+@contextmanager
+def frontend_index(path: Path) -> Iterator[None]:
+    """Point the app at another index.html for a while. Not with monkeypatch: since pytest 9.2 its
+    undo deletes attributes of Starlette's State, which live outside the instance's __dict__."""
+    saved = app.state.frontend_index
+    app.state.frontend_index = path
+    try:
+        yield
+    finally:
+        app.state.frontend_index = saved
+
+
 @pytest.fixture
-def built_frontend(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+def built_frontend(tmp_path: Path) -> Iterator[Path]:
     index = tmp_path / "index.html"
     index.write_text(INDEX_HTML, encoding="utf-8")
-    monkeypatch.setattr(app.state, "frontend_index", index)
-    return index
+    with frontend_index(index):
+        yield index
 
 
 def share(client: TestClient, plan: dict[str, Any], lang: str = "en") -> str:
@@ -149,12 +163,10 @@ def test_link_preview_escapes_names() -> None:
     assert '<meta property="og:description" content="x &amp; y" />' in page
 
 
-def test_the_link_page_needs_a_built_frontend(
-    client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(app.state, "frontend_index", tmp_path / "missing.html")
+def test_the_link_page_needs_a_built_frontend(client: TestClient, tmp_path: Path) -> None:
     share_id = share(client, make_plan(client))
-    assert client.get(f"/p/{share_id}").status_code == 404
+    with frontend_index(tmp_path / "missing.html"):
+        assert client.get(f"/p/{share_id}").status_code == 404
 
 
 def test_a_shared_plan_says_only_what_the_database_says(client: TestClient, built_frontend: Path) -> None:
