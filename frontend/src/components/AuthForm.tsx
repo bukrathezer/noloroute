@@ -117,8 +117,9 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
     });
   };
 
-  const signInWithGoogle = (credential: string) =>
-    run(async () => {
+  const signInWithGoogle = (credential: string) => {
+    if (busy) return; // an e-mail login is under way
+    return run(async () => {
       try {
         onAuthenticated(await googleLogin(credential, remember), remember);
       } catch (err) {
@@ -130,6 +131,7 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
         else setError(t.errors.google);
       }
     });
+  };
 
   const resend = () =>
     run(async () => {

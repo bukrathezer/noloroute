@@ -409,8 +409,16 @@ def delete_account(
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Incorrect password")
     elif not req.google_credential:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "google_reauth_required")
-    elif _google_identity(verifier, req.google_credential).sub != user.google_sub:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "google_account_mismatch")
+    else:
+        try:
+            identity = _google_identity(verifier, req.google_credential)
+        except HTTPException as exc:
+            if exc.status_code != status.HTTP_401_UNAUTHORIZED:
+                raise
+            # 401 would read as "your login expired": the login is fine, the Google check wasn't.
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "invalid_google_token") from exc
+        if identity.sub != user.google_sub:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "google_account_mismatch")
     db.execute(delete(EmailCode).where(EmailCode.email == user.email))
     db.delete(user)  # saved routes and their stops cascade
     db.commit()

@@ -232,6 +232,7 @@ def test_a_google_only_account_is_deleted_by_signing_in_with_google_again(client
         return client.request("DELETE", "/api/v1/auth/me", json=body, headers=headers).status_code
 
     assert delete({}) == 403  # a stolen token alone isn't enough
+    assert delete({"google_credential": "invalid"}) == 403  # not 401: the login itself is fine
     assert delete({"google_credential": "g-2|bob@gmail.com"}) == 403  # another Google account
     assert delete({"google_credential": "g-1|ada@gmail.com"}) == 204
     assert client.get("/api/v1/auth/me", headers=headers).status_code == 401

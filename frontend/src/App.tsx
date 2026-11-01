@@ -302,17 +302,18 @@ export function App() {
   // the account details up to date (whether it has a password, say).
   useEffect(() => {
     if (!auth) return;
+    const checked = auth.token; // a later login (another account, say) mustn't take this answer
     fetchMe()
       .then((user) =>
         setAuth((current) => {
-          if (!current) return current;
+          if (!current || current.token !== checked) return current;
           const next = { ...current, user };
           storeAuth(next);
           return next;
         }),
       )
       .catch((e) => {
-        if (e instanceof ApiError && e.status === 401) logout();
+        if (e instanceof ApiError && e.status === 401 && loadAuth()?.token === checked) logout();
       });
     // Only on first load; later logins are fresh.
   }, []);
