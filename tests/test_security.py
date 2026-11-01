@@ -32,7 +32,7 @@ def test_token_round_trip() -> None:
 
 
 def test_expired_token_is_rejected() -> None:
-    issued_long_ago = datetime.now(UTC) - timedelta(days=30)
+    issued_long_ago = datetime.now(UTC) - timedelta(days=60)
     with pytest.raises(InvalidTokenError):
         decode_access_token(create_access_token("user-1", now=issued_long_ago))
 

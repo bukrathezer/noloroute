@@ -22,7 +22,13 @@ class Settings(BaseSettings):
     # Signs login tokens. Optional here so one-off jobs (migrations, ingestion) don't need it;
     # the API refuses to start without it (see app.main).
     jwt_secret_key: str | None = None
-    access_token_ttl_minutes: int = 60 * 24 * 7  # one week
+    # How long a login lasts: with "remember me" (the browser keeps it), and without (only until
+    # the browser closes, and at most this long).
+    access_token_ttl_minutes: int = 60 * 24 * 30
+    session_token_ttl_minutes: int = 60 * 12
+    # Sign-in with Google: the OAuth client id from Google Cloud (public, it is in the page too).
+    # Without it the Google button doesn't show.
+    google_oauth_client_id: str | None = None
 
 
 @lru_cache

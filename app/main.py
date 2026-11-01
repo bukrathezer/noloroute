@@ -2,8 +2,9 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import Response
 from starlette.types import Scope
@@ -21,6 +22,7 @@ from app.api.v1 import (
 from app.core.config import get_settings
 from app.services.email import LogSender, ResendSender
 from app.services.events import EventsClient
+from app.services.google_auth import GoogleVerifier
 from app.services.place_search import PlaceSearchClient
 from app.services.routes_client import RoutesClient
 from app.services.weather import WeatherClient
@@ -45,6 +47,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.events_client = EventsClient(ticketmaster_key) if ticketmaster_key else None
     resend_key = (get_settings().resend_api_key or "").strip()
     app.state.email_sender = ResendSender(resend_key, get_settings().email_from) if resend_key else LogSender()
+    google_client_id = (get_settings().google_oauth_client_id or "").strip()
+    app.state.google_verifier = GoogleVerifier(google_client_id) if google_client_id else None
     yield
     app.state.email_sender.close()
     clients = (
@@ -103,5 +107,20 @@ class FrontendFiles(StaticFiles):
 # Cloud Run service hosts both and no CORS setup is needed. Mounted last: API routes win.
 FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 app.state.frontend_index = FRONTEND_DIST / "index.html"  # shared plan links fill in its preview tags
+
+
+@app.api_route("/gizlilik", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/gizlilik/", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/privacy", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/privacy/", methods=["GET", "HEAD"], include_in_schema=False)
+def privacy_page(request: Request) -> Response:
+    """The privacy note's own address (Google's sign-in screen links to it): the app, which opens
+    on the note."""
+    index: Path = request.app.state.frontend_index
+    if not index.is_file():  # no built frontend: in development Vite serves the app
+        return Response(status_code=404)
+    return FileResponse(index, headers={"Cache-Control": "no-cache"})
+
+
 if FRONTEND_DIST.is_dir():
     app.mount("/", FrontendFiles(directory=FRONTEND_DIST, html=True), name="frontend")

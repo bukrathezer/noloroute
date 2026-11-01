@@ -7,7 +7,7 @@ interface Props {
   lang: Lang;
   onSwitchLanguage: () => void;
   cities: City[];
-  onAuthenticated: (result: TokenResponse) => void;
+  onAuthenticated: (result: TokenResponse, remember: boolean) => void;
   onGuest: () => void;
   onGuide: () => void;
 }

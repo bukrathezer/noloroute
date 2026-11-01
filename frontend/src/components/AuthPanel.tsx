@@ -9,7 +9,7 @@ interface Props {
   /** Shown above the form when the user got here by trying to save a route. */
   reason: "save" | null;
   initialMode?: AuthMode;
-  onAuthenticated: (result: TokenResponse) => void;
+  onAuthenticated: (result: TokenResponse, remember: boolean) => void;
   onBack: () => void;
 }
 

@@ -186,6 +186,8 @@ export interface User {
   id: string;
   email: string;
   created_at: string;
+  /** False for an account that signs in only with Google (missing from logins kept from before). */
+  has_password?: boolean;
 }
 
 export interface TokenResponse {
@@ -264,11 +266,12 @@ export type CodePurpose = "verify" | "reset";
 export const register = (email: string, password: string, lang: "tr" | "en") =>
   request<CodeSent>("/api/v1/auth/register", { method: "POST", body: JSON.stringify({ email, password, lang }) });
 
-/** `password`: the one the code was asked for with (signing up, or logging in). */
-export const verifyEmail = (email: string, code: string, password: string) =>
+/** `password`: the one the code was asked for with (signing up, or logging in). `remember`: keep
+ * the login for weeks, else for a few hours. */
+export const verifyEmail = (email: string, code: string, password: string, remember: boolean) =>
   request<TokenResponse>("/api/v1/auth/verify-email", {
     method: "POST",
-    body: JSON.stringify({ email, code, password }),
+    body: JSON.stringify({ email, code, password, remember }),
   });
 
 export const resendCode = (email: string, purpose: CodePurpose, lang: "tr" | "en") =>
@@ -277,19 +280,25 @@ export const resendCode = (email: string, purpose: CodePurpose, lang: "tr" | "en
 export const forgotPassword = (email: string, lang: "tr" | "en") =>
   request<CodeSent>("/api/v1/auth/forgot-password", { method: "POST", body: JSON.stringify({ email, lang }) });
 
-export const resetPassword = (email: string, code: string, password: string) =>
+export const resetPassword = (email: string, code: string, password: string, remember: boolean) =>
   request<TokenResponse>("/api/v1/auth/reset-password", {
     method: "POST",
-    body: JSON.stringify({ email, code, password }),
+    body: JSON.stringify({ email, code, password, remember }),
   });
+
+/** `credential`: the ID token Google's sign-in button gave. */
+export const googleLogin = (credential: string, remember: boolean) =>
+  request<TokenResponse>("/api/v1/auth/google", { method: "POST", body: JSON.stringify({ credential, remember }) });
+
+export const fetchAuthConfig = () => request<{ google_client_id: string | null }>("/api/v1/auth/config");
 
 // The login endpoint follows the OAuth2 password flow, which uses form fields, not JSON. An account
 // still to confirm gets a code (403 "email_not_verified"), in `lang`.
-export const login = (email: string, password: string, lang: "tr" | "en") =>
+export const login = (email: string, password: string, lang: "tr" | "en", remember: boolean) =>
   request<TokenResponse>("/api/v1/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept-Language": lang },
-    body: new URLSearchParams({ username: email, password }).toString(),
+    body: new URLSearchParams({ username: email, password, remember: String(remember) }).toString(),
   });
 
 export const fetchMe = () => request<User>("/api/v1/auth/me");
@@ -326,8 +335,10 @@ export const sharePlan = (plan: PlanResponse, lang: "tr" | "en") =>
 
 export const getSharedPlan = (id: string) => request<SharedPlan>(`/api/v1/shares/${encodeURIComponent(id)}`);
 
-export const deleteAccount = (password: string) =>
-  request<void>("/api/v1/auth/me", { method: "DELETE", body: JSON.stringify({ password }) });
+/** Confirmed with the password, or for an account without one (Google only), by signing in with
+ * Google again (`google_credential`: the new ID token). */
+export const deleteAccount = (confirmation: { password: string } | { google_credential: string }) =>
+  request<void>("/api/v1/auth/me", { method: "DELETE", body: JSON.stringify(confirmation) });
 
 export interface PlaceSuggestion {
   place_id: string;

@@ -8,10 +8,13 @@ import {
   type SavedRouteSummary,
 } from "../api";
 import { cityName, type Lang, STRINGS } from "../i18n";
+import { GoogleButton, useGoogleClientId } from "./GoogleButton";
 
 interface Props {
   lang: Lang;
   email: string;
+  /** False for an account that signs in only with Google: deleting it is confirmed with Google. */
+  hasPassword: boolean;
   cities: City[];
   onOpen: (id: string) => void;
   onBack: () => void;
@@ -19,12 +22,13 @@ interface Props {
   onUnauthorized: () => void;
 }
 
-export function SavedRoutes({ lang, email, cities, onOpen, onBack, onLogout, onUnauthorized }: Props) {
+export function SavedRoutes({ lang, email, hasPassword, cities, onOpen, onBack, onLogout, onUnauthorized }: Props) {
   const t = STRINGS[lang];
   const [routes, setRoutes] = useState<SavedRouteSummary[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState(""); // the password
+  const googleClientId = useGoogleClientId();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -48,17 +52,21 @@ export function SavedRoutes({ lang, email, cities, onOpen, onBack, onLogout, onU
     }
   };
 
-  const removeAccount = async (e: FormEvent) => {
+  const removeAccount = (e: FormEvent) => {
     e.preventDefault();
+    confirmDelete({ password: confirmation });
+  };
+
+  const confirmDelete = async (proof: { password: string } | { google_credential: string }) => {
     setDeleting(true);
     setDeleteError(null);
     try {
-      await deleteAccount(password);
+      await deleteAccount(proof);
       onLogout();
     } catch (err) {
       const status = err instanceof ApiError ? err.status : -1;
       if (status === 401) onUnauthorized();
-      else if (status === 403) setDeleteError(t.account.wrongPassword);
+      else if (status === 403) setDeleteError(hasPassword ? t.account.wrongPassword : t.account.otherGoogle);
       else if (status === 429) setDeleteError(t.auth.errors.tooMany);
       else setDeleteError(t.account.deleteFailed);
     } finally {
@@ -133,36 +141,51 @@ export function SavedRoutes({ lang, email, cities, onOpen, onBack, onLogout, onU
         ) : (
           <form className="plan-form" onSubmit={removeAccount}>
             <p className="hint">{t.account.deleteWarning}</p>
-            <div className="field">
-              <label className="field-label" htmlFor="delete-password">
-                {t.account.deletePassword}
-              </label>
-              <div className="input-wrap">
-                <input
-                  id="delete-password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+            {hasPassword ? (
+              <div className="field">
+                <label className="field-label" htmlFor="delete-confirmation">
+                  {t.account.deletePassword}
+                </label>
+                <div className="input-wrap">
+                  <input
+                    id="delete-confirmation"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={confirmation}
+                    onChange={(e) => setConfirmation(e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="field">
+                <p className="hint">{t.account.deleteWithGoogle(email)}</p>
+                {googleClientId && (
+                  <GoogleButton
+                    clientId={googleClientId}
+                    lang={lang}
+                    onCredential={(credential) => confirmDelete({ google_credential: credential })}
+                  />
+                )}
+              </div>
+            )}
             {deleteError && (
               <p className="error" role="alert">
                 {deleteError}
               </p>
             )}
             <div className="button-row">
-              <button type="submit" className="danger-button" disabled={deleting || !password}>
-                {deleting ? t.auth.working : t.account.deleteSubmit}
-              </button>
+              {hasPassword && (
+                <button type="submit" className="danger-button" disabled={deleting || !confirmation}>
+                  {deleting ? t.auth.working : t.account.deleteSubmit}
+                </button>
+              )}
               <button
                 type="button"
                 className="link-button"
                 onClick={() => {
                   setConfirmingDelete(false);
-                  setPassword("");
+                  setConfirmation("");
                   setDeleteError(null);
                 }}
               >

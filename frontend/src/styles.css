@@ -1838,10 +1838,56 @@ a.suggestion-name:hover {
   line-height: 1.5;
 }
 
+/* Remember me, and on the login side "forgot your password?". */
+.auth-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: -2px;
+}
+
+.auth-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.auth-remember input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--brand-fill);
+}
+
 .auth-forgot {
-  align-self: flex-end;
-  margin-top: -4px;
   font-size: 13px;
+}
+
+/* Google draws its own button inside; this keeps its place while the script loads. */
+.google-button {
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.auth-or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.auth-or span {
+  flex-grow: 1;
+  height: 1px;
+  background: var(--border);
 }
 
 .auth-links {
