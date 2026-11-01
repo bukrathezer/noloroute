@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from app.core.security import InvalidTokenError, decode_access_token
+from app.core.security import InvalidTokenError, token_claims
 from app.db.session import get_db
 from app.models import User
 
@@ -22,11 +22,14 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: DbSessio
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        user_id = decode_access_token(token)
+        user_id, issued_at = token_claims(token)
     except InvalidTokenError:
         raise unauthorized from None
     user = db.get(User, user_id)
     if user is None:  # e.g. the account was deleted after the token was issued
+        raise unauthorized
+    # Issued before a password reset: that login is over.
+    if user.tokens_valid_after is not None and issued_at < user.tokens_valid_after:
         raise unauthorized
     return user
 

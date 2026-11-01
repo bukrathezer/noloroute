@@ -12,7 +12,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
@@ -23,9 +23,11 @@ from app.core.rate_limit import RateLimiter, client_ip, limit_by_ip, too_many_re
 from app.core.security import create_access_token, hash_email_code, hash_password, new_email_code, verify_password
 from app.models import EmailCode, User
 from app.schemas.auth import (
+    AuthConfigOut,
     CodeSentResponse,
     DeleteAccountRequest,
     ForgotPasswordRequest,
+    GoogleLoginRequest,
     RegisterRequest,
     ResendCodeRequest,
     ResetPasswordRequest,
@@ -35,6 +37,7 @@ from app.schemas.auth import (
 )
 from app.services.disposable_email import is_disposable
 from app.services.email import EmailError, EmailSender, code_email
+from app.services.google_auth import GoogleIdentity, GoogleTokenError, GoogleUnavailableError, GoogleVerifier
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -62,14 +65,23 @@ def get_email_sender(request: Request) -> EmailSender:
     return request.app.state.email_sender
 
 
+def get_google_verifier(request: Request) -> GoogleVerifier | None:
+    """Checks Google sign-ins; None when no Google client id is configured."""
+    return request.app.state.google_verifier
+
+
 Sender = Annotated[EmailSender, Depends(get_email_sender)]
 
 
-def _token_response(user: User) -> TokenResponse:
-    return TokenResponse(
-        access_token=create_access_token(user.id),
-        user=UserOut(id=user.id, email=user.email, created_at=user.created_at),
+def _user_out(user: User) -> UserOut:
+    return UserOut(
+        id=user.id, email=user.email, created_at=user.created_at, has_password=user.hashed_password is not None
     )
+
+
+def _token_response(user: User, remember: bool = True, now: datetime | None = None) -> TokenResponse:
+    token = create_access_token(user.id, now=now, remember=remember)
+    return TokenResponse(access_token=token, user=_user_out(user))
 
 
 def _email_limits(request: Request, email: str, purpose: Purpose) -> list[tuple[RateLimiter, str]]:
@@ -208,7 +220,7 @@ def verify_email(req: VerifyEmailRequest, request: Request, db: DbSession) -> To
         user.hashed_password = used.pending_password_hash
     user.email_verified_at = datetime.now(UTC)
     db.commit()
-    return _token_response(user)
+    return _token_response(user, req.remember)
 
 
 @router.post("/resend-code", response_model=CodeSentResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -251,20 +263,30 @@ def reset_password(req: ResetPasswordRequest, request: Request, db: DbSession) -
     if user is None:
         db.commit()
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "invalid_code")
+    # Tokens carry whole seconds: logins end up to the next one, and the new login starts there.
+    now = datetime.now(UTC).replace(microsecond=0) + timedelta(seconds=1)
     user.hashed_password = hash_password(req.password)
-    user.email_verified_at = user.email_verified_at or datetime.now(UTC)  # the code proved the address
+    user.email_verified_at = user.email_verified_at or now  # the code proved the address
+    # The mailbox's owner takes the account back: other logins end, and a Google account linked to
+    # it is unlinked (signing in with Google again links it anew, where Google runs the mailbox).
+    user.tokens_valid_after = now
+    user.google_sub = None
     # A half-finished sign-up's code no longer fits the new password.
     db.execute(delete(EmailCode).where(EmailCode.email == req.email, EmailCode.purpose == "verify"))
     FAILED_LOGINS_PER_EMAIL.forget(req.email)
     db.commit()
-    return _token_response(user)
+    return _token_response(user, req.remember, now=now)
 
 
 @router.post("/login", response_model=TokenResponse, dependencies=[Depends(limit_by_ip(LOGIN_ATTEMPTS_PER_IP))])
 def login(
-    form: Annotated[OAuth2PasswordRequestForm, Depends()], request: Request, db: DbSession, sender: Sender
+    form: Annotated[OAuth2PasswordRequestForm, Depends()],
+    request: Request,
+    db: DbSession,
+    sender: Sender,
+    remember: Annotated[bool, Form()] = True,
 ) -> TokenResponse:
-    """OAuth2 password flow: form fields `username` (the email) and `password`.
+    """OAuth2 password flow: form fields `username` (the email) and `password`, and `remember`.
 
     The right password on an unconfirmed account sends it a new code and answers 403
     "email_not_verified" (accounts made before codes existed confirm this way too).
@@ -291,7 +313,71 @@ def login(
                 limiter.record(key)
             _send_code(db, sender, None, email, "verify", _lang_of(request))  # the password is proven
         raise HTTPException(status.HTTP_403_FORBIDDEN, "email_not_verified")
-    return _token_response(user)
+    return _token_response(user, remember)
+
+
+@router.post("/google", response_model=TokenResponse, dependencies=[Depends(limit_by_ip(LOGIN_ATTEMPTS_PER_IP))])
+def google_login(
+    req: GoogleLoginRequest,
+    db: DbSession,
+    verifier: Annotated[GoogleVerifier | None, Depends(get_google_verifier)],
+) -> TokenResponse:
+    """Sign in with Google's ID token: the account it was linked to, else the account with its
+    (Google-confirmed) email, now linked, else a new account.
+
+    An account of that email not yet confirmed by a code may have been started by someone else
+    with a password of their own: it is confirmed by Google now, and that password is dropped.
+    A confirmed account is linked only where Google runs the mailbox (Gmail, Workspace); otherwise
+    its owner logs in with the password (409 "link_with_password").
+    """
+    identity = _google_identity(verifier, req.credential)
+
+    for attempt in range(2):  # a second time if another sign-in created the account meanwhile
+        user = db.scalar(select(User).where(User.google_sub == identity.sub))
+        if user is None:
+            user = db.scalar(select(User).where(User.email == identity.email))
+            if user is None:
+                if is_disposable(identity.email):
+                    raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "disposable_email")
+                user = User(email=identity.email, google_sub=identity.sub, email_verified_at=datetime.now(UTC))
+                db.add(user)
+            elif user.google_sub is not None:
+                # The address's account signs in with another Google account.
+                raise HTTPException(status.HTTP_409_CONFLICT, "google_account_mismatch")
+            elif user.email_verified_at is None:
+                user.google_sub = identity.sub
+                user.hashed_password = None
+                user.email_verified_at = datetime.now(UTC)
+                db.execute(delete(EmailCode).where(EmailCode.email == identity.email))
+            elif identity.authoritative:
+                user.google_sub = identity.sub
+            else:
+                raise HTTPException(status.HTTP_409_CONFLICT, "link_with_password")
+        try:
+            db.commit()
+            break
+        except IntegrityError:
+            db.rollback()
+            if attempt == 1:
+                raise
+    return _token_response(user, req.remember)
+
+
+def _google_identity(verifier: GoogleVerifier | None, credential: str) -> GoogleIdentity:
+    if verifier is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "google_unavailable")
+    try:
+        return verifier.verify(credential)
+    except GoogleUnavailableError as exc:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "google_unavailable") from exc
+    except GoogleTokenError as exc:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid_google_token") from exc
+
+
+@router.get("/config", response_model=AuthConfigOut)
+def auth_config(verifier: Annotated[GoogleVerifier | None, Depends(get_google_verifier)]) -> AuthConfigOut:
+    """What the sign-in form offers: the Google button needs this app's client id."""
+    return AuthConfigOut(google_client_id=verifier.client_id if verifier else None)
 
 
 def _lang_of(request: Request) -> str:
@@ -301,17 +387,38 @@ def _lang_of(request: Request) -> str:
 
 @router.get("/me", response_model=UserOut)
 def me(user: CurrentUser) -> UserOut:
-    return UserOut(id=user.id, email=user.email, created_at=user.created_at)
+    return _user_out(user)
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
-def delete_account(req: DeleteAccountRequest, request: Request, user: CurrentUser, db: DbSession) -> Response:
-    """Permanently delete the account and all its saved routes. Asks for the password again."""
+def delete_account(
+    req: DeleteAccountRequest,
+    request: Request,
+    user: CurrentUser,
+    db: DbSession,
+    verifier: Annotated[GoogleVerifier | None, Depends(get_google_verifier)],
+) -> Response:
+    """Permanently delete the account and all its saved routes. Asks for the password again, or
+    for an account without one (Google only), a fresh Google sign-in to the same Google account:
+    a stolen login token alone can't delete an account."""
     # Counted like a login, so a stolen token can't be used to guess the password.
     if (wait := LOGIN_ATTEMPTS_PER_IP.hit(client_ip(request))) is not None:
         raise too_many_requests(wait)
-    if not verify_password(req.password, user.hashed_password):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Incorrect password")
+    if user.hashed_password is not None:
+        if not verify_password(req.password or "", user.hashed_password):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Incorrect password")
+    elif not req.google_credential:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "google_reauth_required")
+    else:
+        try:
+            identity = _google_identity(verifier, req.google_credential)
+        except HTTPException as exc:
+            if exc.status_code != status.HTTP_401_UNAUTHORIZED:
+                raise
+            # 401 would read as "your login expired": the login is fine, the Google check wasn't.
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "invalid_google_token") from exc
+        if identity.sub != user.google_sub:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "google_account_mismatch")
     db.execute(delete(EmailCode).where(EmailCode.email == user.email))
     db.delete(user)  # saved routes and their stops cascade
     db.commit()

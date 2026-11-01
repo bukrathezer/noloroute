@@ -3,6 +3,7 @@ import {
   ApiError,
   type CodePurpose,
   forgotPassword,
+  googleLogin,
   login,
   register,
   resendCode,
@@ -11,6 +12,7 @@ import {
   verifyEmail,
 } from "../api";
 import { type Lang, STRINGS } from "../i18n";
+import { GoogleButton, useGoogleClientId } from "./GoogleButton";
 
 export type AuthMode = "login" | "register";
 
@@ -23,7 +25,8 @@ const RESEND_SECONDS = 60; // the server sends code emails at least a minute apa
 interface Props {
   lang: Lang;
   initialMode: AuthMode;
-  onAuthenticated: (result: TokenResponse) => void;
+  /** `remember`: the user wants the login kept (in this browser, for weeks). */
+  onAuthenticated: (result: TokenResponse, remember: boolean) => void;
 }
 
 /** Logging in and signing up, with the emailed codes: for the auth panel and the welcome screen. */
@@ -33,7 +36,10 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [remember, setRemember] = useState(true);
   const [code, setCode] = useState("");
+  const googleClientId = useGoogleClientId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
@@ -48,6 +54,7 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
     setStep(next);
     setError(null);
     setCode("");
+    setConfirm("");
   };
 
   const toCode = (next: "code" | "reset") => {
@@ -82,10 +89,15 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    // A new password is typed twice: a typo would lock the account out.
+    if (((step === "form" && mode === "register") || step === "reset") && password !== confirm) {
+      setError(t.errors.passwordMismatch);
+      return;
+    }
     run(async () => {
       if (step === "form" && mode === "login") {
         try {
-          onAuthenticated(await login(email, password, lang));
+          onAuthenticated(await login(email, password, lang, remember), remember);
         } catch (err) {
           // The right password on an account still to confirm: a code is on its way.
           if (err instanceof ApiError && err.status === 403) toCode("code");
@@ -95,12 +107,28 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
         await register(email, password, lang);
         toCode("code");
       } else if (step === "code") {
-        onAuthenticated(await verifyEmail(email, code, password));
+        onAuthenticated(await verifyEmail(email, code, password, remember), remember);
       } else if (step === "forgot") {
         await forgotPassword(email, lang);
         toCode("reset");
       } else {
-        onAuthenticated(await resetPassword(email, code, password));
+        onAuthenticated(await resetPassword(email, code, password, remember), remember);
+      }
+    });
+  };
+
+  const signInWithGoogle = (credential: string) => {
+    if (busy) return; // an e-mail login is under way
+    return run(async () => {
+      try {
+        onAuthenticated(await googleLogin(credential, remember), remember);
+      } catch (err) {
+        const status = err instanceof ApiError ? err.status : -1;
+        const detail = err instanceof ApiError ? err.message : "";
+        if (status === 409) setError(detail === "link_with_password" ? t.errors.googleUsePassword : t.errors.googleMismatch);
+        else if (status === 422) setError(t.errors.disposable);
+        else if (status === 429) setError(t.errors.tooMany);
+        else setError(t.errors.google);
       }
     });
   };
@@ -117,6 +145,7 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
       {t.email}
       <input
         type="email"
+        name="email"
         autoComplete="email"
         required
         placeholder={t.emailPlaceholder}
@@ -142,6 +171,25 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
       />
     </label>
   );
+  const confirmField = (label: string) => (
+    <label className="auth-field">
+      {label}
+      <input
+        type="password"
+        name="password-confirm"
+        autoComplete="new-password"
+        required
+        value={confirm}
+        onChange={(e) => setConfirm(e.target.value)}
+      />
+    </label>
+  );
+  const rememberBox = (
+    <label className="auth-remember">
+      <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+      {t.rememberMe}
+    </label>
+  );
   const submitLabel =
     step === "form" ? (mode === "login" ? t.submitLogin : t.submitRegister)
     : step === "code" ? t.submitCode
@@ -162,17 +210,29 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
                 onClick={() => {
                   setMode(m);
                   setError(null);
+                  setConfirm("");
                 }}
               >
                 {m === "login" ? t.loginTab : t.registerTab}
               </button>
             ))}
           </div>
+          {googleClientId && (
+            <>
+              <GoogleButton clientId={googleClientId} lang={lang} onCredential={signInWithGoogle} />
+              <div className="auth-or" aria-hidden="true">
+                <span />
+                {t.orWithEmail}
+                <span />
+              </div>
+            </>
+          )}
           {emailField}
           <label className="auth-field">
             {t.password}
             <input
               type="password"
+              name="password"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
               required
               minLength={mode === "register" ? 8 : undefined}
@@ -181,11 +241,15 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
               onChange={(e) => setPassword(e.target.value)}
             />
           </label>
-          {mode === "login" && (
-            <button type="button" className="link-button auth-forgot" onClick={() => go("forgot")}>
-              {t.forgot}
-            </button>
-          )}
+          {mode === "register" && confirmField(t.confirmPassword)}
+          <div className="auth-row">
+            {rememberBox}
+            {mode === "login" && (
+              <button type="button" className="link-button auth-forgot" onClick={() => go("forgot")}>
+                {t.forgot}
+              </button>
+            )}
+          </div>
         </>
       )}
 
@@ -198,6 +262,7 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
               {t.newPassword}
               <input
                 type="password"
+                name="password"
                 autoComplete="new-password"
                 required
                 minLength={8}
@@ -207,6 +272,7 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
               />
             </label>
           )}
+          {step === "reset" && confirmField(t.newPasswordAgain)}
         </>
       )}
 

@@ -70,6 +70,8 @@ const INVITE_CLOSED_KEY = "shareInviteClosed";
 const INVITE_DELAY_MS = 4000;
 // A shared plan's link (app/api/v1/routes_share.py).
 const SHARE_PATH = /^\/p\/([A-Za-z0-9]{8})$/;
+// The privacy note's own address (Google's sign-in screen links to it).
+const PRIVACY_PATH = /^\/(gizlilik|privacy)\/?$/;
 
 type View = "plan" | "guide" | "auth" | "saved" | "privacy";
 // The two tabs; the other views are screens that go back to the tab they were opened from.
@@ -82,6 +84,8 @@ const GUIDE_CITY_ZOOM = 11;
 interface Auth {
   token: string;
   user: User;
+  /** "Remember me": kept in localStorage; else in sessionStorage, gone when the browser closes. */
+  remember: boolean;
 }
 
 // The plan of the link the page was opened with (/p/<id>): loading, not there, or shown until it
@@ -103,11 +107,14 @@ function leaveSharedLink() {
 
 function loadAuth(): Auth | null {
   try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Auth) : null;
+    for (const remember of [true, false]) {
+      const raw = (remember ? localStorage : sessionStorage).getItem(AUTH_STORAGE_KEY);
+      if (raw) return { ...(JSON.parse(raw) as Auth), remember };
+    }
   } catch {
-    return null;
+    // Storage unavailable or unreadable: logged out.
   }
+  return null;
 }
 
 function readFlag(key: string): boolean {
@@ -128,8 +135,9 @@ function setFlag(key: string) {
 
 function storeAuth(auth: Auth | null) {
   try {
-    if (auth) localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
-    else localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    if (auth) (auth.remember ? localStorage : sessionStorage).setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
   } catch {
     // Storage unavailable: the login just won't survive a page reload.
   }
@@ -158,12 +166,14 @@ export function App() {
     setAuthToken(stored?.token ?? null);
     return stored;
   });
-  const [view, setView] = useState<View>("plan");
+  const [view, setView] = useState<View>(() => (PRIVACY_PATH.test(window.location.pathname) ? "privacy" : "plan"));
   const [mainView, setMainView] = useState<MainView>("plan");
   const [authReason, setAuthReason] = useState<"save" | null>(null);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   // The welcome screen, for a first visit: not after logging in, nor for someone opening a shared plan.
-  const [showWelcome, setShowWelcome] = useState(() => !auth && !linkOfPage() && !readFlag(WELCOME_SEEN_KEY));
+  const [showWelcome, setShowWelcome] = useState(
+    () => !auth && !linkOfPage() && !PRIVACY_PATH.test(window.location.pathname) && !readFlag(WELCOME_SEEN_KEY),
+  );
   const [inviteReady, setInviteReady] = useState(false);
   const [inviteClosed, setInviteClosed] = useState(() => readFlag(INVITE_CLOSED_KEY));
   // Leaving the welcome screen puts the keyboard focus on the app, not lost on the page.
@@ -288,12 +298,23 @@ export function App() {
     setSavedRouteId(null);
   }, []);
 
-  // A stored token may have expired while the tab was closed: check it once on load.
+  // A stored token may have expired while the tab was closed: check it once on load, and bring
+  // the account details up to date (whether it has a password, say).
   useEffect(() => {
     if (!auth) return;
-    fetchMe().catch((e) => {
-      if (e instanceof ApiError && e.status === 401) logout();
-    });
+    const checked = auth.token; // a later login (another account, say) mustn't take this answer
+    fetchMe()
+      .then((user) =>
+        setAuth((current) => {
+          if (!current || current.token !== checked) return current;
+          const next = { ...current, user };
+          storeAuth(next);
+          return next;
+        }),
+      )
+      .catch((e) => {
+        if (e instanceof ApiError && e.status === 401 && loadAuth()?.token === checked) logout();
+      });
     // Only on first load; later logins are fresh.
   }, []);
 
@@ -371,8 +392,8 @@ export function App() {
     }
   };
 
-  const onAuthenticated = (result: TokenResponse) => {
-    const next = { token: result.access_token, user: result.user };
+  const onAuthenticated = (result: TokenResponse, remember: boolean) => {
+    const next = { token: result.access_token, user: result.user, remember };
     setAuthToken(next.token);
     storeAuth(next);
     setAuth(next);
@@ -560,9 +581,9 @@ export function App() {
           lang={lang}
           onSwitchLanguage={() => setLang(lang === "tr" ? "en" : "tr")}
           cities={cities}
-          onAuthenticated={(result) => {
+          onAuthenticated={(result, remember) => {
             leaveWelcome();
-            onAuthenticated(result);
+            onAuthenticated(result, remember);
           }}
           onGuest={leaveWelcome}
           onGuide={() => {
@@ -624,6 +645,7 @@ export function App() {
           <SavedRoutes
             lang={lang}
             email={auth.user.email}
+            hasPassword={auth.user.has_password !== false}
             cities={cities}
             onOpen={openSavedRoute}
             onBack={() => showMain("plan")}
@@ -632,7 +654,15 @@ export function App() {
           />
         )}
 
-        {view === "privacy" && <Privacy lang={lang} onBack={() => setView(mainView)} />}
+        {view === "privacy" && (
+          <Privacy
+            lang={lang}
+            onBack={() => {
+              if (PRIVACY_PATH.test(window.location.pathname)) window.history.replaceState(null, "", "/");
+              setView(mainView);
+            }}
+          />
+        )}
 
         {(view === "plan" || view === "guide") && (
           <div className="segmented view-tabs" role="tablist">

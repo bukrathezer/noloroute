@@ -20,6 +20,7 @@ from pwdlib import PasswordHash
 from app.core.config import get_settings
 
 ALGORITHM = "HS256"
+TOKEN_LEEWAY_SECONDS = 5
 
 _password_hash = PasswordHash.recommended()  # Argon2id with current recommended parameters
 # Checked when a login email doesn't exist, so that case takes as long as a wrong password
@@ -53,24 +54,40 @@ def hash_email_code(code: str, email: str, purpose: str) -> str:
     return hmac.new(_secret_key().encode(), f"{purpose}:{email}:{code}".encode(), hashlib.sha256).hexdigest()
 
 
-def create_access_token(user_id: str, now: datetime | None = None) -> str:
+def create_access_token(user_id: str, now: datetime | None = None, remember: bool = True) -> str:
+    """A login token: valid for access_token_ttl_minutes when the user asked to be remembered,
+    else for session_token_ttl_minutes."""
     settings = get_settings()
     issued_at = now or datetime.now(UTC)
+    minutes = settings.access_token_ttl_minutes if remember else settings.session_token_ttl_minutes
     payload = {
         "sub": user_id,
         "iat": issued_at,
-        "exp": issued_at + timedelta(minutes=settings.access_token_ttl_minutes),
+        "exp": issued_at + timedelta(minutes=minutes),
     }
     return jwt.encode(payload, _secret_key(), algorithm=ALGORITHM)
 
 
 def decode_access_token(token: str) -> str:
     """Return the user id in a valid token; raise InvalidTokenError otherwise (bad signature, expired...)."""
+    return token_claims(token)[0]
+
+
+def token_claims(token: str) -> tuple[str, datetime]:
+    """The user id and issue time of a valid token; InvalidTokenError otherwise."""
     try:
-        payload = jwt.decode(token, _secret_key(), algorithms=[ALGORITHM], options={"require": ["sub", "exp"]})
+        # A few seconds' leeway: a login started right after a password reset is dated at the next
+        # whole second (see routes_auth.reset_password), which may not quite have come yet.
+        payload = jwt.decode(
+            token,
+            _secret_key(),
+            algorithms=[ALGORITHM],
+            leeway=TOKEN_LEEWAY_SECONDS,
+            options={"require": ["sub", "exp", "iat"]},
+        )
     except jwt.PyJWTError as exc:
         raise InvalidTokenError(str(exc)) from exc
-    return payload["sub"]
+    return payload["sub"], datetime.fromtimestamp(payload["iat"], UTC)
 
 
 def _secret_key() -> str:
