@@ -36,6 +36,7 @@ import { PlanResult, type SaveState, type ShareState } from "./components/PlanRe
 import { Privacy } from "./components/Privacy";
 import { type GuideMap, type Point, RouteMap } from "./components/RouteMap";
 import { SavedRoutes } from "./components/SavedRoutes";
+import { AdminPanel } from "./components/AdminPanel";
 import { ShareInvite } from "./components/ShareInvite";
 import { type GuideFocus, TravelGuide } from "./components/TravelGuide";
 import { addDays, firstTripDayIn, fromIso, todayIso } from "./dates";
@@ -73,7 +74,7 @@ const SHARE_PATH = /^\/p\/([A-Za-z0-9]{8})$/;
 // The privacy note's own address (Google's sign-in screen links to it).
 const PRIVACY_PATH = /^\/(gizlilik|privacy)\/?$/;
 
-type View = "plan" | "guide" | "auth" | "saved" | "privacy";
+type View = "plan" | "guide" | "auth" | "saved" | "admin" | "privacy";
 // The two tabs; the other views are screens that go back to the tab they were opened from.
 type MainView = "plan" | "guide";
 
@@ -646,12 +647,17 @@ export function App() {
             lang={lang}
             email={auth.user.email}
             hasPassword={auth.user.has_password !== false}
+            onShowAdmin={auth.user.is_admin ? () => setView("admin") : undefined}
             cities={cities}
             onOpen={openSavedRoute}
             onBack={() => showMain("plan")}
             onLogout={logout}
             onUnauthorized={logout}
           />
+        )}
+
+        {view === "admin" && auth?.user.is_admin && (
+          <AdminPanel lang={lang} onBack={() => setView("saved")} onUnauthorized={logout} />
         )}
 
         {view === "privacy" && (

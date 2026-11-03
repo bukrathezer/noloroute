@@ -10,6 +10,7 @@ from starlette.responses import Response
 from starlette.types import Scope
 
 from app.api.v1 import (
+    routes_admin,
     routes_auth,
     routes_city,
     routes_guide,
@@ -68,6 +69,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 API_V1_PREFIX = "/api/v1"
 for module in (
+    routes_admin,
     routes_auth,
     routes_city,
     routes_guide,

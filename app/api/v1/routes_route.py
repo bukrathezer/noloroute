@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import CurrentUser, DbSession
 from app.core.rate_limit import RateLimiter, client_ip, too_many_requests
 from app.db.session import get_db
-from app.models import POI, City, RouteStop, SavedRoute, User
+from app.models import POI, City, PlanLog, RouteStop, SavedRoute, User
 from app.schemas.route import DayPlan, RemoveStopRequest, ReorderDaysRequest, RoutePlanRequest, RoutePlanResponse
 from app.schemas.saved_route import SavedRouteOut, SavedRouteSummary, SaveRouteRequest
 from app.services.geo import LatLng
@@ -106,7 +106,7 @@ async def plan_route(
     except HotelTooFarError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
-    return RoutePlanResponse(
+    plan = RoutePlanResponse(
         city_id=city.id,
         currency_code=city.currency_code,
         accommodation=req.accommodation,
@@ -119,6 +119,20 @@ async def plan_route(
         prices_checked_on=city.prices_checked_on,
         **plan_totals(days),
     )
+    # After the response is built: the commit expires the loaded city (reloading it here would
+    # query the database on the event loop, and fail with it after a rollback).
+    await run_in_threadpool(log_plan, db, city.id, req.travel_mode, req.duration_days)
+    return plan
+
+
+def log_plan(db: Session, city_id: str, mode: TravelMode, days: int) -> None:
+    """Count the plan for the admin page (nothing about who made it). Never fails the plan."""
+    try:
+        db.add(PlanLog(city_id=city_id, travel_mode=mode.value, duration_days=days))
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Couldn't count a plan")
 
 
 @router.post("/plan/remove-stop", response_model=RoutePlanResponse)

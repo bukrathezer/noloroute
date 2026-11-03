@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     # Sign-in with Google: the OAuth client id from Google Cloud (public, it is in the page too).
     # Without it the Google button doesn't show.
     google_oauth_client_id: str | None = None
+    # Who sees the admin page: email addresses, comma-separated (confirmed accounts only).
+    admin_emails: str = ""
 
 
 @lru_cache

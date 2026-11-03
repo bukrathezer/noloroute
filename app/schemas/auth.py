@@ -66,6 +66,7 @@ class UserOut(BaseModel):
     email: str
     created_at: datetime
     has_password: bool = Field(description="False for an account that signs in only with Google.")
+    is_admin: bool = Field(False, description="Whether it may open the admin page.")
 
 
 class TokenResponse(BaseModel):

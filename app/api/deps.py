@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.security import InvalidTokenError, token_claims
 from app.db.session import get_db
 from app.models import User
@@ -35,3 +36,19 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: DbSessio
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def is_admin(user: User) -> bool:
+    """A confirmed account whose address is in ADMIN_EMAILS."""
+    admins = {e.strip().lower() for e in get_settings().admin_emails.split(",") if e.strip()}
+    return user.email_verified_at is not None and user.email in admins
+
+
+def get_current_admin(user: CurrentUser) -> User:
+    """Dependency for the admin page: an admin, or 404 (so the page's existence isn't revealed)."""
+    if not is_admin(user):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Not Found")
+    return user
+
+
+CurrentAdmin = Annotated[User, Depends(get_current_admin)]

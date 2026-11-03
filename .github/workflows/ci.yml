@@ -172,6 +172,8 @@ jobs:
         env:
           # Sign-in with Google's OAuth client (public: it is in the page too, so no secret).
           GOOGLE_OAUTH_CLIENT_ID: 76802643500-v1kmopa1a2us23ldt28vmedtq0aadnt6.apps.googleusercontent.com
+        # ADMIN_EMAILS (who sees the admin page) is set on the service itself, not here, to keep the
+        # address out of the public repository; --update-env-vars leaves it in place.
         run: |
           gcloud run deploy "$SERVICE" \
             --image "$IMAGE" \
