@@ -18,7 +18,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import CurrentUser, DbSession, is_admin
 from app.core.rate_limit import RateLimiter, client_ip, limit_by_ip, too_many_requests
 from app.core.security import create_access_token, hash_email_code, hash_password, new_email_code, verify_password
 from app.models import EmailCode, User
@@ -75,11 +75,18 @@ Sender = Annotated[EmailSender, Depends(get_email_sender)]
 
 def _user_out(user: User) -> UserOut:
     return UserOut(
-        id=user.id, email=user.email, created_at=user.created_at, has_password=user.hashed_password is not None
+        id=user.id,
+        email=user.email,
+        created_at=user.created_at,
+        has_password=user.hashed_password is not None,
+        is_admin=is_admin(user),
     )
 
 
-def _token_response(user: User, remember: bool = True, now: datetime | None = None) -> TokenResponse:
+def _token_response(db: Session, user: User, remember: bool = True, now: datetime | None = None) -> TokenResponse:
+    """Log the account in: its token, and the time noted for the admin page."""
+    user.last_login_at = datetime.now(UTC)
+    db.commit()
     token = create_access_token(user.id, now=now, remember=remember)
     return TokenResponse(access_token=token, user=_user_out(user))
 
@@ -220,7 +227,7 @@ def verify_email(req: VerifyEmailRequest, request: Request, db: DbSession) -> To
         user.hashed_password = used.pending_password_hash
     user.email_verified_at = datetime.now(UTC)
     db.commit()
-    return _token_response(user, req.remember)
+    return _token_response(db, user, req.remember)
 
 
 @router.post("/resend-code", response_model=CodeSentResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -275,7 +282,7 @@ def reset_password(req: ResetPasswordRequest, request: Request, db: DbSession) -
     db.execute(delete(EmailCode).where(EmailCode.email == req.email, EmailCode.purpose == "verify"))
     FAILED_LOGINS_PER_EMAIL.forget(req.email)
     db.commit()
-    return _token_response(user, req.remember, now=now)
+    return _token_response(db, user, req.remember, now=now)
 
 
 @router.post("/login", response_model=TokenResponse, dependencies=[Depends(limit_by_ip(LOGIN_ATTEMPTS_PER_IP))])
@@ -313,7 +320,7 @@ def login(
                 limiter.record(key)
             _send_code(db, sender, None, email, "verify", _lang_of(request))  # the password is proven
         raise HTTPException(status.HTTP_403_FORBIDDEN, "email_not_verified")
-    return _token_response(user, remember)
+    return _token_response(db, user, remember)
 
 
 @router.post("/google", response_model=TokenResponse, dependencies=[Depends(limit_by_ip(LOGIN_ATTEMPTS_PER_IP))])
@@ -360,7 +367,7 @@ def google_login(
             db.rollback()
             if attempt == 1:
                 raise
-    return _token_response(user, req.remember)
+    return _token_response(db, user, req.remember)
 
 
 def _google_identity(verifier: GoogleVerifier | None, credential: str) -> GoogleIdentity:

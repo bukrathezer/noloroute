@@ -188,6 +188,8 @@ export interface User {
   created_at: string;
   /** False for an account that signs in only with Google (missing from logins kept from before). */
   has_password?: boolean;
+  /** Whether it may open the admin page. */
+  is_admin?: boolean;
 }
 
 export interface TokenResponse {
@@ -312,6 +314,57 @@ export const getSavedRoute = (id: string) => request<SavedRoute>(`/api/v1/routes
 
 export const deleteSavedRoute = (id: string) =>
   request<void>(`/api/v1/routes/${encodeURIComponent(id)}`, { method: "DELETE" });
+
+export interface DayCount {
+  day: string;
+  count: number;
+}
+
+export interface AdminOverview {
+  users: {
+    total: number;
+    verified: number;
+    with_google: number;
+    with_password: number;
+    new_last_7_days: number;
+    new_last_30_days: number;
+  };
+  signups_by_day: DayCount[];
+  plans_total: number;
+  plans_last_7_days: number;
+  plans_last_30_days: number;
+  plans_by_day: DayCount[];
+  saved_routes: number;
+  users_with_saved_routes: number;
+  shared_plans: number;
+  shared_plans_last_7_days: number;
+  top_cities: {
+    city_id: string;
+    name: string;
+    name_tr: string | null;
+    plans_last_30_days: number;
+    saved_routes: number;
+    shared_plans: number;
+  }[];
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  created_at: string;
+  verified: boolean;
+  google: boolean;
+  has_password: boolean;
+  saved_routes: number;
+  last_login_at: string | null;
+}
+
+export const getAdminOverview = () => request<AdminOverview>("/api/v1/admin/overview");
+
+export const listAdminUsers = (q: string, limit: number, offset: number) =>
+  request<{ total: number; users: AdminUser[] }>(
+    `/api/v1/admin/users?${new URLSearchParams({ q, limit: String(limit), offset: String(offset) })}`,
+  );
 
 export const removeStop = (plan: PlanResponse, poiId: string) =>
   request<PlanResponse>("/api/v1/routes/plan/remove-stop", {

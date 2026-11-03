@@ -16,6 +16,8 @@ interface Props {
   email: string;
   /** False for an account that signs in only with Google: deleting it is confirmed with Google. */
   hasPassword: boolean;
+  /** Set for an admin: opens the admin page. */
+  onShowAdmin?: () => void;
   cities: City[];
   onOpen: (id: string) => void;
   onBack: () => void;
@@ -23,7 +25,17 @@ interface Props {
   onUnauthorized: () => void;
 }
 
-export function SavedRoutes({ lang, email, hasPassword, cities, onOpen, onBack, onLogout, onUnauthorized }: Props) {
+export function SavedRoutes({
+  lang,
+  email,
+  hasPassword,
+  onShowAdmin,
+  cities,
+  onOpen,
+  onBack,
+  onLogout,
+  onUnauthorized,
+}: Props) {
   const t = STRINGS[lang];
   const [routes, setRoutes] = useState<SavedRouteSummary[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -103,6 +115,11 @@ export function SavedRoutes({ lang, email, hasPassword, cities, onOpen, onBack, 
           {t.account.logout}
         </button>
       </p>
+      {onShowAdmin && (
+        <button type="button" className="pill-button admin-link" onClick={onShowAdmin}>
+          {t.admin.open}
+        </button>
+      )}
 
       {failed && (
         <p className="error" role="alert">
