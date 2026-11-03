@@ -5,6 +5,7 @@ get up to that many times the limit. That is enough to stop brute-force and cost
 scale; a shared store (e.g. Redis) would be the next step.
 """
 
+import ipaddress
 import threading
 import time
 from collections import deque
@@ -71,8 +72,30 @@ def reset_all_limiters() -> None:
         limiter.reset()
 
 
+# Addresses of Google's own front ends and internal hops, never a visitor's.
+_GOOGLE_HOPS = [ipaddress.ip_network(n) for n in ("35.191.0.0/16", "130.211.0.0/22")]
+
+
+def _is_hop(address: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(address)
+    except ValueError:
+        return False
+    return not ip.is_global or any(ip in net for net in _GOOGLE_HOPS)
+
+
 def client_ip(request: Request) -> str:
-    # Behind Cloud Run, uvicorn's --proxy-headers already puts the real client address here.
+    """The visitor's address, for rate limits.
+
+    Cloud Run's front end appends the address it saw to X-Forwarded-For. Whatever a visitor wrote
+    in that header themselves comes before it, so the address is taken from the right (skipping
+    Google's internal hops), never from the left, which anyone can fill with made-up addresses.
+    (uvicorn's --proxy-headers takes the leftmost one into request.client, so that isn't used.)
+    """
+    entries = [e.strip() for value in request.headers.getlist("x-forwarded-for") for e in value.split(",")]
+    for entry in reversed([e for e in entries if e]):
+        if not _is_hop(entry):
+            return entry
     return request.client.host if request.client else "unknown"
 
 
