@@ -169,6 +169,9 @@ jobs:
           gcloud run jobs execute "$MIGRATE_JOB" --region "$REGION" --wait
 
       - name: Deploy to Cloud Run
+        env:
+          # Sign-in with Google's OAuth client (public: it is in the page too, so no secret).
+          GOOGLE_OAUTH_CLIENT_ID: 76802643500-v1kmopa1a2us23ldt28vmedtq0aadnt6.apps.googleusercontent.com
         run: |
           gcloud run deploy "$SERVICE" \
             --image "$IMAGE" \
@@ -176,6 +179,7 @@ jobs:
             --service-account "$RUNTIME_SA" \
             --set-cloudsql-instances "$SQL_INSTANCE" \
             --set-secrets "DATABASE_URL=database-url:latest,GOOGLE_PLACES_API_KEY=maps-api-key:latest,JWT_SECRET_KEY=jwt-secret:latest,TICKETMASTER_API_KEY=ticketmaster-api-key:latest,RESEND_API_KEY=resend-api-key:latest" \
+            --update-env-vars "GOOGLE_OAUTH_CLIENT_ID=$GOOGLE_OAUTH_CLIENT_ID" \
             --allow-unauthenticated \
             --min-instances 0 \
             --max-instances 3 \
