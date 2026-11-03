@@ -9,6 +9,7 @@ import {
 } from "../api";
 import { cityName, type Lang, STRINGS } from "../i18n";
 import { GoogleButton, useGoogleClientId } from "./GoogleButton";
+import { PasswordInput } from "./PasswordInput";
 
 interface Props {
   lang: Lang;
@@ -147,9 +148,9 @@ export function SavedRoutes({ lang, email, hasPassword, cities, onOpen, onBack, 
                   {t.account.deletePassword}
                 </label>
                 <div className="input-wrap">
-                  <input
+                  <PasswordInput
+                    lang={lang}
                     id="delete-confirmation"
-                    type="password"
                     autoComplete="current-password"
                     required
                     value={confirmation}

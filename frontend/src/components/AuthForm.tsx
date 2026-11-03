@@ -13,6 +13,7 @@ import {
 } from "../api";
 import { type Lang, STRINGS } from "../i18n";
 import { GoogleButton, useGoogleClientId } from "./GoogleButton";
+import { PasswordInput } from "./PasswordInput";
 
 export type AuthMode = "login" | "register";
 
@@ -174,8 +175,8 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
   const confirmField = (label: string) => (
     <label className="auth-field">
       {label}
-      <input
-        type="password"
+      <PasswordInput
+        lang={lang}
         name="password-confirm"
         autoComplete="new-password"
         required
@@ -230,8 +231,8 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
           {emailField}
           <label className="auth-field">
             {t.password}
-            <input
-              type="password"
+            <PasswordInput
+              lang={lang}
               name="password"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
               required
@@ -260,8 +261,8 @@ export function AuthForm({ lang, initialMode, onAuthenticated }: Props) {
           {step === "reset" && (
             <label className="auth-field">
               {t.newPassword}
-              <input
-                type="password"
+              <PasswordInput
+                lang={lang}
                 name="password"
                 autoComplete="new-password"
                 required

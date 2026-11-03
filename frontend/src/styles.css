@@ -1838,6 +1838,46 @@ a.suggestion-name:hover {
   line-height: 1.5;
 }
 
+/* A password field with its show/hide eye button inside, on the right. */
+.password-input {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+.password-input input {
+  flex: 1;
+  min-width: 0;
+}
+
+.auth-field .password-input input,
+.input-wrap .password-input input {
+  padding-right: 46px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
 /* Remember me, and on the login side "forgot your password?". */
 .auth-row {
   display: flex;
