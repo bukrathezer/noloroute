@@ -1869,11 +1869,14 @@ a.suggestion-name:hover {
   font-size: 13px;
 }
 
-/* Google draws its own button inside; this keeps its place while the script loads. */
+/* Google draws its own button inside; this keeps its place while the script loads. The button
+   is a frame in light mode: on a dark page the browser would paint the frame's backdrop white
+   around it, unless the frame's box is light too (its own backdrop then stays transparent). */
 .google-button {
   display: flex;
   justify-content: center;
   min-height: 44px;
+  color-scheme: light;
 }
 
 .auth-or {
