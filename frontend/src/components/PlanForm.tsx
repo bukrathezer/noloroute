@@ -12,7 +12,6 @@ export interface FormState {
   hotelLabel: string | null;
   days: number;
   mode: TravelMode;
-  budget: string;
   /** "YYYY-MM-DD" of day 1, or "" to plan without dates. */
   startDate: string;
 }
@@ -71,12 +70,7 @@ export function PlanForm({ cities, form, onChange, onSubmit, loading, lang, onSh
         ) : form.hotel ? (
           <div className="hotel-chosen">
             <span className="pin-dot" aria-hidden="true" />
-            <span className="hotel-label">
-              {form.hotelLabel ?? t.hotel.pinnedOnMap}
-              <span className="muted coords">
-                {form.hotel.lat.toFixed(4)}, {form.hotel.lng.toFixed(4)}
-              </span>
-            </span>
+            <span className="hotel-label">{form.hotelLabel ?? t.hotel.pinnedOnMap}</span>
             <button type="button" className="link-button" onClick={() => onChange({ hotel: null, hotelLabel: null })}>
               {t.hotel.clear}
             </button>
@@ -123,25 +117,6 @@ export function PlanForm({ cities, form, onChange, onSubmit, loading, lang, onSh
               {t.mode[mode]}
             </button>
           ))}
-        </div>
-      </div>
-
-      <div className="field">
-        <label className="field-label" htmlFor="budget">
-          {t.budget.label} <span className="muted">({t.budget.optional})</span>
-        </label>
-        <div className="input-wrap">
-          <input
-            id="budget"
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step={1}
-            placeholder={t.budget.placeholder}
-            value={form.budget}
-            onChange={(e) => onChange({ budget: e.target.value })}
-          />
-          {form.city && <span className="suffix">{form.city.currency_code}</span>}
         </div>
       </div>
 

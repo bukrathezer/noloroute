@@ -63,11 +63,6 @@ const en = {
     TravelMode | "label",
     string
   >,
-  budget: {
-    label: "Entry-fee budget",
-    optional: "optional",
-    placeholder: "No limit",
-  },
   submit: "Plan my trip",
   planning: "Planning…",
   result: {
@@ -78,8 +73,6 @@ const en = {
     sightseeing: "Sightseeing",
     travel: "Travel",
     stopsCount: (n: number) => `${n} ${n === 1 ? "stop" : "stops"}`,
-    entryCost: "Entry fees",
-    unpriced: (n: number) => `${n} stops without price info`,
     visit: "visit",
     leg: (mode: string, duration: string, km: string, fromHotel: boolean) =>
       `${mode} ${duration} · ${km} km${fromHotel ? " from your hotel" : ""}`,
@@ -99,7 +92,6 @@ const en = {
     allWalked: "No public transport data was found here, so every leg is on foot.",
     attribution: "Routes and travel times: Google Maps",
     backToHotel: "Back to your hotel",
-    unknownCost: "—",
     estimated: "Approximate times: live routing was unavailable",
     emptyDay: "Nothing left to fit in this day.",
     focusDay: (n: number) => `Show only day ${n} on the map`,
@@ -196,8 +188,6 @@ const en = {
     ],
   },
   footer: {
-    api: "API docs",
-    source: "Source code",
     privacy: "Privacy",
     install: "Install the app",
     iosInstall: "On iPhone and iPad: open the browser's Share menu, then choose “Add to Home Screen”.",
@@ -426,11 +416,6 @@ const tr: Strings = {
     hint: "Tarih seçersen kapalı yerler plana girmez; hava durumu ve etkinlikler de gösterilir.",
   },
   mode: { label: "Ulaşım", WALK: "Yürüyerek", DRIVE: "Araçla", TRANSIT: "Toplu taşıma" },
-  budget: {
-    label: "Giriş ücreti bütçesi",
-    optional: "isteğe bağlı",
-    placeholder: "Sınır yok",
-  },
   submit: "Rotamı planla",
   planning: "Planlanıyor…",
   result: {
@@ -441,8 +426,6 @@ const tr: Strings = {
     sightseeing: "Gezme",
     travel: "Yol",
     stopsCount: (n) => `${n} durak`,
-    entryCost: "Giriş ücretleri",
-    unpriced: (n) => `${n} durağın fiyat bilgisi yok`,
     visit: "ziyaret",
     leg: (mode, duration, km, fromHotel) =>
       fromHotel
@@ -464,7 +447,6 @@ const tr: Strings = {
     allWalked: "Burada toplu taşıma verisi bulunamadı; bütün yollar yürüyerek planlandı.",
     attribution: "Rotalar ve süreler: Google Maps",
     backToHotel: "Otele dönüş",
-    unknownCost: "—",
     estimated: "Yaklaşık süreler: canlı rota hesaplanamadı",
     emptyDay: "Bu güne sığacak yer kalmadı.",
     focusDay: (n) => `Haritada sadece ${n}. günü göster`,
@@ -585,8 +567,6 @@ const tr: Strings = {
     ],
   },
   footer: {
-    api: "API dokümanı",
-    source: "Kaynak kod",
     privacy: "Gizlilik",
     install: "Uygulamayı yükle",
     iosInstall: "iPhone ve iPad'de: tarayıcının Paylaş menüsünü aç, sonra “Ana Ekrana Ekle”yi seç.",
