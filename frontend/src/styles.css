@@ -15,6 +15,9 @@
   --danger-soft: #fdecea;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 4px 16px rgb(0 0 0 / 0.06);
   --radius: 12px;
+  --star: #b45309;
+  --free: #047857;
+  --free-soft: #d1fae5;
   color-scheme: light;
 }
 
@@ -36,6 +39,9 @@
     --danger: #f97066;
     --danger-soft: #3a1a17;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 4px 16px rgb(0 0 0 / 0.35);
+    --star: #fbbf24;
+    --free: #34d399;
+    --free-soft: #0c2e25;
     color-scheme: dark;
   }
 }
@@ -89,10 +95,10 @@ a {
 
 .app {
   display: grid;
-  grid-template-columns: minmax(340px, 420px) 1fr;
+  grid-template-columns: minmax(360px, 460px) 1fr;
   grid-template-rows: auto 1fr;
   grid-template-areas:
-    "brand map"
+    "top top"
     "panel map";
   height: 100dvh;
 }
@@ -102,7 +108,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: 18px 22px 16px;
+  padding: 20px 24px 16px;
   overflow-y: auto;
   background: var(--surface);
   border-right: 1px solid var(--border);
@@ -124,7 +130,7 @@ a {
     grid-template-columns: 1fr;
     grid-template-rows: auto 46dvh auto;
     grid-template-areas:
-      "brand"
+      "top"
       "map"
       "panel";
     height: auto;
@@ -144,23 +150,117 @@ a {
 
 /* ---------- header ---------- */
 
-/* Above the panel; on phones, above the map. */
-.brand {
-  grid-area: brand;
+.topbar {
+  grid-area: top;
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 20px 22px 0;
+  gap: 32px;
+  height: 64px;
+  padding: 0 20px;
   background: var(--surface);
-  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
+.main-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.main-nav button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.main-nav button:hover {
+  color: var(--text);
+}
+
+.main-nav button[aria-current="page"] {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.language-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.login-button,
+.account-button {
+  height: 36px;
+  border: none;
+  background: var(--brand-fill);
+  color: var(--on-brand);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-button {
+  padding: 0 16px;
+  border-radius: 999px;
+}
+
+.account-button {
+  width: 36px;
+  border-radius: 50%;
+}
+
+.login-button:hover,
+.account-button:hover {
+  background: var(--brand-fill-strong);
+}
+
+/* Phones: the menu gets a row of its own under the logo. */
 @media (max-width: 860px) {
-  .brand {
-    padding: 12px 16px;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
+  .topbar {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+    height: auto;
+    padding: 10px 16px;
   }
+  .main-nav {
+    order: 3;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    width: 100%;
+  }
+  .main-nav button {
+    justify-content: center;
+  }
+}
+
+.form-intro h1 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.form-intro .tagline {
+  margin: 6px 0 0;
 }
 
 .logo {
@@ -172,11 +272,6 @@ a {
   font-size: 20px;
   letter-spacing: -0.01em;
   text-decoration: none;
-}
-
-.header-actions {
-  display: flex;
-  gap: 6px;
 }
 
 .pill-button {
@@ -596,324 +691,120 @@ a {
   font-size: 14px;
 }
 
-/* ---------- results ---------- */
+/* ---------- the trip's summary ---------- */
 
-.plan-result {
+.trip-summary {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border);
 }
 
-.plan-result h2 {
+.trip-summary-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eyebrow {
   margin: 0;
-  font-size: 18px;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  margin: 0;
-}
-
-.stats div {
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--surface-2);
-}
-
-.stats dt {
   color: var(--muted);
   font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.stats dd {
-  margin: 2px 0 0;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+.trip-summary h1 {
+  margin: 4px 0 0;
+  font-size: 28px;
+  letter-spacing: -0.02em;
 }
 
-.day-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.day-tabs button {
+.ghost-button {
   display: inline-flex;
+  flex: none;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 5px 11px;
+  height: 38px;
+  padding: 0 14px;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  font-size: 13px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
 
-.day-tabs button.selected {
-  border-color: var(--text);
-  background: var(--text);
-  color: var(--surface);
+.ghost-button:hover:not(:disabled) {
+  border-color: var(--brand);
 }
 
-.swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--day, var(--brand));
+.ghost-button:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
 
-.day-card {
-  padding: 12px 14px 8px;
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--day);
-  border-radius: var(--radius);
-}
-
-.day-card header {
+.chips {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px 8px;
-}
-
-.day-card h3 {
-  display: flex;
-  align-items: center;
   gap: 8px;
   margin: 0;
-  font-size: 16px;
-  white-space: nowrap;
-}
-
-.day-card header .muted {
-  font-size: 13px;
-}
-
-/* Stops, time and the move buttons; on a narrow screen they wrap below the title, still on the right. */
-.day-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-}
-
-.day-card.moving {
-  opacity: 0.5;
-}
-
-.move-day {
-  display: flex;
-  flex: none;
-  gap: 2px;
-  align-self: center;
-}
-
-.move-day button {
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.move-day button:hover:not(:disabled) {
-  border-color: var(--day);
-  color: var(--text);
-}
-
-.move-day button:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.translated-by {
-  color: var(--muted);
-}
-
-.stop-warning {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.stop-warning.closed {
-  color: var(--danger);
-}
-
-.stop-warning.rain {
-  color: var(--muted);
-}
-
-.badge {
-  display: inline-block;
-  margin: 8px 0 0;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: var(--surface-2);
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.stops {
-  margin: 8px 0 0;
   padding: 0;
   list-style: none;
 }
 
-.stops li {
-  position: relative;
-  padding-left: 14px;
-}
-
-/* the dotted route line down the left of the list */
-.stops li::before {
-  content: "";
-  position: absolute;
-  left: 27px;
-  top: 0;
-  bottom: 0;
-  border-left: 2px dotted var(--day);
-  opacity: 0.5;
-}
-
-.leg {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 3px 0 3px 30px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-/* one ride of a transit leg: line badge, then stops */
-.ride {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  color: var(--text);
-}
-
-.line-chip {
+.chips li {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  padding: 0 6px;
-  border-radius: 5px;
-  background: var(--text);
-  color: var(--surface);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 18px;
-  white-space: nowrap;
-}
-
-.attribution {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-  text-align: right;
-}
-
-.stop {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  width: 100%;
-  margin-left: -14px;
-  padding: 6px 8px 6px 14px;
-  border: none;
+  gap: 6px;
+  max-width: 100%;
+  height: 30px;
+  padding: 0 10px;
   border-radius: 8px;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-}
-
-button.stop:hover,
-.stops li.highlighted button.stop {
   background: var(--surface-2);
+  font-size: 13px;
 }
 
-.stop-number {
+.chips .icon {
   flex: none;
-  display: inline-grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--day);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.stop-number.hotel {
-  background: var(--text);
-  color: var(--surface);
-}
-
-.stop-body {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.stop-name {
-  font-weight: 600;
-}
-
-.stop-body .muted {
-  font-size: 13px;
-}
-
-/* Wikipedia's sentence about the stop, lined up under its name. */
-.stop-description {
-  margin: -2px 0 6px 36px;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.4;
 }
 
-.stop-description a {
-  font-weight: 600;
-  text-decoration: none;
+.chip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.stop-description a:hover {
-  text-decoration: underline;
+.trip-stats {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
-.stops li.return {
-  padding-bottom: 4px;
-}
-
-.stops li.return::before {
-  bottom: 50%;
-}
-
-.stops li.return .stop {
-  cursor: default;
-  align-items: center;
-}
-
-.result-header {
+.trip-actions {
   display: flex;
+  gap: 8px;
+}
+
+.trip-actions .primary-button,
+.trip-actions .saved-badge {
+  display: inline-flex;
+  flex: 1;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  font-size: 15px;
+}
+
+.trip-actions .ghost-button {
+  height: 44px;
+  padding: 0 18px;
 }
 
 .secondary-button {
@@ -938,16 +829,442 @@ button.stop:hover,
   cursor: progress;
 }
 
-/* Share and save; on a narrow screen they wrap below the summary. */
-.result-header {
-  flex-wrap: wrap;
+/* ---------- the plan, day by day ---------- */
+
+.plan-result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.result-actions {
+/* The days, kept in view at the top of the panel while it scrolls. */
+.day-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  gap: 8px;
+  margin: 0 -24px;
+  padding: 10px 24px;
+  overflow-x: auto;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+
+.day-tabs button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.day-tabs button:hover {
+  border-color: var(--day, var(--brand));
+}
+
+.day-tabs button.selected {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.day-tab-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.day-tab-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.day-tab-detail {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--day, var(--brand));
+}
+
+.day-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.day-card + .day-card {
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.day-card.moving {
+  opacity: 0.5;
+}
+
+.day-head {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.day-head h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  margin: 0;
+  font-size: 17px;
+}
+
+.day-sub {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-tools {
+  display: flex;
+  align-items: center;
   gap: 8px;
   margin-left: auto;
+}
+
+.move-day {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  align-self: center;
+}
+
+.move-day button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.move-day button:hover:not(:disabled) {
+  border-color: var(--day);
+  color: var(--text);
+}
+
+.move-day button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.translated-by {
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-block;
+  align-self: flex-start;
+  margin: 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* A day as a timeline: the clock on the left, the route down the middle, the stops on the right. */
+.timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tl-row {
+  display: grid;
+  grid-template-columns: 44px 26px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: start;
+}
+
+.tl-time {
+  padding-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tl-time.arrival {
+  padding-top: 13px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.tl-rail {
+  display: flex;
+  justify-content: center;
+  align-self: stretch;
+}
+
+.tl-line {
+  min-height: 26px;
+  border-left: 2px dotted var(--day);
+  opacity: 0.7;
+}
+
+.tl-home {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  color: var(--muted);
+}
+
+.tl-label {
+  padding-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tl-row .stop-number {
+  margin-top: 10px;
+}
+
+.tl-stop.removing {
+  opacity: 0.4;
+}
+
+.leg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 7px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.leg-text {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.leg-text .icon {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* one ride of a transit leg: line badge, then stops */
+.ride {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-left: 19px;
+  color: var(--text);
+}
+
+.line-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--text);
+  color: var(--surface);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.attribution {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+}
+
+.stop-number {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--day);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stop-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-2) 45%, var(--surface));
+  transition: border-color 0.15s;
+}
+
+.tl-stop.highlighted .stop-card,
+.stop-card:has(.stop-main[aria-expanded="true"]) {
+  border-color: var(--brand);
+  background: var(--surface-2);
+}
+
+.stop-main {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  padding: 11px 13px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stop-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stop-name {
+  font-weight: 600;
+}
+
+.stop-title .stop-name {
+  font-size: 15px;
+}
+
+.stop-rating {
+  flex: none;
+  color: var(--star);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.stop-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.stop-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stop-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.stop-tag.free {
+  background: var(--free-soft);
+  color: var(--free);
+}
+
+.stop-tag.warn.closed {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.stop-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 13px 13px;
+}
+
+/* Wikipedia's sentence about the stop. */
+.stop-description {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.stop-description a {
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.stop-description a:hover {
+  text-decoration: underline;
+}
+
+.stop-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.small-button {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.small-button.danger {
+  color: var(--danger);
+}
+
+.small-button.danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+}
+
+.small-button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.extras-title {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .share-box {
@@ -1023,6 +1340,9 @@ button.stop:hover,
 }
 
 .link-button.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   align-self: flex-start;
   margin: 0;
 }
@@ -1094,53 +1414,6 @@ button.stop:hover,
 
 .small {
   font-size: 12px;
-}
-
-.stop-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-}
-
-.remove-stop {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  margin-top: 6px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-/* Visible on hover/focus with a mouse; always visible on touch screens. */
-.stops li:hover .remove-stop,
-.remove-stop:focus-visible {
-  opacity: 1;
-}
-
-@media (hover: none) {
-  .remove-stop {
-    opacity: 1;
-  }
-}
-
-.remove-stop:hover:not(:disabled) {
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-
-.remove-stop:disabled {
-  cursor: progress;
-}
-
-.stops li.removing {
-  opacity: 0.4;
 }
 
 .suggestions li.stacked {
@@ -1365,12 +1638,12 @@ button.stop:hover,
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 8px;
-  margin: 8px 0 0;
-  padding: 6px 10px;
+  gap: 2px 6px;
+  margin: 0;
+  padding: 5px 10px;
   border-radius: 8px;
   background: var(--surface-2);
-  font-size: 13px;
+  font-size: 12px;
   cursor: default;
 }
 
@@ -1382,10 +1655,7 @@ button.stop:hover,
 .day-extras {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
+  gap: 8px;
 }
 
 .privacy h2 {
@@ -1409,7 +1679,22 @@ button.stop:hover,
 }
 
 .suggestion-toggle {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
   font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+}
+
+.suggestion-toggle:hover {
+  border-color: var(--brand);
+  text-decoration: none;
 }
 
 .suggestion-list ul {
@@ -1564,14 +1849,15 @@ a.suggestion-name:hover {
 }
 
 @media (max-width: 860px) {
+  .day-tabs {
+    position: static;
+    margin: 0 -16px;
+    padding: 10px 16px;
+  }
   /* Below the sticky map: scrolling to the guide's top must not hide it behind the map. */
   .guide {
     scroll-margin-top: 47dvh;
   }
-}
-
-.view-tabs {
-  margin-top: -6px;
 }
 
 .guide {

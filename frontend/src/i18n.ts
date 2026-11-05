@@ -5,7 +5,18 @@ export type Lang = "tr" | "en";
 
 const en = {
   tagline: "Day-by-day routes planned around where you stay",
-  views: { plan: "Plan a trip", guide: "Travel guide" },
+  nav: { label: "Main menu", plan: "Plan", guide: "Guide", saved: "My routes", account: "My account" },
+  summary: {
+    label: "Your trip",
+    eyebrow: "Your trip",
+    edit: "Edit",
+    backToPlan: "Back to your plan",
+    newTrip: "New trip",
+    editTrip: "Change your trip",
+    cityCentre: "City centre",
+    yourPlace: "Where you stay",
+    stats: (stops: string, visit: string, travel: string) => `${stops} · ${visit} sightseeing · ${travel} travel`,
+  },
   guide: {
     intro: "Not sure where to go? Pick a month to see where it's best, or look up a city month by month.",
     month: "Month",
@@ -66,14 +77,11 @@ const en = {
   submit: "Plan my trip",
   planning: "Planning…",
   result: {
-    summary: (stops: number, days: number) => `${stops} stops over ${days} ${days === 1 ? "day" : "days"}`,
     allDays: "All days",
+    daysLabel: "Days",
     day: (n: number) => `Day ${n}`,
     stopNumber: (n: number) => `stop ${n}`,
-    sightseeing: "Sightseeing",
-    travel: "Travel",
     stopsCount: (n: number) => `${n} ${n === 1 ? "stop" : "stops"}`,
-    visit: "visit",
     leg: (mode: string, duration: string, km: string, fromHotel: boolean) =>
       `${mode} ${duration} · ${km} km${fromHotel ? " from your hotel" : ""}`,
     // How a leg is travelled, as used in r.leg: "Walking 12 min · 0.9 km".
@@ -92,6 +100,11 @@ const en = {
     allWalked: "No public transport data was found here, so every leg is on foot.",
     attribution: "Routes and travel times: Google Maps",
     backToHotel: "Back to your hotel",
+    leaveHotel: "Leave your hotel",
+    timesNote: "Times are approximate, leaving at 09:00.",
+    forThisDay: "For this day",
+    removeStopShort: "Remove stop",
+    noDescription: "No description for this place yet.",
     estimated: "Approximate times: live routing was unavailable",
     emptyDay: "Nothing left to fit in this day.",
     focusDay: (n: number) => `Show only day ${n} on the map`,
@@ -99,7 +112,7 @@ const en = {
     open247: "Open 24/7",
     openHours: (hours: string) => `Open ${hours}`,
     removeStop: (name: string) => `Remove ${name} from the route`,
-    free: "free",
+    free: "Free",
     priceBasis: {
       adult: (month: string) => `Entry fees are adult tickets (the non-EU price where it differs), checked ${month}.`,
       tr_citizen: (month: string) =>
@@ -210,7 +223,6 @@ const en = {
   },
   account: {
     login: "Log in",
-    myRoutes: "My routes",
     logout: "Log out",
     signedInAs: (email: string) => `Signed in as ${email}`,
     deleteAccount: "Delete account",
@@ -362,7 +374,18 @@ type Strings = typeof en;
 
 const tr: Strings = {
   tagline: "Kaldığın yere göre gün gün planlanan gezi rotaları",
-  views: { plan: "Rota planla", guide: "Gezi rehberi" },
+  nav: { label: "Ana menü", plan: "Planla", guide: "Rehber", saved: "Rotalarım", account: "Hesabım" },
+  summary: {
+    label: "Gezi planın",
+    eyebrow: "Gezi planın",
+    edit: "Düzenle",
+    backToPlan: "Plana dön",
+    newTrip: "Yeni gezi",
+    editTrip: "Geziyi düzenle",
+    cityCentre: "Şehir merkezi",
+    yourPlace: "Kaldığın yer",
+    stats: (stops, visit, travel) => `${stops} · ${visit} gezme · ${travel} yol`,
+  },
   guide: {
     intro: "Nereye gideceğine karar veremedin mi? Bir ay seç, o ay nereler güzel gör; ya da bir şehri ay ay incele.",
     month: "Ay",
@@ -419,14 +442,11 @@ const tr: Strings = {
   submit: "Rotamı planla",
   planning: "Planlanıyor…",
   result: {
-    summary: (stops, days) => `${days} günde ${stops} durak`,
     allDays: "Tüm günler",
+    daysLabel: "Günler",
     day: (n) => `${n}. gün`,
     stopNumber: (n) => `${n}. durak`,
-    sightseeing: "Gezme",
-    travel: "Yol",
     stopsCount: (n) => `${n} durak`,
-    visit: "ziyaret",
     leg: (mode, duration, km, fromHotel) =>
       fromHotel
         ? `Otelden ${mode.toLocaleLowerCase("tr")} ${duration} · ${km} km`
@@ -447,6 +467,11 @@ const tr: Strings = {
     allWalked: "Burada toplu taşıma verisi bulunamadı; bütün yollar yürüyerek planlandı.",
     attribution: "Rotalar ve süreler: Google Maps",
     backToHotel: "Otele dönüş",
+    leaveHotel: "Otelden çıkış",
+    timesNote: "Saatler yaklaşıktır; sabah 09:00'da yola çıkışa göre hesaplanır.",
+    forThisDay: "Bu gün için",
+    removeStopShort: "Durağı çıkar",
+    noDescription: "Bu yer için henüz açıklama yok.",
     estimated: "Yaklaşık süreler: canlı rota hesaplanamadı",
     emptyDay: "Bu güne sığacak yer kalmadı.",
     focusDay: (n) => `Haritada sadece ${n}. günü göster`,
@@ -454,7 +479,7 @@ const tr: Strings = {
     open247: "7/24 açık",
     openHours: (hours) => `Açık ${hours}`,
     removeStop: (name) => `${name} durağını rotadan çıkar`,
-    free: "ücretsiz",
+    free: "Ücretsiz",
     priceBasis: {
       adult: (month) => `Giriş ücretleri yetişkin biletidir (fark varsa AB dışı fiyatı), ${month} itibarıyla.`,
       tr_citizen: (month) =>
@@ -589,7 +614,6 @@ const tr: Strings = {
   },
   account: {
     login: "Giriş yap",
-    myRoutes: "Rotalarım",
     logout: "Çıkış yap",
     signedInAs: (email) => `${email} olarak giriş yapıldı`,
     deleteAccount: "Hesabı sil",
