@@ -35,6 +35,7 @@ const en = {
   switchLanguage: "Türkçe",
   // HTML for the map's corner (Leaflet renders it as such).
   mapAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  sheetHandle: "Pull the panel up or down",
   city: {
     label: "City",
     placeholder: "Search a city…",
@@ -403,6 +404,7 @@ const tr: Strings = {
   },
   switchLanguage: "English",
   mapAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanlar',
+  sheetHandle: "Paneli yukarı veya aşağı çek",
   city: {
     label: "Şehir",
     placeholder: "Şehir ara…",

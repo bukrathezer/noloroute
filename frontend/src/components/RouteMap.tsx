@@ -1,5 +1,5 @@
 import L from "leaflet";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
 import type { City, DayPlan, LatLng, PlanResponse } from "../api";
 import { cityName, type Lang, STRINGS } from "../i18n";
@@ -31,6 +31,13 @@ interface Props {
   lang: Lang;
   /** Set while the travel guide is open: the trip being planned is hidden meanwhile. */
   guide: GuideMap | null;
+  /** On a phone: how much of the map the floating bar and the panel cover, top and bottom (px). */
+  insets: Insets | null;
+}
+
+interface Insets {
+  top: number;
+  bottom: number;
 }
 
 const EUROPE_VIEW: { center: Point; zoom: number } = { center: [45.5, 15.5], zoom: 4 };
@@ -96,22 +103,34 @@ function ClickToPlaceHotel({ enabled, onPick }: { enabled: boolean; onPick: (p: 
 }
 
 /** Moves the map when the city, plan or focused day changes, or to what the guide shows. */
-function ViewController(props: { city: City | null; bounds: Point[] | null; guide: GuideMap | null }) {
+function ViewController(props: {
+  city: City | null;
+  bounds: Point[] | null;
+  guide: GuideMap | null;
+  insets: Insets | null;
+}) {
   const { city, bounds } = props;
   const inGuide = props.guide !== null;
   const focus = props.guide?.focus ?? null;
   const map = useMap();
+  // Read when the map moves, not a reason to move it: pulling the panel up mustn't pan the map.
+  const insets = useRef(props.insets);
+  insets.current = props.insets;
   useEffect(() => {
+    const padding = {
+      paddingTopLeft: [48, 48 + (insets.current?.top ?? 0)] as Point,
+      paddingBottomRight: [48, 48 + (insets.current?.bottom ?? 0)] as Point,
+    };
     if (inGuide) {
       if (focus && focus.points.length === 1) {
         map.flyTo(focus.points[0], focus.maxZoom, { duration: 1 });
       } else if (focus && focus.points.length > 1) {
-        map.flyToBounds(L.latLngBounds(focus.points), { padding: [48, 48], duration: 0.9, maxZoom: focus.maxZoom });
+        map.flyToBounds(L.latLngBounds(focus.points), { ...padding, duration: 0.9, maxZoom: focus.maxZoom });
       } else {
         map.flyTo(EUROPE_VIEW.center, EUROPE_VIEW.zoom, { duration: 0.8 });
       }
     } else if (bounds && bounds.length > 0) {
-      map.flyToBounds(L.latLngBounds(bounds), { padding: [48, 48], duration: 0.8, maxZoom: 15 });
+      map.flyToBounds(L.latLngBounds(bounds), { ...padding, duration: 0.8, maxZoom: 15 });
     } else if (city?.center_lat != null && city.center_lng != null) {
       map.flyTo([city.center_lat, city.center_lng], CITY_ZOOM, { duration: 1 });
     } else {
@@ -138,7 +157,7 @@ export function RouteMap(props: Props) {
   return (
     <MapContainer center={EUROPE_VIEW.center} zoom={EUROPE_VIEW.zoom} className="map" zoomControl={false}>
       <TileLayer url={TILE_URL} attribution={STRINGS[lang].mapAttribution} maxZoom={19} />
-      <ViewController city={city} bounds={bounds} guide={guide} />
+      <ViewController city={city} bounds={bounds} guide={guide} insets={props.insets} />
       {/* Clicking only drops the first pin; after that it is moved by dragging, so a stray click
           on the map can't wipe out a plan. */}
       <ClickToPlaceHotel enabled={!guide && Boolean(city) && !hotel} onPick={onPickHotel} />
