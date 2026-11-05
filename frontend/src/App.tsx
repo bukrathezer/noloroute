@@ -63,7 +63,6 @@ class SkipOnError extends Component<{ onError: () => void; children: ReactNode }
   }
 }
 
-const SOURCE_URL = "https://github.com/bukrathezer/noloroute";
 const AUTH_STORAGE_KEY = "auth";
 const WELCOME_SEEN_KEY = "welcomeSeen";
 const INVITE_CLOSED_KEY = "shareInviteClosed";
@@ -154,7 +153,6 @@ export function App() {
     hotelLabel: null,
     days: 2,
     mode: "WALK",
-    budget: "",
     startDate: addDays(todayIso(), 1), // tomorrow: close enough for a real forecast
   });
   const [plan, setPlan] = useState<PlanResponse | null>(null);
@@ -338,13 +336,11 @@ export function App() {
     setLoading(true);
     setError(null);
     try {
-      const budget = form.budget.trim() === "" ? undefined : Number(form.budget);
       const result = await planRoute({
         city_id: form.city.id,
         accommodation: form.hotel,
         duration_days: form.days,
         travel_mode: form.mode,
-        budget,
         start_date: form.startDate || undefined,
       });
       if (id !== requestId.current) return;
@@ -417,7 +413,6 @@ export function App() {
       hotelLabel: null,
       days: stored.duration_days,
       mode: stored.travel_mode,
-      budget: stored.budget ?? "",
       startDate: start == null ? "" : start >= todayIso() ? start : addDays(todayIso(), 1),
     });
     setPlan(stored);
@@ -599,38 +594,38 @@ export function App() {
 
   return (
     <div className="app">
-      <aside className="panel">
-        <header className="brand">
-          <a
-            className="logo"
-            href="/"
-            ref={logo}
-            onClick={(e) => {
-              // Guests go back to the welcome screen; the planner keeps what they were doing.
-              if (auth) return;
-              e.preventDefault();
-              setShowWelcome(true);
-            }}
-          >
-            <img src="/favicon.svg" alt="" width={28} height={28} />
-            <span>NoloRoute</span>
-          </a>
-          <div className="header-actions">
-            {auth ? (
-              <button type="button" className="pill-button" onClick={() => setView("saved")}>
-                {t.account.myRoutes}
-              </button>
-            ) : (
-              <button type="button" className="pill-button" onClick={() => showAuth()}>
-                {t.account.login}
-              </button>
-            )}
-            <button type="button" className="pill-button" onClick={() => setLang(lang === "tr" ? "en" : "tr")}>
-              {t.switchLanguage}
+      {/* Outside the panel, so on phones it sits above the map rather than under it. */}
+      <header className="brand">
+        <a
+          className="logo"
+          href="/"
+          ref={logo}
+          onClick={(e) => {
+            // Guests go back to the welcome screen; the planner keeps what they were doing.
+            if (auth) return;
+            e.preventDefault();
+            setShowWelcome(true);
+          }}
+        >
+          <img src="/favicon.svg" alt="" width={28} height={28} />
+          <span>NoloRoute</span>
+        </a>
+        <div className="header-actions">
+          {auth ? (
+            <button type="button" className="pill-button" onClick={() => setView("saved")}>
+              {t.account.myRoutes}
             </button>
-          </div>
-        </header>
-
+          ) : (
+            <button type="button" className="pill-button" onClick={() => showAuth()}>
+              {t.account.login}
+            </button>
+          )}
+          <button type="button" className="pill-button" onClick={() => setLang(lang === "tr" ? "en" : "tr")}>
+            {t.switchLanguage}
+          </button>
+        </div>
+      </header>
+      <aside className="panel">
         {view === "auth" && (
           <AuthPanel
             key={authMode}
@@ -772,14 +767,6 @@ export function App() {
 
         <footer className="footer">
           {/* In a new window: inside the installed app it would have no way back. */}
-          <a href="/docs" target="_blank" rel="noreferrer">
-            {t.footer.api}
-          </a>
-          <span aria-hidden="true">·</span>
-          <a href={SOURCE_URL} target="_blank" rel="noreferrer">
-            {t.footer.source}
-          </a>
-          <span aria-hidden="true">·</span>
           <button type="button" className="link-button footer-link" onClick={() => setView("privacy")}>
             {t.footer.privacy}
           </button>

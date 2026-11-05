@@ -48,8 +48,6 @@ export function PlanResult(props: Props) {
   const stopCount = plan.days.reduce((n, d) => n + d.stops.length, 0);
   const visit = plan.days.reduce((n, d) => n + d.total_visit_minutes, 0);
   const travel = plan.days.reduce((n, d) => n + d.total_travel_minutes, 0);
-  const cost = Number(plan.total_entry_cost);
-  const allUnpriced = plan.unpriced_stop_count === stopCount;
   const days = activeDay ? plan.days.filter((d) => d.day_number === activeDay) : plan.days;
   const transit = plan.travel_mode === "TRANSIT";
   // What the map shows: real rides (solid), estimated rides (dashed), or only walks.
@@ -116,16 +114,7 @@ export function PlanResult(props: Props) {
           <dt>{r.travel}</dt>
           <dd>{t.minutes(travel)}</dd>
         </div>
-        <div>
-          <dt>{r.entryCost}</dt>
-          <dd>
-            {allUnpriced
-              ? r.unknownCost
-              : cost.toLocaleString(lang, { style: "currency", currency: plan.currency_code, maximumFractionDigits: 0 })}
-          </dd>
-        </div>
       </dl>
-      {plan.unpriced_stop_count > 0 && <p className="hint">{r.unpriced(plan.unpriced_stop_count)}</p>}
       {plan.price_basis && plan.prices_checked_on && (
         <p className="hint">{r.priceBasis[plan.price_basis](formatMonth(plan.prices_checked_on, lang))}</p>
       )}
