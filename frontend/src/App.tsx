@@ -32,13 +32,16 @@ import {
 } from "./api";
 import { type AuthMode, AuthPanel } from "./components/AuthPanel";
 import { type FormState, PlanForm } from "./components/PlanForm";
-import { PlanResult, type SaveState, type ShareState } from "./components/PlanResult";
+import { PlanResult } from "./components/PlanResult";
 import { Privacy } from "./components/Privacy";
 import { type GuideMap, type Point, RouteMap } from "./components/RouteMap";
 import { SavedRoutes } from "./components/SavedRoutes";
 import { AdminPanel } from "./components/AdminPanel";
 import { ShareInvite } from "./components/ShareInvite";
+import { type Section, TopBar } from "./components/TopBar";
 import { type GuideFocus, TravelGuide } from "./components/TravelGuide";
+import { type SaveState, type ShareState, TripSummary } from "./components/TripSummary";
+import { Icon } from "./components/Icon";
 import { addDays, firstTripDayIn, fromIso, todayIso } from "./dates";
 import { cityName, initialLang, type Lang, STRINGS } from "./i18n";
 import { canAddToHomeScreen, useInstallPrompt } from "./install";
@@ -156,6 +159,8 @@ export function App() {
     startDate: addDays(todayIso(), 1), // tomorrow: close enough for a real forecast
   });
   const [plan, setPlan] = useState<PlanResponse | null>(null);
+  // The form shown again over a plan, to change the trip ("Edit"); a plan otherwise hides it.
+  const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState<number | null>(null);
@@ -345,6 +350,7 @@ export function App() {
       });
       if (id !== requestId.current) return;
       setPlan(result);
+      setEditing(false);
       setActiveDay(null);
       setSaveState("idle");
       setSavedRouteId(null);
@@ -416,6 +422,7 @@ export function App() {
       startDate: start == null ? "" : start >= todayIso() ? start : addDays(todayIso(), 1),
     });
     setPlan(stored);
+    setEditing(false);
     setActiveDay(null);
     setError(null);
     setLoading(false);
@@ -563,6 +570,22 @@ export function App() {
     setView("auth");
   };
 
+  // The main menu: saved routes need an account, so guests are asked to log in first.
+  const navigate = (section: Section) => {
+    if (section === "plan") showMain("plan");
+    else if (section === "guide") openGuide(guideCity);
+    else if (auth) setView("saved");
+    else showAuth();
+  };
+  const section: Section | null =
+    view === "plan" || view === "guide"
+      ? view
+      : view === "saved" || view === "admin"
+        ? "saved"
+        : view === "auth" && authReason === "save"
+          ? "plan"
+          : null;
+
   const leaveWelcome = () => {
     setFlag(WELCOME_SEEN_KEY);
     focusAppNext.current = true;
@@ -594,37 +617,21 @@ export function App() {
 
   return (
     <div className="app">
-      {/* Outside the panel, so on phones it sits above the map rather than under it. */}
-      <header className="brand">
-        <a
-          className="logo"
-          href="/"
-          ref={logo}
-          onClick={(e) => {
-            // Guests go back to the welcome screen; the planner keeps what they were doing.
-            if (auth) return;
-            e.preventDefault();
-            setShowWelcome(true);
-          }}
-        >
-          <img src="/favicon.svg" alt="" width={28} height={28} />
-          <span>NoloRoute</span>
-        </a>
-        <div className="header-actions">
-          {auth ? (
-            <button type="button" className="pill-button" onClick={() => setView("saved")}>
-              {t.account.myRoutes}
-            </button>
-          ) : (
-            <button type="button" className="pill-button" onClick={() => showAuth()}>
-              {t.account.login}
-            </button>
-          )}
-          <button type="button" className="pill-button" onClick={() => setLang(lang === "tr" ? "en" : "tr")}>
-            {t.switchLanguage}
-          </button>
-        </div>
-      </header>
+      <TopBar
+        lang={lang}
+        section={section}
+        email={auth?.user.email ?? null}
+        logoRef={logo}
+        onLogo={(e) => {
+          // Guests go back to the welcome screen; the planner keeps what they were doing.
+          if (auth) return;
+          e.preventDefault();
+          setShowWelcome(true);
+        }}
+        onNavigate={navigate}
+        onLogin={() => showAuth()}
+        onSwitchLanguage={() => setLang(lang === "tr" ? "en" : "tr")}
+      />
       <aside className="panel">
         {view === "auth" && (
           <AuthPanel
@@ -665,23 +672,6 @@ export function App() {
           />
         )}
 
-        {(view === "plan" || view === "guide") && (
-          <div className="segmented view-tabs" role="tablist">
-            {(["plan", "guide"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                role="tab"
-                aria-selected={view === v}
-                className={view === v ? "selected" : undefined}
-                onClick={() => (v === "guide" ? openGuide(guideCity) : showMain("plan"))}
-              >
-                {t.views[v]}
-              </button>
-            ))}
-          </div>
-        )}
-
         {view === "guide" && (
           <TravelGuide
             guide={guide}
@@ -704,31 +694,58 @@ export function App() {
         {/* Kept mounted while another view is open, so the plan's loaded suggestions, events
             and half-typed searches are still there on the way back. */}
         <div className="plan-view" hidden={view !== "plan"}>
-            <p className="tagline">{t.tagline}</p>
+            {plan && !editing ? (
+              <TripSummary
+                plan={plan}
+                city={cities.find((c) => c.id === plan.city_id) ?? null}
+                stayLabel={form.hotelLabel}
+                lang={lang}
+                saveState={saveState}
+                onSave={requestSave}
+                onShowSaved={() => setView("saved")}
+                shareState={share?.plan === plan ? share.state : null}
+                onShare={onShare}
+                sharedWithYou={sharedLink?.status === "shown" && sharedLink.plan === plan}
+                onEdit={() => setEditing(true)}
+              />
+            ) : (
+              <>
+                {plan && (
+                  <button type="button" className="link-button back" onClick={() => setEditing(false)}>
+                    <Icon name="back" size={16} />
+                    {t.summary.backToPlan}
+                  </button>
+                )}
+                <div className="form-intro">
+                  <h1>{plan ? t.summary.editTrip : t.summary.newTrip}</h1>
+                  <p className="tagline">{t.tagline}</p>
+                </div>
 
-            {citiesFailed && (
-              <p className="error" role="alert">
-                {t.errors.loadCities}
-              </p>
+                {citiesFailed && (
+                  <p className="error" role="alert">
+                    {t.errors.loadCities}
+                  </p>
+                )}
+
+                <PlanForm
+                  cities={cities}
+                  form={form}
+                  onChange={updateForm}
+                  onSubmit={submit}
+                  loading={loading}
+                  lang={lang}
+                  onShowGuide={
+                    form.city && guide?.cities.some((c) => c.id === form.city?.id)
+                      ? () =>
+                          openGuide(
+                            form.city?.id ?? null,
+                            form.startDate ? fromIso(form.startDate).getMonth() + 1 : undefined,
+                          )
+                      : undefined
+                  }
+                />
+              </>
             )}
-
-            <PlanForm
-              cities={cities}
-              form={form}
-              onChange={updateForm}
-              onSubmit={submit}
-              loading={loading}
-              lang={lang}
-              onShowGuide={
-                form.city && guide?.cities.some((c) => c.id === form.city?.id)
-                  ? () =>
-                      openGuide(
-                        form.city?.id ?? null,
-                        form.startDate ? fromIso(form.startDate).getMonth() + 1 : undefined,
-                      )
-                  : undefined
-              }
-            />
 
             {error && (
               <p className="error" role="alert">
@@ -743,7 +760,7 @@ export function App() {
               </p>
             )}
 
-            {plan && (
+            {plan && !editing && (
               <PlanResult
                 plan={plan}
                 lang={lang}
@@ -751,16 +768,10 @@ export function App() {
                 onActiveDayChange={setActiveDay}
                 highlightedStop={highlightedStop}
                 onHighlightStop={setHighlightedStop}
-                saveState={saveState}
-                onSave={requestSave}
-                onShowSaved={() => setView("saved")}
                 onRemoveStop={onRemoveStop}
                 removingStop={removingStop}
                 onMoveDay={onMoveDay}
                 movingDay={movingDay}
-                shareState={share?.plan === plan ? share.state : null}
-                onShare={onShare}
-                sharedWithYou={sharedLink?.status === "shown" && sharedLink.plan === plan}
               />
             )}
         </div>
