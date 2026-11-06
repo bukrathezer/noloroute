@@ -35,8 +35,10 @@ const EUROPE_VIEW: { center: Point; zoom: number } = { center: [45.5, 15.5], zoo
 const CITY_ZOOM = 13;
 // With more cities than this, names show on hover only: otherwise they pile up over Europe.
 const MAX_CITY_LABELS = 8;
-// Of a city's sights shown before planning, the most famous are named on the map.
+// Of a city's sights shown before planning, the most famous are named on the map, and the map
+// frames a few more (not all: some lie far out).
 const NAMED_SIGHTS = 6;
+const FRAMED_SIGHTS = 15;
 
 // OpenStreetMap's own tiles: free and keyless for light use with attribution
 // (https://operations.osmfoundation.org/policies/tiles/). Dark mode re-colours them in CSS.
@@ -95,7 +97,7 @@ function ClickToPlaceHotel({ enabled, onPick }: { enabled: boolean; onPick: (p: 
   return null;
 }
 
-/** Moves the map when the city, plan or focused day changes. */
+/** Moves the map to what `bounds` frames (the plan, or the city's sights), else to the city. */
 function ViewController(props: { city: City | null; bounds: Point[] | null; insets: Insets | null }) {
   const { city, bounds } = props;
   const map = useMap();
@@ -125,11 +127,17 @@ export function RouteMap(props: Props) {
   const hotelPoint: Point | null = hotel ? [hotel.lat, hotel.lng] : null;
 
   // What the map should frame: the whole plan, or just the focused day.
-  const bounds = useMemo<Point[] | null>(() => {
+  const planBounds = useMemo<Point[] | null>(() => {
     if (!plan || !hotel) return null;
     const days = activeDay ? plan.days.filter((d) => d.day_number === activeDay) : plan.days;
     return [[hotel.lat, hotel.lng], ...days.flatMap((d) => d.stops.map((s): Point => [s.latitude, s.longitude]))];
   }, [plan, activeDay, hotel]);
+  // Before planning, the best-known sights. Apart from the hotel, so dropping the pin doesn't move the map.
+  const sightBounds = useMemo<Point[] | null>(
+    () => (sights && sights.length > 1 ? sights.slice(0, FRAMED_SIGHTS).map((s): Point => [s.lat, s.lng]) : null),
+    [sights],
+  );
+  const bounds = planBounds ?? sightBounds;
 
   return (
     <MapContainer center={EUROPE_VIEW.center} zoom={EUROPE_VIEW.zoom} className="map" zoomControl={false}>
