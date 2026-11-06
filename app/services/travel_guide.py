@@ -21,8 +21,9 @@ CONTINENTS: tuple[Continent, ...] = ("europe", "asia", "africa", "north_america"
 # By country. Turkey counts as Europe: the guide's Turkish city is Istanbul.
 CONTINENT_OF_COUNTRY: dict[str, Continent] = {
     **dict.fromkeys(
-        ["AT", "BA", "BE", "CH", "CZ", "DE", "DK", "ES", "FR", "GB", "GR", "HR", "HU", "IE", "IT", "NL", "NO", "PL",
-         "PT", "RS", "SE", "TR"],
+        ["AL", "AT", "BA", "BE", "BG", "CH", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU",
+         "IE", "IS", "IT", "LT", "LU", "LV", "ME", "MK", "MT", "NL", "NO", "PL", "PT", "RO", "RS", "SE", "SI", "SK",
+         "TR"],
         "europe",
     ),
     **dict.fromkeys(["AE", "AZ", "CN", "GE", "HK", "ID", "IN", "JP", "KR", "QA", "SG", "TH", "VN"], "asia"),

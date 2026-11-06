@@ -10,10 +10,22 @@ export interface City {
   name_tr: string | null;
   /** ISO 3166-1 alpha-2, e.g. "IT". */
   country_code: string | null;
+  continent: Continent | null;
   currency_code: string;
   poi_count: number;
   center_lat: number | null;
   center_lng: number | null;
+}
+
+/** One of a city's sights, for the map before a trip is planned (most famous first). */
+export interface Sight {
+  poi_id: string;
+  /** English name. */
+  name: string;
+  name_tr: string | null;
+  category: string;
+  lat: number;
+  lng: number;
 }
 
 export interface LatLng {
@@ -250,6 +262,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const fetchCities = () => request<City[]>("/api/v1/cities");
+
+export const fetchSights = (cityId: string) =>
+  request<Sight[]>(`/api/v1/cities/${encodeURIComponent(cityId)}/sights`);
 
 export const fetchGuide = (lang: "tr" | "en") => request<Guide>(`/api/v1/guide?lang=${lang}`);
 

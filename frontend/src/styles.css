@@ -118,6 +118,7 @@ a {
   grid-area: map;
   position: relative;
   min-height: 0;
+  isolation: isolate; /* the map's own layers stay under the header and full-page screens */
 }
 
 .map {
@@ -387,16 +388,98 @@ a {
   font-size: 14px;
 }
 
-.step {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+.mode-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mode-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mode-option .icon {
+  color: var(--muted);
+}
+
+.mode-option:hover {
+  border-color: var(--brand);
+}
+
+.mode-option.selected {
+  border-color: var(--brand-fill);
   background: var(--brand-soft);
+}
+
+.mode-option.selected .icon {
   color: var(--brand);
+}
+
+.mode-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mode-hint {
+  color: var(--muted);
   font-size: 12px;
-  font-weight: 700;
+  line-height: 1.35;
+}
+
+.quick-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.chip-button .icon {
+  color: var(--muted);
+}
+
+.chip-button:hover {
+  border-color: var(--brand);
+}
+
+.form-submit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.form-submit .primary-button {
+  height: 50px;
+  font-size: 16px;
+}
+
+.form-submit .hint {
+  text-align: center;
 }
 
 .hint {
@@ -513,6 +596,12 @@ a {
   align-items: center;
   flex-wrap: wrap;
   gap: 6px 10px;
+}
+
+.hotel-empty {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
 }
 
 .hotel-chosen {
@@ -1927,215 +2016,348 @@ a.suggestion-name:hover {
     margin: 0 -16px;
     padding: 10px 16px;
   }
-  .guide {
-    scroll-margin-top: 28px;
+}
+
+/* Full-page screens (the guide): over the panel and the map, which stay as they were underneath. */
+.page {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  z-index: 2;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+@media (max-width: 860px) {
+  .page {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    padding: 72px 0 calc(64px + env(safe-area-inset-bottom));
   }
 }
 
-.guide {
+.guide-page {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 28px;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 32px 40px 48px;
+  scroll-margin-top: 0;
 }
 
-.guide .tagline {
+.guide-page h1 {
   margin: 0;
+  font-size: 32px;
+  letter-spacing: -0.02em;
 }
 
-.guide-heading {
-  margin: 6px 0 0;
-  font-size: 16px;
+.guide-page .tagline {
+  margin: 8px 0 0;
+}
+
+.guide-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
 }
 
 .month-picker {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
+  display: flex;
+  gap: 4px;
+  max-width: 100%;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  scrollbar-width: none;
 }
 
 .month-picker button {
-  padding: 7px 0;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  flex: none;
+  min-width: 50px;
+  height: 38px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .month-picker button:hover {
-  background: var(--surface-2);
+  color: var(--text);
 }
 
 .month-picker button.selected {
-  border-color: var(--brand-fill);
   background: var(--brand-fill);
   color: var(--on-brand);
 }
 
-.month-star {
-  color: #d97706;
-}
-
-.month-picker button.selected .month-star {
-  color: inherit;
-}
-
-.guide-picks {
+.guide-section {
   display: flex;
   flex-direction: column;
+  gap: 14px;
+}
+
+.guide-section h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.guide-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.guide-best {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.guide-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.guide-rank {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.guide-card h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.guide-card-text {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.guide-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guide-card-actions .primary-button {
+  height: 42px;
+}
+
+.continent-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.continent-tabs button {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.continent-tabs button[aria-selected="true"] {
+  border-color: var(--brand-fill);
+  background: var(--brand-soft);
+  font-weight: 600;
+}
+
+.guide-cities {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 10px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.guide-picks li {
+.guide-city {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px 14px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.guide-pick {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 0;
-  border: none;
-  background: none;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
 }
 
-.guide-pick-name {
-  font-size: 15px;
-  font-weight: 700;
+.guide-city:hover {
+  border-color: var(--brand);
 }
 
-.guide-pick-name .muted {
-  font-weight: 500;
-  font-size: 13px;
+.guide-city-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
 }
 
-.guide-pick-text {
-  color: var(--muted);
+.guide-city-head p {
+  margin: 4px 0 0;
+}
+
+.guide-city-head .primary-button {
+  padding: 0 20px;
+}
+
+.guide-note {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
   font-size: 14px;
   line-height: 1.5;
 }
 
-.guide-pick:hover .guide-pick-name {
-  color: var(--brand);
-}
-
-.guide-plan-link {
-  align-self: flex-start;
-  margin-left: 0;
-  font-size: 13px;
-}
-
-.guide-continent h3 {
-  margin: 4px 0 8px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.guide-continent ul {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.guide-months {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.guide-country {
+.guide-month {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-}
-
-.guide-country-name {
-  margin-left: 0;
-  min-width: 96px;
-  color: var(--text);
-  font-size: 14px;
-  text-align: left;
-}
-
-.guide-country-name:hover {
-  color: var(--brand);
-  text-decoration: underline;
-}
-
-.guide-country-cities {
-  display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
-}
-
-.guide-city-chip {
-  padding: 4px 11px;
+  width: 100%;
+  height: 100%;
+  padding: 14px 16px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 14px;
   background: var(--surface);
-  font-size: 13px;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.guide-city-chip:hover {
+.guide-month:hover {
   border-color: var(--brand);
-  color: var(--brand);
 }
 
-.guide-back {
-  align-self: flex-start;
-  margin-left: 0;
+.guide-month[aria-pressed="true"] {
+  border: 2px solid var(--brand-fill);
+  background: var(--brand-soft);
 }
 
-.guide-city-header {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.guide-city-header h2 {
-  margin: 0;
-  font-size: 22px;
-}
-
-.guide-month {
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-
-.guide-month h3 {
-  margin: 0 0 6px;
+.guide-month-name {
   font-size: 15px;
+  font-weight: 700;
 }
 
-.guide-month p {
-  margin: 0;
+.guide-month.best .guide-month-name span {
+  color: var(--star);
+}
+
+.guide-month-text {
+  font-size: 14px;
   line-height: 1.55;
 }
 
-.guide-month .guide-best-note {
-  margin-top: 10px;
-  padding-top: 10px;
+.guide-best-note {
+  margin-top: 4px;
+  padding-top: 8px;
   border-top: 1px solid var(--border);
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .guide-best-note strong {
   color: var(--text);
+}
+
+@media (max-width: 860px) {
+  .guide-page {
+    gap: 22px;
+    padding: 16px 16px 32px;
+  }
+  .guide-page h1 {
+    font-size: 26px;
+  }
+}
+
+/* Before planning, over the map: how many sights the city has. */
+.map-note {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1000; /* above the map's own panes */
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+@media (max-width: 860px) {
+  .map-note {
+    top: 72px;
+    left: 10px;
+    max-width: calc(100% - 20px);
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .map-area:has(.map-note) .leaflet-bottom {
+    top: 112px;
+  }
 }
 
 .guide-link {
