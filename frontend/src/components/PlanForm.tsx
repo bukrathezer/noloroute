@@ -3,6 +3,7 @@ import type { City, LatLng, TravelMode } from "../api";
 import { cityName, type Lang, STRINGS } from "../i18n";
 import { CitySearch } from "./CitySearch";
 import { DateRangeField } from "./DateRangeField";
+import { Icon, type IconName } from "./Icon";
 import { PlaceSearch } from "./PlaceSearch";
 
 export interface FormState {
@@ -25,9 +26,17 @@ interface Props {
   lang: Lang;
   /** Opens the travel guide on the chosen city; unset when it has no guide. */
   onShowGuide?: () => void;
+  /** Phones: gets the panel out of the way so the stay can be tapped on the map. */
+  onPickOnMap?: () => void;
 }
 
-export function PlanForm({ cities, form, onChange, onSubmit, loading, lang, onShowGuide }: Props) {
+const MODES: { mode: TravelMode; icon: IconName }[] = [
+  { mode: "WALK", icon: "walk" },
+  { mode: "TRANSIT", icon: "transit" },
+  { mode: "DRIVE", icon: "car" },
+];
+
+export function PlanForm({ cities, form, onChange, onSubmit, loading, lang, onShowGuide, onPickOnMap }: Props) {
   const t = STRINGS[lang];
   const canSubmit = Boolean(form.city && form.hotel) && !loading;
   const cityCenter =
@@ -43,10 +52,7 @@ export function PlanForm({ cities, form, onChange, onSubmit, loading, lang, onSh
   return (
     <form className="plan-form" onSubmit={submit}>
       <div className="field">
-        <label className="field-label">
-          <span className="step">1</span>
-          {t.city.label}
-        </label>
+        <label className="field-label">{t.city.label}</label>
         <CitySearch
           cities={cities}
           value={form.city}
@@ -61,10 +67,7 @@ export function PlanForm({ cities, form, onChange, onSubmit, loading, lang, onSh
       </div>
 
       <div className="field">
-        <span className="field-label">
-          <span className="step">2</span>
-          {t.hotel.label}
-        </span>
+        <span className="field-label">{t.hotel.label}</span>
         {!form.city ? (
           <p className="hint">{t.hotel.pickCityFirst}</p>
         ) : form.hotel ? (
@@ -80,49 +83,62 @@ export function PlanForm({ cities, form, onChange, onSubmit, loading, lang, onSh
             {cityCenter && (
               <PlaceSearch near={cityCenter} lang={lang} onPick={(hotel, hotelLabel) => onChange({ hotel, hotelLabel })} />
             )}
-            <p className="hint">{t.hotel.orClickMap}</p>
-            {cityCenter && (
-              <button
-                type="button"
-                className="link-button"
-                onClick={() => onChange({ hotel: cityCenter, hotelLabel: null })}
-              >
-                {t.hotel.useCenter}
-              </button>
-            )}
+            <div className="quick-picks">
+              {onPickOnMap && (
+                <button type="button" className="chip-button" onClick={onPickOnMap}>
+                  <Icon name="map" size={15} />
+                  {t.hotel.pickOnMap}
+                </button>
+              )}
+              {cityCenter && (
+                <button
+                  type="button"
+                  className="chip-button"
+                  onClick={() => onChange({ hotel: cityCenter, hotelLabel: null })}
+                >
+                  <Icon name="home" size={15} />
+                  {t.hotel.centre}
+                </button>
+              )}
+            </div>
+            {!onPickOnMap && <p className="hint">{t.hotel.orClickMap}</p>}
           </div>
         )}
       </div>
 
       <div className="field">
-        <span className="field-label">
-          <span className="step">3</span>
-          {t.dates.label}
-        </span>
+        <span className="field-label">{t.dates.label}</span>
         <DateRangeField startDate={form.startDate} days={form.days} onChange={onChange} lang={lang} />
       </div>
 
       <div className="field">
-        <span className="field-label">{t.mode.label}</span>
-        <div className="segmented" role="radiogroup" aria-label={t.mode.label}>
-          {(["WALK", "TRANSIT", "DRIVE"] as const).map((mode) => (
+        <span className="field-label" id="mode-label">
+          {t.mode.label}
+        </span>
+        <div className="mode-options" role="radiogroup" aria-labelledby="mode-label">
+          {MODES.map(({ mode, icon }) => (
             <button
               key={mode}
               type="button"
               role="radio"
               aria-checked={form.mode === mode}
-              className={form.mode === mode ? "selected" : undefined}
+              className={form.mode === mode ? "mode-option selected" : "mode-option"}
               onClick={() => onChange({ mode })}
             >
-              {t.mode[mode]}
+              <Icon name={icon} size={20} />
+              <span className="mode-name">{t.mode[mode]}</span>
+              <span className="mode-hint">{t.modeHint[mode]}</span>
             </button>
           ))}
         </div>
       </div>
 
-      <button type="submit" className="primary-button" disabled={!canSubmit}>
-        {loading ? t.planning : t.submit}
-      </button>
+      <div className="form-submit">
+        <button type="submit" className="primary-button" disabled={!canSubmit}>
+          {loading ? t.planning : t.submit}
+        </button>
+        {!canSubmit && !loading && <p className="hint small">{t.submitHint}</p>}
+      </div>
     </form>
   );
 }

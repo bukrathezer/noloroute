@@ -1,22 +1,13 @@
 import L from "leaflet";
 import { useEffect, useMemo, useRef } from "react";
 import { CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
-import type { City, DayPlan, LatLng, PlanResponse } from "../api";
+import type { City, DayPlan, LatLng, PlanResponse, Sight } from "../api";
 import { cityName, type Lang, STRINGS } from "../i18n";
 import { decodePolyline } from "../polyline";
 import { stopName } from "../text";
 import { dayColor } from "../theme";
 
 export type Point = [number, number];
-
-/** The travel guide's map: every city shows, the month's best stand out, the map frames `focus`. */
-export interface GuideMap {
-  highlighted: Set<string>;
-  selected: string | null;
-  /** Points to frame, zoomed in no further than `maxZoom` (one point: centred at that zoom). */
-  focus: { points: Point[]; maxZoom: number } | null;
-  onPickCity: (city: City) => void;
-}
 
 interface Props {
   cities: City[];
@@ -29,8 +20,8 @@ interface Props {
   onPickHotel: (hotel: LatLng) => void;
   onHighlightStop: (poiId: string | null) => void;
   lang: Lang;
-  /** Set while the travel guide is open: the trip being planned is hidden meanwhile. */
-  guide: GuideMap | null;
+  /** The city's sights, most famous first, shown while there is no plan yet. */
+  sights: Sight[] | null;
   /** On a phone: how much of the map the floating bar and the panel cover, top and bottom (px). */
   insets: Insets | null;
 }
@@ -44,6 +35,8 @@ const EUROPE_VIEW: { center: Point; zoom: number } = { center: [45.5, 15.5], zoo
 const CITY_ZOOM = 13;
 // With more cities than this, names show on hover only: otherwise they pile up over Europe.
 const MAX_CITY_LABELS = 8;
+// Of a city's sights shown before planning, the most famous are named on the map.
+const NAMED_SIGHTS = 6;
 
 // OpenStreetMap's own tiles: free and keyless for light use with attribution
 // (https://operations.osmfoundation.org/policies/tiles/). Dark mode re-colours them in CSS.
@@ -102,16 +95,9 @@ function ClickToPlaceHotel({ enabled, onPick }: { enabled: boolean; onPick: (p: 
   return null;
 }
 
-/** Moves the map when the city, plan or focused day changes, or to what the guide shows. */
-function ViewController(props: {
-  city: City | null;
-  bounds: Point[] | null;
-  guide: GuideMap | null;
-  insets: Insets | null;
-}) {
+/** Moves the map when the city, plan or focused day changes. */
+function ViewController(props: { city: City | null; bounds: Point[] | null; insets: Insets | null }) {
   const { city, bounds } = props;
-  const inGuide = props.guide !== null;
-  const focus = props.guide?.focus ?? null;
   const map = useMap();
   // Read when the map moves, not a reason to move it: pulling the panel up mustn't pan the map.
   const insets = useRef(props.insets);
@@ -121,30 +107,21 @@ function ViewController(props: {
       paddingTopLeft: [48, 48 + (insets.current?.top ?? 0)] as Point,
       paddingBottomRight: [48, 48 + (insets.current?.bottom ?? 0)] as Point,
     };
-    if (inGuide) {
-      if (focus && focus.points.length === 1) {
-        map.flyTo(focus.points[0], focus.maxZoom, { duration: 1 });
-      } else if (focus && focus.points.length > 1) {
-        map.flyToBounds(L.latLngBounds(focus.points), { ...padding, duration: 0.9, maxZoom: focus.maxZoom });
-      } else {
-        map.flyTo(EUROPE_VIEW.center, EUROPE_VIEW.zoom, { duration: 0.8 });
-      }
-    } else if (bounds && bounds.length > 0) {
+    if (bounds && bounds.length > 0) {
       map.flyToBounds(L.latLngBounds(bounds), { ...padding, duration: 0.8, maxZoom: 15 });
     } else if (city?.center_lat != null && city.center_lng != null) {
       map.flyTo([city.center_lat, city.center_lng], CITY_ZOOM, { duration: 1 });
     } else {
       map.flyTo(EUROPE_VIEW.center, EUROPE_VIEW.zoom, { duration: 0.8 });
     }
-  }, [map, city, bounds, inGuide, focus]);
+  }, [map, city, bounds]);
   return null;
 }
 
 export function RouteMap(props: Props) {
-  const { cities, city, activeDay, highlightedStop, onPickCity, onPickHotel, onHighlightStop, lang, guide } = props;
-  // In the guide the trip being planned is hidden, but kept for when the planner opens again.
-  const hotel = guide ? null : props.hotel;
-  const plan = guide ? null : props.plan;
+  const { cities, city, hotel, plan, activeDay, highlightedStop, onPickCity, onPickHotel, onHighlightStop, lang } =
+    props;
+  const sights = city && !plan ? props.sights : null;
   const hotelPoint: Point | null = hotel ? [hotel.lat, hotel.lng] : null;
 
   // What the map should frame: the whole plan, or just the focused day.
@@ -157,36 +134,34 @@ export function RouteMap(props: Props) {
   return (
     <MapContainer center={EUROPE_VIEW.center} zoom={EUROPE_VIEW.zoom} className="map" zoomControl={false}>
       <TileLayer url={TILE_URL} attribution={STRINGS[lang].mapAttribution} maxZoom={19} />
-      <ViewController city={city} bounds={bounds} guide={guide} insets={props.insets} />
+      <ViewController city={city} bounds={bounds} insets={props.insets} />
       {/* Clicking only drops the first pin; after that it is moved by dragging, so a stray click
           on the map can't wipe out a plan. */}
-      <ClickToPlaceHotel enabled={!guide && Boolean(city) && !hotel} onPick={onPickHotel} />
+      <ClickToPlaceHotel enabled={Boolean(city) && !hotel} onPick={onPickHotel} />
 
-      {guide &&
-        cities.map((c) => {
-          if (c.center_lat == null || c.center_lng == null) return null;
-          const strong = guide.highlighted.has(c.id) || guide.selected === c.id;
-          return (
-            <CircleMarker
-              key={`guide-${c.id}-${strong}`}
-              center={[c.center_lat, c.center_lng]}
-              radius={strong ? 11 : 7}
-              pathOptions={
-                strong
-                  ? { color: "#b45309", fillColor: "#f59e0b", fillOpacity: 0.95, weight: 3 }
-                  : { color: "#1d4ed8", fillColor: "#3b82f6", fillOpacity: 0.75, weight: 2 }
-              }
-              eventHandlers={{ click: () => guide.onPickCity(c) }}
-            >
-              <Tooltip permanent={strong} direction="top" offset={[0, -9]} className="city-label">
-                {cityName(c, lang)}
-              </Tooltip>
-            </CircleMarker>
-          );
-        })}
+      {/* Before planning: the city's sights, the best known named, so there is something to see. */}
+      {sights?.map((sight, i) => (
+        <CircleMarker
+          key={`sight-${sight.poi_id}`}
+          center={[sight.lat, sight.lng]}
+          radius={i < NAMED_SIGHTS ? 7 : 5}
+          interactive={false}
+          pathOptions={{
+            color: "#1d4ed8",
+            fillColor: i < NAMED_SIGHTS ? "#3b82f6" : "#93a0bf",
+            fillOpacity: i < NAMED_SIGHTS ? 0.95 : 0.7,
+            weight: i < NAMED_SIGHTS ? 2 : 1,
+          }}
+        >
+          {i < NAMED_SIGHTS && (
+            <Tooltip permanent direction="top" offset={[0, -6]} className="city-label">
+              {(lang === "tr" && sight.name_tr) || sight.name}
+            </Tooltip>
+          )}
+        </CircleMarker>
+      ))}
 
-      {!guide &&
-        !city &&
+      {!city &&
         cities.map(
           (c) =>
             c.center_lat != null &&

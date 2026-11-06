@@ -8,6 +8,7 @@ import pytest
 import scripts.ingest_places as ingest
 from app.services.geo import LatLng, haversine_km
 from app.services.places_client import BoundingBox
+from app.services.travel_guide import CONTINENT_OF_COUNTRY
 from scripts.city_catalog import CATALOG
 from scripts.ingest_places import CityConfig, catalog_config, fetch_adaptive, pick_for_refresh
 
@@ -175,3 +176,4 @@ def test_catalog_entries_are_well_formed() -> None:
         assert len(city.country) == 2 and city.country.isupper(), city.id
         assert len(city.currency) == 3 and city.currency.isupper(), city.id
         assert city.name_en and city.name_tr and city.query, city.id
+        assert city.country in CONTINENT_OF_COUNTRY, city.id  # the guide lists every city under its continent
