@@ -125,27 +125,77 @@ a {
   height: 100%;
 }
 
+/* Phones: the map fills the screen and the panel is a sheet pulled up over it (BottomSheet.tsx);
+   the header floats at the top and the menu sits along the bottom. */
 @media (max-width: 860px) {
   .app {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 46dvh auto;
-    grid-template-areas:
-      "top"
-      "map"
-      "panel";
-    height: auto;
+    display: block;
+    height: 100dvh;
+    overflow: hidden;
   }
   .map-area {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    border-bottom: 1px solid var(--border);
+    position: fixed;
+    inset: 0;
+    z-index: 0;
   }
   .panel {
-    overflow: visible;
-    border-right: none;
-    padding: 16px;
+    position: fixed;
+    right: 0;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    left: 0;
+    z-index: 3;
+    gap: 16px;
+    height: var(--sheet-height);
+    max-height: calc(100dvh - 64px - 76px - env(safe-area-inset-bottom));
+    padding: 0 16px 16px;
+    overscroll-behavior: contain;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -8px 30px rgb(0 0 0 / 0.3);
+    transition: height 0.25s ease;
   }
+  .panel[data-sheet="peek"] {
+    --sheet-height: 152px;
+  }
+  .panel[data-sheet="half"] {
+    --sheet-height: 52dvh;
+  }
+  .panel[data-sheet="full"] {
+    --sheet-height: 100dvh;
+  }
+  /* The map's credit line, clear of the sheet. */
+  .map-area .leaflet-bottom {
+    top: 72px;
+    bottom: auto;
+  }
+}
+
+/* The grip along the top of the phone's sheet. */
+.sheet-handle {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: calc(100% + 32px);
+  height: 28px;
+  margin: 0 -16px -8px;
+  padding: 0;
+  border: none;
+  background: var(--surface);
+  cursor: grab;
+  touch-action: none;
+}
+
+.sheet-handle::before {
+  content: "";
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border);
 }
 
 /* ---------- header ---------- */
@@ -233,23 +283,45 @@ a {
   background: var(--brand-fill-strong);
 }
 
-/* Phones: the menu gets a row of its own under the logo. */
+/* Phones: the header floats over the map, and the menu becomes a bar along the bottom of the screen. */
 @media (max-width: 860px) {
   .topbar {
-    flex-wrap: wrap;
-    gap: 10px 12px;
-    height: auto;
-    padding: 10px 16px;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    z-index: 4;
+    gap: 8px;
+    height: 52px;
+    padding: 0 8px 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
   }
   .main-nav {
-    order: 3;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
     display: grid;
-    grid-auto-columns: 1fr;
-    grid-auto-flow: column;
-    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    height: calc(64px + env(safe-area-inset-bottom));
+    padding: 6px 8px env(safe-area-inset-bottom);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
   }
   .main-nav button {
+    flex-direction: column;
     justify-content: center;
+    gap: 3px;
+    height: auto;
+    padding: 0;
+    font-size: 11px;
+  }
+  .main-nav button[aria-current="page"] {
+    background: none;
+    color: var(--brand);
   }
 }
 
@@ -1849,14 +1921,14 @@ a.suggestion-name:hover {
 }
 
 @media (max-width: 860px) {
+  /* Under the sheet's grip, which stays at its top. */
   .day-tabs {
-    position: static;
+    top: 28px;
     margin: 0 -16px;
     padding: 10px 16px;
   }
-  /* Below the sticky map: scrolling to the guide's top must not hide it behind the map. */
   .guide {
-    scroll-margin-top: 47dvh;
+    scroll-margin-top: 28px;
   }
 }
 
@@ -2548,7 +2620,7 @@ a.suggestion-name:hover {
   background: var(--surface-2);
 }
 
-/* Phones: the map is short, so the card stays compact along its bottom. */
+/* Small screens: the card stays compact; on phones it sits under the floating header, clear of the sheet. */
 @media (max-width: 900px) {
   .share-invite {
     left: 12px;
@@ -2557,6 +2629,16 @@ a.suggestion-name:hover {
     width: auto;
     padding: 12px 8px 12px 14px;
   }
+}
+
+@media (max-width: 860px) {
+  .share-invite {
+    top: 72px;
+    bottom: auto;
+  }
+}
+
+@media (max-width: 900px) {
 
   .share-invite-body > span {
     display: none;

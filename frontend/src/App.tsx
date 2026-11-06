@@ -31,6 +31,7 @@ import {
   type User,
 } from "./api";
 import { type AuthMode, AuthPanel } from "./components/AuthPanel";
+import { HALF_SHARE, PEEK_HEIGHT, SheetHandle, type SheetState } from "./components/BottomSheet";
 import { type FormState, PlanForm } from "./components/PlanForm";
 import { PlanResult } from "./components/PlanResult";
 import { Privacy } from "./components/Privacy";
@@ -83,6 +84,25 @@ type MainView = "plan" | "guide";
 // How close the map comes for the guide: a whole country, or one city.
 const GUIDE_COUNTRY_ZOOM = 6;
 const GUIDE_CITY_ZOOM = 11;
+
+// The phone layout of styles.css: the map fills the screen, the panel is a sheet pulled up over
+// it, the menu sits at the bottom. What covers the map there, in px, so routes are framed clear of it.
+const PHONE_QUERY = "(max-width: 860px)";
+const PHONE_TOP_BAR = 72;
+const PHONE_MENU = 64;
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => window.matchMedia?.(query).matches ?? false);
+  useEffect(() => {
+    const list = window.matchMedia?.(query);
+    if (!list) return;
+    const update = () => setMatches(list.matches);
+    update();
+    list.addEventListener("change", update);
+    return () => list.removeEventListener("change", update);
+  }, [query]);
+  return matches;
+}
 
 interface Auth {
   token: string;
@@ -161,6 +181,11 @@ export function App() {
   const [plan, setPlan] = useState<PlanResponse | null>(null);
   // The form shown again over a plan, to change the trip ("Edit"); a plan otherwise hides it.
   const [editing, setEditing] = useState(false);
+  const phone = useMediaQuery(PHONE_QUERY);
+  const [sheet, setSheet] = useState<SheetState>("half");
+  const panelRef = useRef<HTMLElement>(null);
+  // Counts the plans shown (planned, opened), not their edits: each new one starts at the panel's top.
+  const [plansShown, setPlansShown] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState<number | null>(null);
@@ -283,6 +308,16 @@ export function App() {
     }
   }, [sharedLink]);
 
+  // On a phone the planner opens half way up over the map; the other screens take the whole sheet.
+  useEffect(() => {
+    setSheet(view === "plan" ? "half" : "full");
+  }, [view]);
+
+  // A new plan, or the form brought back over it, is read from the top.
+  useEffect(() => {
+    panelRef.current?.scrollTo({ top: 0 });
+  }, [plansShown, editing]);
+
   useEffect(() => {
     document.documentElement.lang = lang;
     try {
@@ -351,6 +386,8 @@ export function App() {
       if (id !== requestId.current) return;
       setPlan(result);
       setEditing(false);
+      setSheet("half");
+      setPlansShown((n) => n + 1);
       setActiveDay(null);
       setSaveState("idle");
       setSavedRouteId(null);
@@ -423,6 +460,8 @@ export function App() {
     });
     setPlan(stored);
     setEditing(false);
+    setSheet("half");
+    setPlansShown((n) => n + 1);
     setActiveDay(null);
     setError(null);
     setLoading(false);
@@ -632,7 +671,8 @@ export function App() {
         onLogin={() => showAuth()}
         onSwitchLanguage={() => setLang(lang === "tr" ? "en" : "tr")}
       />
-      <aside className="panel">
+      <aside className="panel" ref={panelRef} data-sheet={sheet}>
+        {phone && <SheetHandle panel={panelRef} state={sheet} onChange={setSheet} label={t.sheetHandle} />}
         {view === "auth" && (
           <AuthPanel
             key={authMode}
@@ -811,6 +851,15 @@ export function App() {
           onHighlightStop={setHighlightedStop}
           lang={lang}
           guide={guideMap}
+          insets={
+            phone
+              ? {
+                  top: PHONE_TOP_BAR,
+                  bottom:
+                    PHONE_MENU + (sheet === "peek" ? PEEK_HEIGHT : Math.round(window.innerHeight * HALF_SHARE)),
+                }
+              : null
+          }
         />
         {sharedPlanShown && inviteReady && !auth && !inviteClosed && view === "plan" && (
           <ShareInvite
